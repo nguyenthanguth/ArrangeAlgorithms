@@ -130,5 +130,5 @@ dotnet test  ArrangeAlgorithms.UnitTest/ArrangeAlgorithms.UnitTest.csproj
 
 `ArrangeAlgorithms.CadTest` cần AutoCAD 2021 đã cài sẵn. Nếu cài ở đường dẫn khác, sửa `AutoCadPath`
 trong file `.csproj`. Nạp DLL kết quả vào AutoCAD bằng lệnh `NETLOAD` rồi chạy một trong các lệnh
-`T111_Greedy`, `T111_Backtracking`, `T111_SimulatedAnnealing`, `T111_ForceDirected`, `T111_CSP`: chọn
+`T1_Greedy`, `T1_BoundedBacktracking`, `T1_SimulatedAnnealing`, `T1_ForceDirected`, `T1_ConstraintSatisfaction`: chọn
 các đối tượng LINE hoặc LWPOLYLINE, plugin sẽ vẽ hộp nhãn trước và sau khi sắp xếp cùng số liệu thống kê.
