@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 using ArrangeAlgorithms.Geometry;
 
@@ -207,6 +209,142 @@ namespace ArrangeAlgorithms.UnitTest
 
             Assert.Equal(0.0, poly.GetArea(), 12);
             Assert.Equal(0.0, poly.GetSignedArea(), 12);
+        }
+
+        [Fact]
+        public void Polygon_Constructor_DropsRepeatedClosingVertex()
+        {
+            // Nhiều định dạng bản vẽ lặp lại đỉnh đầu ở cuối để khép kín vòng. Hàm dựng phải lược bỏ nó,
+            // nếu không đa giác sẽ có một cạnh suy biến dài bằng 0.
+            var poly = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 4.0),
+                new GeoPoint(0.0, 0.0));
+
+            Assert.Equal(3, poly.VertexCount);
+            Assert.Equal(3, poly.EdgeCount);
+            Assert.Equal(8.0, poly.GetArea(), 12);
+        }
+
+        [Fact]
+        public void Polygon_Constructor_RejectsNullAndTooFewVertices()
+        {
+            Assert.Throws<ArgumentNullException>(() => new GeoPolygon((IEnumerable<GeoPoint>)null));
+            Assert.Throws<ArgumentException>(() => new GeoPolygon(new GeoPoint(0.0, 0.0)));
+            Assert.Throws<ArgumentException>(
+                () => new GeoPolygon(new GeoPoint(1.0, 1.0), new GeoPoint(1.0, 1.0), new GeoPoint(1.0, 1.0)));
+        }
+
+        [Fact]
+        public void Polygon_Indexer_AndGetEdgeAt_RejectOutOfRange()
+        {
+            var poly = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 4.0));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => poly[-1]);
+            Assert.Throws<ArgumentOutOfRangeException>(() => poly[3]);
+            Assert.Throws<ArgumentOutOfRangeException>(() => poly.GetEdgeAt(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => poly.GetEdgeAt(3));
+        }
+
+        [Fact]
+        public void Polygon_GetEdges_FormsClosedLoop()
+        {
+            var poly = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 4.0));
+
+            var edges = poly.GetEdges().ToList();
+
+            Assert.Equal(3, edges.Count);
+            for (int i = 0; i < edges.Count; i++)
+            {
+                // Điểm cuối cạnh này phải trùng điểm đầu cạnh kế tiếp, cạnh cuối vòng về cạnh đầu.
+                Assert.Equal(edges[(i + 1) % edges.Count].StartPoint, edges[i].EndPoint);
+            }
+        }
+
+        [Fact]
+        public void Polygon_Equality_AndHashCode_WorkCorrectly()
+        {
+            var a = new GeoPolygon(new GeoPoint(0.0, 0.0), new GeoPoint(4.0, 0.0), new GeoPoint(4.0, 4.0));
+            var b = new GeoPolygon(new GeoPoint(0.0, 0.0), new GeoPoint(4.0, 0.0), new GeoPoint(4.0, 4.0));
+            var different = new GeoPolygon(new GeoPoint(0.0, 0.0), new GeoPoint(5.0, 0.0), new GeoPoint(5.0, 5.0));
+
+            Assert.True(a.Equals(b));
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            Assert.False(a.Equals(different));
+            Assert.False(a.Equals((GeoPolygon)null));
+
+            object notAPolygon = "không phải GeoPolygon";
+            Assert.False(a.Equals(notAPolygon));
+        }
+
+        [Fact]
+        public void Polygon_IntersectsWithLine_TouchingBoundaryCounts()
+        {
+            var poly = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 4.0),
+                new GeoPoint(0.0, 4.0));
+
+            // Đoạn thẳng chỉ chạm đúng một đỉnh vẫn tính là giao nhau.
+            Assert.True(poly.IntersectsWith(new GeoLine(4.0, 4.0, 8.0, 8.0)));
+
+            // Đoạn thẳng chạy sát ngoài biên thì không.
+            Assert.False(poly.IntersectsWith(new GeoLine(4.5, 0.0, 4.5, 4.0)));
+        }
+
+        [Fact]
+        public void Polygon_IntersectsWithPolygon_ConcaveNotchIsNotOccupied()
+        {
+            // Đa giác hình chữ L, phần khuyết nằm ở góc trên-phải.
+            var lShape = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 2.0),
+                new GeoPoint(2.0, 2.0),
+                new GeoPoint(2.0, 4.0),
+                new GeoPoint(0.0, 4.0));
+
+            // Đa giác nhỏ nằm gọn trong phần khuyết: nằm trong hộp bao nhưng KHÔNG giao với hình chữ L.
+            var inNotch = new GeoPolygon(
+                new GeoPoint(2.5, 2.5),
+                new GeoPoint(3.5, 2.5),
+                new GeoPoint(3.5, 3.5),
+                new GeoPoint(2.5, 3.5));
+
+            Assert.False(lShape.IntersectsWith(inNotch));
+            Assert.False(inNotch.IntersectsWith(lShape));
+        }
+
+        [Fact]
+        public void Polygon_ClockwiseAndCounterClockwise_BehaveIdenticallyForContainment()
+        {
+            var ccw = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 4.0),
+                new GeoPoint(0.0, 4.0));
+
+            var cw = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(0.0, 4.0),
+                new GeoPoint(4.0, 4.0),
+                new GeoPoint(4.0, 0.0));
+
+            Assert.False(ccw.IsClockwise());
+            Assert.True(cw.IsClockwise());
+
+            // Chiều đi của đỉnh không được ảnh hưởng tới kết quả bao chứa hay diện tích tuyệt đối.
+            Assert.Equal(ccw.GetArea(), cw.GetArea(), 12);
+            Assert.Equal(ccw.Contains(new GeoPoint(2.0, 2.0)), cw.Contains(new GeoPoint(2.0, 2.0)));
+            Assert.Equal(ccw.Contains(new GeoPoint(9.0, 9.0)), cw.Contains(new GeoPoint(9.0, 9.0)));
         }
     }
 }

@@ -154,6 +154,123 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(overlapping.IntersectsWith(rect));
             Assert.False(far.IntersectsWith(rect));
         }
+
+        [Fact]
+        public void Rectangle_CornerConstructor_MatchesCentreConstructor()
+        {
+            var fromCorner = new GeoRectangle(10.0, 20.0, 4.0, 6.0);
+            var fromCentre = new GeoRectangle(new GeoPoint(12.0, 23.0), 4.0, 6.0);
+
+            Assert.Equal(fromCentre, fromCorner);
+            Assert.Equal(0.0, fromCorner.AngleRad);
+            Assert.False(fromCorner.IsRotated);
+        }
+
+        [Fact]
+        public void Rectangle_GetEdges_ConnectsVerticesInOrder()
+        {
+            var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.6);
+
+            var vertices = rect.GetVertices();
+            var edges = rect.GetEdges();
+
+            Assert.Equal(4, edges.Length);
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.Equal(vertices[i], edges[i].StartPoint);
+                Assert.Equal(vertices[(i + 1) % 4], edges[i].EndPoint);
+            }
+        }
+
+        [Fact]
+        public void Rectangle_Equality_AndHashCode_WorkCorrectly()
+        {
+            var a = new GeoRectangle(new GeoPoint(1.0, 2.0), 4.0, 2.0, 0.5);
+            var b = new GeoRectangle(new GeoPoint(1.0, 2.0), 4.0, 2.0, 0.5);
+            var rotatedDifferently = new GeoRectangle(new GeoPoint(1.0, 2.0), 4.0, 2.0, 0.6);
+
+            Assert.True(a == b);
+            Assert.False(a != b);
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            Assert.True(a.Equals((object)b));
+
+            object notARectangle = "không phải GeoRectangle";
+            Assert.False(a.Equals(notARectangle));
+            Assert.True(a != rotatedDifferently);
+        }
+
+        [Fact]
+        public void Rectangle_IsRotated_IgnoresNegligibleAngles()
+        {
+            Assert.False(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.0).IsRotated);
+            Assert.False(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 1e-9).IsRotated);
+            Assert.True(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.01).IsRotated);
+        }
+
+        [Fact]
+        public void Rectangle_DistanceTo_IsZeroWhenTouchingAndPositiveWhenApart()
+        {
+            var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0); // X: [-2, 2], Y: [-1, 1]
+
+            // Chạm cạnh: khoảng cách biên-biên bằng 0.
+            var touching = new GeoRectangle(new GeoPoint(4.0, 0.0), 4.0, 2.0);
+            Assert.Equal(0.0, rect.DistanceTo(touching), 9);
+
+            // Cách nhau 3 đơn vị theo trục X.
+            var apart = new GeoRectangle(new GeoPoint(7.0, 0.0), 4.0, 2.0);
+            Assert.Equal(3.0, rect.DistanceTo(apart), 9);
+
+            // Tới đoạn thẳng nằm ngang phía trên, cách mép trên 4 đơn vị.
+            Assert.Equal(4.0, rect.DistanceTo(new GeoLine(-5.0, 5.0, 5.0, 5.0)), 9);
+
+            // Tới đa giác nằm bên phải, cách mép phải 3 đơn vị.
+            var poly = new GeoPolygon(
+                new GeoPoint(5.0, -1.0),
+                new GeoPoint(9.0, -1.0),
+                new GeoPoint(9.0, 1.0),
+                new GeoPoint(5.0, 1.0));
+            Assert.Equal(3.0, rect.DistanceTo(poly), 9);
+        }
+
+        [Fact]
+        public void Rectangle_DistanceTo_NullPolygon_Throws()
+        {
+            var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0);
+
+            Assert.Throws<ArgumentNullException>(() => rect.DistanceTo((GeoPolygon)null));
+            Assert.Throws<ArgumentNullException>(() => rect.IntersectsWith((GeoPolygon)null));
+        }
+
+        [Fact]
+        public void Rectangle_IntersectsWith_NarrowGapCountsAsTouchingWithinTolerance()
+        {
+            var left = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0);   // X tới 2.0
+
+            // Khe hở hẹp hơn dung sai thì coi như chạm nhau.
+            var almostTouching = new GeoRectangle(new GeoPoint(4.0 + 1e-6, 0.0), 4.0, 2.0);
+            Assert.True(left.IntersectsWith(almostTouching));
+
+            // Khe hở rộng hơn dung sai thì tách hẳn.
+            var clearlyApart = new GeoRectangle(new GeoPoint(4.1, 0.0), 4.0, 2.0);
+            Assert.False(left.IntersectsWith(clearlyApart));
+        }
+
+        [Fact]
+        public void Rectangle_GetVertices_PreservesSizeUnderRotation()
+        {
+            var rect = new GeoRectangle(new GeoPoint(3.0, -2.0), 6.0, 4.0, 1.1);
+            var vertices = rect.GetVertices();
+
+            // Cạnh kề nhau phải giữ đúng chiều rộng và chiều cao dù hình đã xoay.
+            Assert.Equal(6.0, vertices[0].DistanceTo(vertices[1]), 9);
+            Assert.Equal(4.0, vertices[1].DistanceTo(vertices[2]), 9);
+            Assert.Equal(6.0, vertices[2].DistanceTo(vertices[3]), 9);
+            Assert.Equal(4.0, vertices[3].DistanceTo(vertices[0]), 9);
+
+            // Tâm hình vẫn là trung điểm của hai đường chéo.
+            Assert.True(vertices[0].GetMiddlePoint(vertices[2]).IsEqualTo(rect.Center));
+            Assert.True(vertices[1].GetMiddlePoint(vertices[3]).IsEqualTo(rect.Center));
+        }
     }
 }
 

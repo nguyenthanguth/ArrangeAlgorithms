@@ -110,6 +110,84 @@ namespace ArrangeAlgorithms.UnitTest
         }
 
         [Fact]
+        public void Line_GetPointAtParameter_InterpolatesAndExtrapolates()
+        {
+            var line = new GeoLine(0.0, 0.0, 10.0, 20.0);
+
+            Assert.True(line.GetPointAtParameter(0.0).IsEqualTo(line.StartPoint));
+            Assert.True(line.GetPointAtParameter(1.0).IsEqualTo(line.EndPoint));
+            Assert.True(line.GetPointAtParameter(0.5).IsEqualTo(line.MidPoint));
+
+            // Tham số ngoài [0, 1] cho điểm trên đường thẳng kéo dài.
+            Assert.True(line.GetPointAtParameter(2.0).IsEqualTo(new GeoPoint(20.0, 40.0)));
+            Assert.True(line.GetPointAtParameter(-0.5).IsEqualTo(new GeoPoint(-5.0, -10.0)));
+        }
+
+        [Fact]
+        public void Line_GetParameterOf_ReturnsZeroForDegenerateLine()
+        {
+            // Đoạn suy biến không có hướng nên không định nghĩa được tham số; phải trả 0 chứ không chia cho 0.
+            var degenerate = new GeoLine(3.0, 3.0, 3.0, 3.0);
+
+            Assert.Equal(0.0, degenerate.GetParameterOf(new GeoPoint(10.0, 10.0)));
+            Assert.Equal(degenerate.StartPoint, degenerate.GetClosestPointTo(new GeoPoint(10.0, 10.0)));
+        }
+
+        [Fact]
+        public void Line_Equality_AndHashCode_WorkCorrectly()
+        {
+            var a = new GeoLine(1.0, 2.0, 3.0, 4.0);
+            var b = new GeoLine(1.0, 2.0, 3.0, 4.0);
+            var reversed = new GeoLine(3.0, 4.0, 1.0, 2.0);
+
+            Assert.True(a == b);
+            Assert.False(a != b);
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            Assert.True(a.Equals((object)b));
+
+            object notALine = "không phải GeoLine";
+            Assert.False(a.Equals(notALine));
+
+            // Đảo chiều tạo ra một đoạn thẳng KHÁC: hướng là một phần định danh của nó.
+            Assert.True(a != reversed);
+        }
+
+        [Fact]
+        public void Line_IntersectsWith_MatchesTryIntersectWith()
+        {
+            var line = new GeoLine(0.0, 0.0, 10.0, 10.0);
+            var crossing = new GeoLine(0.0, 10.0, 10.0, 0.0);
+            var parallel = new GeoLine(0.0, 2.0, 10.0, 12.0);
+
+            Assert.Equal(line.TryIntersectWith(crossing, out _), line.IntersectsWith(crossing));
+            Assert.Equal(line.TryIntersectWith(parallel, out _), line.IntersectsWith(parallel));
+
+            Assert.True(line.IntersectsWith(crossing));
+            Assert.False(line.IntersectsWith(parallel));
+        }
+
+        [Fact]
+        public void Line_IntersectsWith_NullPolygon_Throws()
+        {
+            var line = new GeoLine(0.0, 0.0, 10.0, 10.0);
+
+            Assert.Throws<ArgumentNullException>(() => line.IntersectsWith((GeoPolygon)null));
+        }
+
+        [Fact]
+        public void Line_DistanceTo_MeasuresFromNearestEndWhenProjectionFallsOutside()
+        {
+            var line = new GeoLine(0.0, 0.0, 10.0, 0.0);
+
+            // Hình chiếu rơi giữa đoạn: khoảng cách vuông góc.
+            Assert.Equal(3.0, line.DistanceTo(new GeoPoint(4.0, 3.0)), 9);
+
+            // Hình chiếu rơi ngoài đầu mút: đo tới chính đầu mút đó.
+            Assert.Equal(5.0, line.DistanceTo(new GeoPoint(-3.0, 4.0)), 9);
+            Assert.Equal(5.0, line.DistanceTo(new GeoPoint(13.0, 4.0)), 9);
+        }
+
+        [Fact]
         public void Line_IntersectsWithLine_WorksCorrectly()
         {
             var l1 = new GeoLine(0.0, 0.0, 10.0, 0.0);
