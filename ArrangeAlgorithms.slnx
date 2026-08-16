@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ArrangeAlgorithms.CadTest/ArrangeAlgorithms.CadTest.csproj" />
+  <Project Path="ArrangeAlgorithms.UnitTest/ArrangeAlgorithms.UnitTest.csproj" />
+  <Project Path="ArrangeAlgorithms/ArrangeAlgorithms.csproj" />
+
+</Solution>

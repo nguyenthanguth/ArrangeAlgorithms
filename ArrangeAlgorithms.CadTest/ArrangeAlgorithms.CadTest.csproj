@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RootNamespace>ArrangeAlgorithms.CadTest</RootNamespace>
+    <AssemblyName>ArrangeAlgorithms.CadTest</AssemblyName>
+
+    <!-- Đổi dòng này nếu cài AutoCAD ở chỗ khác hoặc dùng phiên bản khác. -->
+    <AutoCadPath>D:\Autodesk\AutoCAD\AutoCAD 2021</AutoCadPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private=false là bắt buộc: các DLL này phải KHÔNG được chép vào thư mục output.
+         AutoCAD đã nạp sẵn bản của nó, chép thêm một bản nữa sẽ khiến plugin nạp
+         hai assembly cùng tên khác đường dẫn và ném lỗi ép kiểu rất khó lần. -->
+    <Reference Include="accoremgd">
+      <HintPath>$(AutoCadPath)\accoremgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="acdbmgd">
+      <HintPath>$(AutoCadPath)\acdbmgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="acmgd">
+      <HintPath>$(AutoCadPath)\acmgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArrangeAlgorithms\ArrangeAlgorithms.csproj" />
+  </ItemGroup>
+
+</Project>

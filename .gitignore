@@ -1,55 +1,101 @@
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
+# ---------------------------------------------------------------------------
+# Kết quả biên dịch
+# ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
 *.pdb
+*.ilk
+*.tlog
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# ---------------------------------------------------------------------------
+# Visual Studio
+# ---------------------------------------------------------------------------
+.vs/
+*.suo
+*.user
+*.userosscache
+*.userprefs
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.psess
+*.vsp
+*.vspx
+*.sap
 
-# debug information files
-*.dwo
+# ---------------------------------------------------------------------------
+# Rider / ReSharper / JetBrains
+# Riêng *.DotSettings (không có đuôi .user) là thiết lập dùng chung, vẫn nên đưa vào repo;
+# bản cá nhân *.DotSettings.user đã bị chặn bởi luật *.user ở trên.
+# ---------------------------------------------------------------------------
+.idea/
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.resharper
+
+# ---------------------------------------------------------------------------
+# Visual Studio Code
+# Giữ lại các file cấu hình dùng chung của nhóm, chỉ bỏ phần thiết lập cá nhân.
+# ---------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ---------------------------------------------------------------------------
+# Kết quả chạy test và đo độ phủ
+# ---------------------------------------------------------------------------
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+*.opencover.xml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# ---------------------------------------------------------------------------
+# NuGet
+# ---------------------------------------------------------------------------
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# ---------------------------------------------------------------------------
+# Xuất bản và triển khai
+# ---------------------------------------------------------------------------
+[Pp]ublish/
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.pubxml.user
+PublishScripts/
+
+# ---------------------------------------------------------------------------
+# File tạm và file đổ lỗi
+# ---------------------------------------------------------------------------
+*.tmp
+*.cache
+*.bak
+*.swp
+*~
+*.dmp
+*.mdmp
+*.stackdump
+
+# ---------------------------------------------------------------------------
+# Rác do hệ điều hành sinh ra
+# ---------------------------------------------------------------------------
+[Tt]humbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
