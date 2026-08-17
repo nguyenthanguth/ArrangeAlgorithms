@@ -5,6 +5,31 @@
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!-- 1. Cấu hình sinh NuGet Package và XML Documentation -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        
+    <!-- 2. Thông tin Metadata của NuGet Package -->
+    <PackageId>ArrangeAlgorithms</PackageId>
+    <Version>1.0.1</Version>
+    <Authors>Nguyen Thang</Authors>
+    <Company>Nguyen Thang</Company>
+    <Description>Thư viện chứa các thuật toán sắp xếp.</Description>
+    <PackageProjectUrl>https://github.com/nguyenthanguth/ArrangeAlgorithms</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nguyenthanguth/ArrangeAlgorithms</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- 3. Nhúng mã nguồn và file Debug vào DLL để hỗ trợ F12 xem code gốc -->
+    <DebugType>embedded</DebugType>
+    <EmbedAllSources>true</EmbedAllSources>
+
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
