@@ -1,6 +1,6 @@
+using ArrangeAlgorithms.Geometry;
 using System;
 using Xunit;
-using ArrangeAlgorithms.Geometry;
 
 namespace ArrangeAlgorithms.UnitTest
 {
@@ -34,7 +34,7 @@ namespace ArrangeAlgorithms.UnitTest
             // Điểm ngoài khoảng đầu mút
             Assert.Equal(-0.2, GeoLine.GetParameterOf(new GeoPoint(-2.0, 0.0)), 12);
             Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointTo(new GeoPoint(-2.0, 5.0)));
-            
+
             Assert.True(GeoLine.IsPointOn(new GeoPoint(3.0, 0.0)));
             Assert.False(GeoLine.IsPointOn(new GeoPoint(3.0, 0.1)));
         }
@@ -72,7 +72,7 @@ namespace ArrangeAlgorithms.UnitTest
         {
             // Hai đoạn thẳng cùng nằm trên 1 đường thẳng
             var l1 = new GeoLine(0.0, 0.0, 5.0, 0.0);
-            
+
             // Trường hợp 1: Nằm trên đường thẳng kéo dài nhưng không chạm nhau
             var l2 = new GeoLine(10.0, 0.0, 15.0, 0.0);
             Assert.False(l1.TryIntersectWith(l2, out _));
@@ -102,7 +102,7 @@ namespace ArrangeAlgorithms.UnitTest
         public void Line_TJunctionIntersection_WorksCorrectly()
         {
             var l1 = new GeoLine(0.0, 0.0, 10.0, 0.0);
-            
+
             // Một đoạn thẳng vuông góc và chạm chính xác vào điểm mút
             var l2 = new GeoLine(5.0, 0.0, 5.0, 5.0);
             Assert.True(l1.TryIntersectWith(l2, out var hit));

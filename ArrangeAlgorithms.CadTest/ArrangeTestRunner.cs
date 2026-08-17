@@ -1,14 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
+using ArrangeAlgorithms.Geometry;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
-using ArrangeAlgorithms;
-using ArrangeAlgorithms.Geometry;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 
 [assembly: CommandClass(typeof(ArrangeAlgorithms.CadTest.ArrangeCommands))]
 

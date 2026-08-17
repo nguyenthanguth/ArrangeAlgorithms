@@ -1,6 +1,6 @@
+using ArrangeAlgorithms.Geometry;
 using System;
 using Xunit;
-using ArrangeAlgorithms.Geometry;
 
 namespace ArrangeAlgorithms.UnitTest
 {
@@ -100,7 +100,7 @@ namespace ArrangeAlgorithms.UnitTest
         public void Rectangle_IntersectsWithContactOnly_WorksCorrectly()
         {
             var rect1 = new GeoRectangle(0.0, 0.0, 4.0, 4.0); // X: [0, 4], Y: [0, 4]
-            
+
             // Tiếp xúc ngoài chạm cạnh
             var rect2 = new GeoRectangle(4.0, 0.0, 4.0, 4.0); // X: [4, 8], Y: [0, 4]
             Assert.True(rect1.IntersectsWith(rect2));

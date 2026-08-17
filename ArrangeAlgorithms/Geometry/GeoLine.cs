@@ -137,7 +137,7 @@ namespace ArrangeAlgorithms.Geometry
             double t = qMinusP.CrossProduct(s) / rCrossS;
             double u = qMinusP.CrossProduct(r) / rCrossS;
 
-            if (t >= -tolerance.EqualPoint && t <= 1.0 + tolerance.EqualPoint && 
+            if (t >= -tolerance.EqualPoint && t <= 1.0 + tolerance.EqualPoint &&
                 u >= -tolerance.EqualPoint && u <= 1.0 + tolerance.EqualPoint)
             {
                 intersection = GetPointAtParameter(t);

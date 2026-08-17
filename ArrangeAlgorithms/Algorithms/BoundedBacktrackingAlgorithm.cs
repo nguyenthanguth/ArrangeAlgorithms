@@ -1,6 +1,6 @@
+using ArrangeAlgorithms.Geometry;
 using System.Collections.Generic;
 using System.Linq;
-using ArrangeAlgorithms.Geometry;
 
 namespace ArrangeAlgorithms.Algorithms
 {

@@ -1,8 +1,8 @@
+using ArrangeAlgorithms.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
-using ArrangeAlgorithms.Geometry;
 
 namespace ArrangeAlgorithms.UnitTest
 {
@@ -168,7 +168,7 @@ namespace ArrangeAlgorithms.UnitTest
             // Công thức diện tích và trọng tâm đa giác tự do bằng giải thuật Shoelace / Green Theorem
             // Diện tích = 12
             Assert.Equal(12.0, poly.GetArea(), 12);
-            
+
             // Ghép từ hai hình chữ nhật: [0,4]x[0,2] diện tích 8 tâm (2,1) và [0,2]x[2,4] diện tích 4 tâm (1,3).
             // Trọng tâm = (8*2 + 4*1)/12 = 5/3 theo X, (8*1 + 4*3)/12 = 5/3 theo Y.
             Assert.True(poly.GetCentroid().IsEqualTo(new GeoPoint(5.0 / 3.0, 5.0 / 3.0)));

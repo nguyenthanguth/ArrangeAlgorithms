@@ -1,5 +1,3 @@
-using ArrangeAlgorithms.Geometry;
-
 namespace ArrangeAlgorithms
 {
     /// <summary>

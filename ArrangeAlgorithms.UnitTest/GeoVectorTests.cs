@@ -1,6 +1,6 @@
+using ArrangeAlgorithms.Geometry;
 using System;
 using Xunit;
-using ArrangeAlgorithms.Geometry;
 
 namespace ArrangeAlgorithms.UnitTest
 {

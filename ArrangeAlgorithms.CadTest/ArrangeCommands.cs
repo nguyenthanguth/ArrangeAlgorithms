@@ -1,5 +1,4 @@
 using Autodesk.AutoCAD.Runtime;
-using ArrangeAlgorithms;
 
 namespace ArrangeAlgorithms.CadTest
 {

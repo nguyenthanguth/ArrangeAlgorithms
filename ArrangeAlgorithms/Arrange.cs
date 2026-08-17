@@ -1,8 +1,8 @@
+using ArrangeAlgorithms.Algorithms;
+using ArrangeAlgorithms.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Algorithms;
 
 namespace ArrangeAlgorithms
 {
@@ -351,10 +351,10 @@ namespace ArrangeAlgorithms
             {
                 // Biến đổi tọa độ đỉnh thành GeoVector từ gốc tọa độ (0,0)
                 GeoVector offset = new GeoPoint(0.0, 0.0).GetVectorTo(vertices[i]);
-                
+
                 // Chiếu đỉnh lên trục dọc của đường dẫn (tích vô hướng)
                 double along = offset.DotProduct(direction);
-                
+
                 // Chiếu đỉnh lên trục vuông góc của đường dẫn (tích vô hướng)
                 double across = offset.DotProduct(perpendicular);
 
@@ -381,11 +381,11 @@ namespace ArrangeAlgorithms
                 direction,     // Trục dọc cục bộ
                 perpendicular, // Trục ngang/vuông góc cục bộ
                 height,        // Chiều cao thực tế của nhãn theo trục vuông góc
-                
+
                 // BaseOffset: Khoảng cách vuông góc tối thiểu từ đường dẫn tới tâm hàng nhãn đầu tiên
                 // bằng nửa chiều cao nhãn cộng thêm khoảng cách lề riêng của nhãn này (MarkOffsetFromLine)
                 height * 0.5 + MarkOffsetFromLine,
-                
+
                 // MaximumShift: Khoảng cách trượt dọc tối đa cho phép dọc theo đường dẫn
                 // bằng nửa chiều dài đường dẫn cộng thêm một tỷ lệ chiều rộng nhãn nhô ra ngoài (LongitudinalOvershootRatio)
                 GeoLine.Length * 0.5 + width * options.LongitudinalOvershootRatio);

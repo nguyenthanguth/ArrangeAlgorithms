@@ -33,7 +33,7 @@ namespace ArrangeAlgorithms.Geometry
         public GeoPolygon(IEnumerable<GeoPoint> vertices)
         {
             if (vertices == null) throw new ArgumentNullException(nameof(vertices));
-            
+
             List<GeoPoint> list = vertices.ToList();
             // Lược bỏ đỉnh cuối nếu trùng với đỉnh đầu tiên
             while (list.Count > 1 && list[list.Count - 1].Equals(list[0]))
