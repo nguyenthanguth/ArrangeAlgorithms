@@ -28,6 +28,8 @@ var arranges = new List<Arrange>
         GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 2000.0, 1000.0),
         // Đoạn dẫn: trung điểm của nó là gốc để loang vị trí ứng viên
         GeoLine      = leader,
+        // Khoảng hở vuông góc tối thiểu giữa mép nhãn và đoạn dẫn, riêng cho nhãn này (mặc định 50)
+        MarkOffsetFromLine = 50.0,
         // Các vùng nhãn không được đè lên
         BlockPolygons = new List<GeoPolygon>(),
         BlockLines    = new List<GeoLine>()
@@ -50,7 +52,6 @@ Muốn đổi thuật toán hoặc tinh chỉnh tham số thì truyền `Arrange
 var options = new ArrangeOptions
 {
     Algorithm           = ArrangeAlgorithmType.BoundedBacktracking,
-    MarkOffsetFromLine  = 50.0,
     RowGap              = 20.0,
     PerpendicularLevels = 3
 };
@@ -58,13 +59,34 @@ var options = new ArrangeOptions
 List<GeoVector> moves = Arrange.Run(arranges, options);
 ```
 
+`ArrangeOptions` là cấu hình dùng chung cho cả danh sách. Riêng `MarkOffsetFromLine` nằm trên từng
+`Arrange` vì mỗi nhãn có thể cần một khoảng hở khác nhau:
+
+```csharp
+var nhanChuNho = new Arrange
+{
+    GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 2000.0, 1000.0),
+    GeoLine      = leader,
+    MarkOffsetFromLine = 50.0   // chữ nhỏ, bám sát đoạn dẫn
+};
+
+var nhanChuLon = new Arrange
+{
+    GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 4000.0, 2000.0),
+    GeoLine      = leader,
+    MarkOffsetFromLine = 200.0  // chữ lớn, phải lùi ra xa hơn
+};
+
+List<GeoVector> moves = Arrange.Run(new List<Arrange> { nhanChuNho, nhanChuLon }, options);
+```
+
 ## Cách sinh vị trí ứng viên
 
 Cả 5 thuật toán đều dùng chung một bộ ứng viên rời rạc, loang ra từ trung điểm đoạn dẫn:
 
 - **Dịch vuông góc** — mỗi cấp trong `PerpendicularLevels` tạo một hàng nhãn, đối xứng hai bên đoạn dẫn.
-  Cấp đầu cách đoạn dẫn nửa chiều cao nhãn cộng `MarkOffsetFromLine`, mỗi cấp sau cộng thêm chiều cao
-  nhãn cộng `RowGap`.
+  Cấp đầu cách đoạn dẫn nửa chiều cao nhãn cộng `MarkOffsetFromLine` của chính nhãn đó, mỗi cấp sau
+  cộng thêm chiều cao nhãn cộng `RowGap`.
 - **Trượt dọc** — trong mỗi hàng, nhãn trượt song song đoạn dẫn theo cả hai chiều, xa nhất là nửa chiều
   dài đoạn dẫn cộng `LongitudinalOvershootRatio` lần chiều rộng nhãn.
 
@@ -85,12 +107,21 @@ sạch va chạm nào, nên mọi nhãn luôn có vị trí hiển thị.
 
 Kết quả của `SimulatedAnnealing` dùng seed cố định nên vẫn tái lập được giữa các lần chạy.
 
+## Tham số của từng `Arrange`
+
+| Tham số | Mặc định | Ý nghĩa |
+|---|---|---|
+| `GeoRectangle` | — | Hộp bao nhãn, phần hình học sẽ được dịch chuyển |
+| `GeoLine` | — | Đoạn dẫn; trung điểm của nó là gốc để loang vị trí ứng viên |
+| `MarkOffsetFromLine` | 50.0 | Khoảng hở vuông góc tối thiểu giữa mép nhãn và đoạn dẫn |
+| `BlockPolygons` | — | Đa giác cấm nhãn không được đè lên |
+| `BlockLines` | — | Đoạn thẳng cấm nhãn không được đè lên |
+
 ## Tham số chính của `ArrangeOptions`
 
 | Tham số | Mặc định | Ý nghĩa |
 |---|---|---|
 | `Algorithm` | `Greedy` | Thuật toán sử dụng |
-| `MarkOffsetFromLine` | 50.0 | Khoảng hở vuông góc tối thiểu giữa mép nhãn và đoạn dẫn |
 | `RowGap` | 20.0 | Khoảng hở giữa hai hàng nhãn liên tiếp |
 | `PerpendicularLevels` | 3 | Số cấp lùi vuông góc thử ở mỗi bên |
 | `LongitudinalOvershootRatio` | 0.75 | Tỷ lệ chiều rộng nhãn được phép nhô ra ngoài hai đầu đoạn dẫn |
@@ -128,7 +159,18 @@ dotnet build ArrangeAlgorithms/ArrangeAlgorithms.csproj
 dotnet test  ArrangeAlgorithms.UnitTest/ArrangeAlgorithms.UnitTest.csproj
 ```
 
-`ArrangeAlgorithms.CadTest` cần AutoCAD 2021 đã cài sẵn. Nếu cài ở đường dẫn khác, sửa `AutoCadPath`
-trong file `.csproj`. Nạp DLL kết quả vào AutoCAD bằng lệnh `NETLOAD` rồi chạy một trong các lệnh
-`T1_Greedy`, `T1_BoundedBacktracking`, `T1_SimulatedAnnealing`, `T1_ForceDirected`, `T1_ConstraintSatisfaction`: chọn
-các đối tượng LINE hoặc LWPOLYLINE, plugin sẽ vẽ hộp nhãn trước và sau khi sắp xếp cùng số liệu thống kê.
+## Chạy thử trong AutoCAD
+
+`ArrangeAlgorithms.CadTest` build ra một file DLL rồi nạp vào AutoCAD để dùng:
+
+```bash
+dotnet build ArrangeAlgorithms.CadTest/ArrangeAlgorithms.CadTest.csproj
+```
+
+Kết quả nằm ở `ArrangeAlgorithms.CadTest/bin/Debug/net48/ArrangeAlgorithms.CadTest.dll`. Nạp file này
+vào AutoCAD bằng lệnh `NETLOAD`, rồi chạy một trong các lệnh `T1_Greedy`, `T1_BoundedBacktracking`,
+`T1_SimulatedAnnealing`, `T1_ForceDirected`, `T1_ConstraintSatisfaction`: chọn các đối tượng LINE hoặc
+LWPOLYLINE, plugin sẽ vẽ hộp nhãn trước và sau khi sắp xếp cùng số liệu thống kê.
+
+Project tham chiếu ba DLL `accoremgd`, `acdbmgd`, `acmgd` theo đường dẫn `AutoCadPath` khai báo trong
+`.csproj`. Nếu bộ DLL đó nằm ở chỗ khác trên máy, sửa lại dòng `AutoCadPath`.

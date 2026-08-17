@@ -15,18 +15,19 @@ namespace ArrangeAlgorithms.UnitTest
             var a1 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                GeoLine = leaderLine
+                GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                GeoLine = leaderLine
+                GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.ConstraintSatisfaction,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 2
             };

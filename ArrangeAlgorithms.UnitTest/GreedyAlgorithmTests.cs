@@ -15,7 +15,6 @@ namespace ArrangeAlgorithms.UnitTest
             return new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.Greedy,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = perpendicularLevels
             };
@@ -27,7 +26,8 @@ namespace ArrangeAlgorithms.UnitTest
             return new Arrange
             {
                 GeoLine = leader,
-                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0)
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
+                MarkOffsetFromLine = 5.0
             };
         }
 
@@ -47,19 +47,20 @@ namespace ArrangeAlgorithms.UnitTest
             var a1 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                GeoLine = leaderLine
+                GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                GeoLine = leaderLine
+                GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0
             };
 
             var list = new List<Arrange> { a1, a2 };
             var options = new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.Greedy,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 3
             };
@@ -94,13 +95,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = rect,
                 GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 
             var options = new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.Greedy,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 2
             };
@@ -134,13 +135,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = rect,
                 GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 
             var options = new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.Greedy,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 2
             };
@@ -253,8 +254,8 @@ namespace ArrangeAlgorithms.UnitTest
             var leader = new GeoLine(0.0, 0.0, 40.0, 40.0);
             var box = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0);
 
-            var a = new Arrange { GeoLine = leader, GeoRectangle = box };
-            var b = new Arrange { GeoLine = leader, GeoRectangle = box };
+            var a = new Arrange { GeoLine = leader, GeoRectangle = box, MarkOffsetFromLine = 5.0 };
+            var b = new Arrange { GeoLine = leader, GeoRectangle = box, MarkOffsetFromLine = 5.0 };
 
             var translations = Arrange.Run(new List<Arrange> { a, b }, GreedyOptions());
 

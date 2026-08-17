@@ -99,7 +99,7 @@ namespace ArrangeAlgorithms.Algorithms
             // Trước đây chỗ này chỉ xếp theo khoảng hở giảm dần, tức luôn thử vị trí XA NHẤT trước và
             // gần như luôn dừng lại ở đó. Hệ quả đo được: khoảng cách nhãn tới đoạn dẫn trung bình 2405
             // so với 550 của Greedy — mọi nhãn bị ném ra cấp vuông góc ngoài cùng dù chỗ gần còn trống.
-            // Toàn bộ cấu hình mặc định (MarkOffsetFromLine, LongitudinalOvershootRatio) đều nói rằng
+            // Toàn bộ giá trị mặc định (Arrange.MarkOffsetFromLine, LongitudinalOvershootRatio) đều nói rằng
             // nhãn nên bám sát đoạn dẫn, nên độ dịch chuyển mới là tiêu chí chính.
             //
             // Khoảng hở vẫn hữu ích để phá hòa: bộ sinh ứng viên đối xứng nên các vị trí cách đều nhau

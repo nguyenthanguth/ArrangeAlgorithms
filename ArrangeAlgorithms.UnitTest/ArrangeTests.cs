@@ -17,7 +17,6 @@ namespace ArrangeAlgorithms.UnitTest
             return new ArrangeOptions
             {
                 Algorithm = algorithm,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 3
             };
@@ -28,7 +27,8 @@ namespace ArrangeAlgorithms.UnitTest
             return new Arrange
             {
                 GeoLine = leader,
-                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0)
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
+                MarkOffsetFromLine = 5.0
             };
         }
 
@@ -71,9 +71,12 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_SingleArgumentOverload_UsesDefaultOptions()
         {
-            // Nhãn 20x10 nhỏ hơn MarkOffsetFromLine mặc định (50), nên chỉ cần kết quả chạy được
-            // và giữ đúng số phần tử là đủ để chứng minh overload này dùng ArrangeOptions.Default.
-            var label = LabelOn(new GeoLine(0.0, 0.0, 400.0, 0.0));
+            // Nhãn không đặt MarkOffsetFromLine nên nó giữ giá trị mặc định 50 của chính Arrange.
+            var label = new Arrange
+            {
+                GeoLine = new GeoLine(0.0, 0.0, 400.0, 0.0),
+                GeoRectangle = new GeoRectangle(new GeoPoint(200.0, 0.0), 20.0, 10.0)
+            };
 
             var translations = Arrange.Run(new List<Arrange> { label });
 
@@ -98,6 +101,41 @@ namespace ArrangeAlgorithms.UnitTest
             // BaseOffset = nửa chiều cao nhãn (5) + MarkOffsetFromLine (5) = 10, đo từ trung điểm đoạn dẫn (20, 0).
             Assert.True(points[0].IsEqualTo(new GeoPoint(20.0, 10.0)));
             Assert.True(points[1].IsEqualTo(new GeoPoint(20.0, -10.0)));
+        }
+
+        [Fact]
+        public void Arrange_MarkOffsetFromLine_IsPerLabelNotGlobal()
+        {
+            // Khoảng hở nằm trên từng nhãn, nên hai nhãn dùng chung một ArrangeOptions vẫn phải
+            // loang ứng viên từ hai cấp vuông góc khác nhau.
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var near = LabelOn(leader);                       // MarkOffsetFromLine = 5
+            var far = LabelOn(leader);
+            far.MarkOffsetFromLine = 30.0;
+
+            var options = OptionsFor(ArrangeAlgorithmType.Greedy);
+
+            // BaseOffset = nửa chiều cao nhãn (5) cộng khoảng hở riêng của chính nhãn đó.
+            Assert.True(near.GetPlacePoints(options)[0].IsEqualTo(new GeoPoint(20.0, 10.0)));
+            Assert.True(far.GetPlacePoints(options)[0].IsEqualTo(new GeoPoint(20.0, 35.0)));
+        }
+
+        [Fact]
+        public void Arrange_Run_HonoursEachLabelsOwnMarkOffsetFromLine()
+        {
+            // Cùng một đoạn dẫn, cùng một bộ tùy chọn: nhãn khai báo khoảng hở lớn hơn phải
+            // dừng xa đoạn dẫn hơn, và cả hai đều nằm đúng cấp vuông góc đầu tiên của mình.
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var near = LabelOn(leader);                       // MarkOffsetFromLine = 5
+            var far = LabelOn(leader);
+            far.MarkOffsetFromLine = 30.0;
+
+            var translations = Arrange.Run(new List<Arrange> { near, far }, OptionsFor(ArrangeAlgorithmType.Greedy));
+
+            Assert.Equal(10.0, Math.Abs(MovedBox(near, translations[0]).Center.Y), 6);
+            Assert.Equal(35.0, Math.Abs(MovedBox(far, translations[1]).Center.Y), 6);
+            Assert.True(near.Placed);
+            Assert.True(far.Placed);
         }
 
         [Fact]
@@ -136,7 +174,8 @@ namespace ArrangeAlgorithms.UnitTest
             var label = new Arrange
             {
                 GeoLine = new GeoLine(5.0, 0.0, 5.0, 0.0),
-                GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0)
+                GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
+                MarkOffsetFromLine = 5.0
             };
 
             Assert.Empty(label.GetPlacePoints(OptionsFor(ArrangeAlgorithmType.Greedy)));
@@ -149,7 +188,8 @@ namespace ArrangeAlgorithms.UnitTest
             var label = new Arrange
             {
                 GeoLine = new GeoLine(0.0, 0.0, 40.0, 0.0),
-                GeoRectangle = new GeoRectangle(new GeoPoint(20.0, 0.0), 10.0, 10.0)
+                GeoRectangle = new GeoRectangle(new GeoPoint(20.0, 0.0), 10.0, 10.0),
+                MarkOffsetFromLine = 5.0
             };
 
             var options = OptionsFor(ArrangeAlgorithmType.Greedy);
@@ -188,7 +228,8 @@ namespace ArrangeAlgorithms.UnitTest
             var label = new Arrange
             {
                 GeoLine = new GeoLine(5.0, 0.0, 5.0, 0.0),
-                GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0)
+                GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
+                MarkOffsetFromLine = 5.0
             };
 
             var translations = Arrange.Run(new List<Arrange> { label }, OptionsFor(ArrangeAlgorithmType.Greedy));
@@ -208,7 +249,8 @@ namespace ArrangeAlgorithms.UnitTest
             var label = new Arrange
             {
                 GeoLine = leader,
-                GeoRectangle = new GeoRectangle(new GeoPoint(20.0, 10.0), 20.0, 10.0)
+                GeoRectangle = new GeoRectangle(new GeoPoint(20.0, 10.0), 20.0, 10.0),
+                MarkOffsetFromLine = 5.0
             };
 
             var translations = Arrange.Run(new List<Arrange> { label }, OptionsFor(ArrangeAlgorithmType.Greedy));

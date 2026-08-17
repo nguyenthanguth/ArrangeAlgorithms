@@ -15,18 +15,19 @@ namespace ArrangeAlgorithms.UnitTest
             var a1 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                GeoLine = leaderLine
+                GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                GeoLine = leaderLine
+                GeoLine = leaderLine,
+                MarkOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 2
             };
@@ -54,14 +55,14 @@ namespace ArrangeAlgorithms.UnitTest
                     labels.Add(new Arrange
                     {
                         GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
-                        GeoLine = leader
+                        GeoLine = leader,
+                        MarkOffsetFromLine = 5.0
                     });
                 }
 
                 return Arrange.Run(labels, new ArrangeOptions
                 {
                     Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
-                    MarkOffsetFromLine = 5.0,
                     RowGap = 5.0,
                     PerpendicularLevels = 3
                 });
@@ -85,13 +86,13 @@ namespace ArrangeAlgorithms.UnitTest
             var label = new Arrange
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
-                GeoLine = leader
+                GeoLine = leader,
+                MarkOffsetFromLine = 5.0
             };
 
             var translations = Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 3
             });
@@ -116,18 +117,19 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                 GeoLine = leader,
+                MarkOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
             var b = new Arrange
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
-                GeoLine = leader
+                GeoLine = leader,
+                MarkOffsetFromLine = 5.0
             };
 
             var translations = Arrange.Run(new List<Arrange> { a, b }, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
-                MarkOffsetFromLine = 5.0,
                 RowGap = 5.0,
                 PerpendicularLevels = 3
             });

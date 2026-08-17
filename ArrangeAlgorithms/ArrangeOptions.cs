@@ -65,12 +65,6 @@ namespace ArrangeAlgorithms
         public ArrangeAlgorithmType Algorithm { get; set; } = ArrangeAlgorithmType.Greedy;
 
         /// <summary>
-        /// Khoảng hở vuông góc tối thiểu giữa mép nhãn và đường dẫn.
-        /// Cộng với nửa chiều cao nhãn sẽ ra khoảng cách từ đường dẫn tới tâm nhãn.
-        /// </summary>
-        public double MarkOffsetFromLine { get; set; } = 50.0;
-
-        /// <summary>
         /// Khoảng hở giữa hai hàng nhãn liên tiếp, được cộng vào chiều cao nhãn
         /// khi dịch ra cấp vuông góc tiếp theo. Giúp giữ các hàng nhãn không bị chồng đè lên nhau.
         /// </summary>

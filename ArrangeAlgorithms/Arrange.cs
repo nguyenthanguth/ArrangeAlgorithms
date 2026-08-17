@@ -20,6 +20,16 @@ namespace ArrangeAlgorithms
         /// </summary>
         public GeoLine GeoLine { get; set; }
 
+        /// <summary>
+        /// Lấy hoặc đặt khoảng hở vuông góc tối thiểu giữa mép nhãn và đường dẫn.
+        /// Cộng với nửa chiều cao nhãn sẽ ra khoảng cách từ đường dẫn tới tâm nhãn.
+        /// <para>
+        /// Thuộc tính này nằm trên từng nhãn chứ không nằm trong <see cref="ArrangeOptions"/> vì
+        /// mỗi nhãn có thể cần một khoảng hở riêng — chẳng hạn nhãn chữ lớn phải lùi xa hơn nhãn chữ nhỏ.
+        /// </para>
+        /// </summary>
+        public double MarkOffsetFromLine { get; set; } = 50.0;
+
         /// <summary>Lấy hoặc đặt danh sách đa giác cấm tĩnh mà nhãn không được đè lên.</summary>
         public List<GeoPolygon> BlockPolygons { get; set; }
 
@@ -373,8 +383,8 @@ namespace ArrangeAlgorithms
                 height,        // Chiều cao thực tế của nhãn theo trục vuông góc
                 
                 // BaseOffset: Khoảng cách vuông góc tối thiểu từ đường dẫn tới tâm hàng nhãn đầu tiên
-                // bằng nửa chiều cao nhãn cộng thêm khoảng cách lề cấu hình (MarkOffsetFromLine)
-                height * 0.5 + options.MarkOffsetFromLine,
+                // bằng nửa chiều cao nhãn cộng thêm khoảng cách lề riêng của nhãn này (MarkOffsetFromLine)
+                height * 0.5 + MarkOffsetFromLine,
                 
                 // MaximumShift: Khoảng cách trượt dọc tối đa cho phép dọc theo đường dẫn
                 // bằng nửa chiều dài đường dẫn cộng thêm một tỷ lệ chiều rộng nhãn nhô ra ngoài (LongitudinalOvershootRatio)
