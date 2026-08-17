@@ -8,7 +8,7 @@ namespace ArrangeAlgorithms.UnitTest
 {
     public class GreedyAlgorithmTests
     {
-        /// <summary>Cấu hình dùng chung cho các phép thử bên dưới, kích thước nhỏ cho dễ tính tay.</summary>
+        /// <summary>Shared configuration for tests below, small dimensions for easy manual calculation.</summary>
         private static ArrangeOptions GreedyOptions(int perpendicularLevels = 3)
         {
             return new ArrangeOptions
@@ -19,7 +19,7 @@ namespace ArrangeAlgorithms.UnitTest
             };
         }
 
-        /// <summary>Nhãn 20x10 đặt sẵn tại trung điểm đoạn dẫn.</summary>
+        /// <summary>20x10 label initially placed at the midpoint of the guide segment.</summary>
         private static Arrange LabelOn(GeoLine leader)
         {
             return new Arrange
@@ -78,8 +78,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_Greedy_RespectsObstacles()
         {
-            // Đoạn dẫn nằm ngang ngay dưới nhãn. Nó phải có độ dài thực: đoạn dẫn suy biến
-            // không có hướng nên không sinh được vị trí ứng viên nào.
+            // Horizontal guide segment lies directly below the label. It must have a real length: a degenerate guide segment
+            // has no direction and thus generates no candidate positions.
             var leaderLine = new GeoLine(0.0, 0.0, 20.0, 0.0);
             var rect = new GeoRectangle(new GeoPoint(10.0, 10.0), 20.0, 10.0);
 
@@ -118,11 +118,11 @@ namespace ArrangeAlgorithms.UnitTest
         public void Arrange_Run_Greedy_WithNoValidSpaces_FallsBackToFirstCandidate()
         {
             var leaderLine = new GeoLine(0.0, 0.0, 10.0, 0.0);
-            // Nhãn xuất phát ở xa cụm ứng viên. Nếu đặt nó trùng luôn ứng viên đầu tiên thì
-            // phép lùi về ứng viên đó cho ra vector không, và phép thử mất hết ý nghĩa.
+            // The label starts far from the candidate cluster. If it is placed exactly at the first candidate,
+            // the fallback to that candidate yields a zero vector, and the test becomes meaningless.
             var rect = new GeoRectangle(new GeoPoint(5.0, 40.0), 20.0, 10.0);
 
-            // Đa giác cấm cực lớn bao trùm toàn bộ không gian xung quanh vùng nhãn
+            // Huge blocked polygon wrapping the entire space around the label area
             var blockPoly = new GeoPolygon(
                 new GeoPoint(-100.0, -100.0),
                 new GeoPoint(100.0, -100.0),
@@ -147,8 +147,8 @@ namespace ArrangeAlgorithms.UnitTest
 
             var translations = Arrange.Run(new List<Arrange> { arrange }, options);
 
-            // Bất kể bị cấm, thuật toán Greedy phải lùi về phương án dự phòng (fallback) là candidate đầu tiên
-            // thay vì đứng yên tại chỗ cũ gây bất định.
+            // Regardless of constraints, the Greedy algorithm must fallback to the first candidate
+            // instead of staying in place, which causes uncertainty.
             Assert.False(arrange.Placed);
             Assert.NotEqual(GeoVector.Zero, translations[0]);
         }
@@ -156,8 +156,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_Greedy_ReturnsTranslationsInInputOrder()
         {
-            // Nhãn thứ hai bị vùng cấm bó hẹp nên được xử lý TRƯỚC nhãn thứ nhất.
-            // Dù vậy kết quả trả về vẫn phải khớp đúng chỉ số đầu vào.
+            // The second label is constrained by the blocked region and should be processed BEFORE the first label.
+            // Still, the returned results must match the original input index.
             var near = LabelOn(new GeoLine(0.0, 0.0, 40.0, 0.0));
             var far = LabelOn(new GeoLine(1000.0, 0.0, 1040.0, 0.0));
 
@@ -172,11 +172,11 @@ namespace ArrangeAlgorithms.UnitTest
 
             var translations = Arrange.Run(new List<Arrange> { near, far }, GreedyOptions());
 
-            // translations[0] phải là của nhãn bên trái, translations[1] của nhãn bên phải.
+            // translations[0] must correspond to the left label, translations[1] to the right label.
             Assert.Equal(20.0, MovedBox(near, translations[0]).Center.X, 6);
             Assert.Equal(1020.0, MovedBox(far, translations[1]).Center.X, 6);
 
-            // Và nhãn bị cấm phía trên phải né xuống dưới.
+            // And the label blocked above must dodge downwards.
             Assert.True(MovedBox(far, translations[1]).Center.Y < 0.0);
         }
 
@@ -218,11 +218,11 @@ namespace ArrangeAlgorithms.UnitTest
 
             var translations = Arrange.Run(new List<Arrange> { a, null, b }, GreedyOptions());
 
-            // Ô rỗng vẫn chiếm một chỗ trong kết quả để chỉ số không bị lệch.
+            // Null entry still occupies a slot in the results to prevent index shifting.
             Assert.Equal(3, translations.Count);
             Assert.Equal(GeoVector.Zero, translations[1]);
 
-            // Hai nhãn thật vẫn phải được sắp xếp bình thường.
+            // The two real labels must still be arranged normally.
             Assert.False(MovedBox(a, translations[0]).IntersectsWith(MovedBox(b, translations[2])));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
@@ -234,7 +234,7 @@ namespace ArrangeAlgorithms.UnitTest
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var arrange = LabelOn(leader);
 
-            // Đoạn thẳng cấm chắn ngang đúng chỗ ứng viên đầu tiên (phía trên đoạn dẫn).
+            // Block line directly obstructs the first candidate position (above the guide segment).
             var blockLine = new GeoLine(-20.0, 10.0, 60.0, 10.0);
             arrange.BlockLines = new List<GeoLine> { blockLine };
 
@@ -249,7 +249,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_Greedy_RotatedLabels_AreSeparatedAlongPerpendicular()
         {
-            // Đoạn dẫn nghiêng 45 độ, nhãn xoay theo cho song song với nó.
+            // The guide segment is tilted at 45 degrees; the label rotates to stay parallel to it.
             var leader = new GeoLine(0.0, 0.0, 40.0, 40.0);
             var box = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0);
 
@@ -262,15 +262,15 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(a.Placed);
             Assert.True(b.Placed);
 
-            // Hai nhãn phải nằm hai bên đoạn dẫn, tức lệch nhau theo phương vuông góc.
+            // The two labels must be placed on opposite sides of the guide segment, i.e., shifted in perpendicular directions.
             Assert.NotEqual(translations[0], translations[1]);
         }
 
         [Fact]
         public void Arrange_Run_Greedy_RepeatedObstacleOnEveryLabel_GivesSameResult()
         {
-            // Cách dùng phổ biến là gán cùng một vùng cấm cho MỌI nhãn. Việc đó chỉ được làm
-            // danh sách vật cản phình lên, tuyệt đối không được đổi kết quả sắp xếp.
+            // A common usage pattern is to assign the same blocked region to EVERY label. This only inflates
+            // the obstacle list and must absolutely not change the arrangement result.
             GeoPolygon Block() => new GeoPolygon(
                 new GeoPoint(-50.0, 0.0),
                 new GeoPoint(50.0, 0.0),
@@ -304,15 +304,15 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_Greedy_LabelOverlappedByLaterFallback_IsNotReportedAsPlaced()
         {
-            // Ba nhãn chung một đoạn dẫn ngắn nhưng chỉ có một cấp vuông góc, tức chỉ đủ chỗ cho hai.
-            // Nhãn thứ ba buộc phải lùi về đè lên một nhãn đã đặt xong.
+            // Three labels share a short guide segment but only have one perpendicular level, meaning there is only room for two.
+            // The third label is forced to fallback and overlap an already placed label.
             var leader = new GeoLine(0.0, 0.0, 10.0, 0.0);
             var labels = new List<Arrange> { LabelOn(leader), LabelOn(leader), LabelOn(leader) };
 
             Arrange.Run(labels, GreedyOptions(perpendicularLevels: 1));
 
-            // Nhãn BỊ ĐÈ cũng phải bị báo là thất bại, không chỉ riêng nhãn gây ra va chạm.
-            // Trước đây nó vẫn giữ cờ thành công vì lúc đến lượt nó thì chỗ đó còn trống.
+            // The OVERLAPPED label must also be reported as failed, not just the label causing the collision.
+            // Previously it still retained the success flag because that spot was empty when its turn came.
             Assert.Equal(1, labels.Count(x => x.Placed));
         }
 

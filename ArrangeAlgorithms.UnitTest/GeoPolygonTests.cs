@@ -11,7 +11,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Polygon_WindingAndArea_WorkCorrectly()
         {
-            // Tam giác ngược chiều kim đồng hồ (CCW)
+            // Counter-clockwise triangle (CCW)
             var p1 = new GeoPoint(0.0, 0.0);
             var p2 = new GeoPoint(4.0, 0.0);
             var p3 = new GeoPoint(0.0, 3.0);
@@ -23,7 +23,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(6.0, poly.GetSignedArea(), 12);
             Assert.False(poly.IsClockwise());
 
-            // Tam giác cùng chiều kim đồng hồ (CW)
+            // Clockwise triangle (CW)
             var polyCW = new GeoPolygon(p1, p3, p2);
             Assert.Equal(6.0, polyCW.GetArea(), 12);
             Assert.Equal(-6.0, polyCW.GetSignedArea(), 12);
@@ -38,7 +38,7 @@ namespace ArrangeAlgorithms.UnitTest
             var p3 = new GeoPoint(0.0, 6.0);
             var poly = new GeoPolygon(p1, p2, p3);
 
-            // Trọng tâm tam giác vuông này nằm ở (2, 2)
+            // The centroid of this right triangle is at (2, 2)
             Assert.True(poly.GetCentroid().IsEqualTo(new GeoPoint(2.0, 2.0)));
         }
 
@@ -50,11 +50,11 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(4.0, 0.0),
                 new GeoPoint(4.0, 4.0),
                 new GeoPoint(0.0, 4.0)
-            ); // Hình vuông 4x4
+            ); // 4x4 square
 
-            Assert.True(poly.Contains(new GeoPoint(2.0, 2.0)));   // Điểm bên trong
-            Assert.True(poly.Contains(new GeoPoint(0.0, 2.0)));   // Điểm trên biên
-            Assert.False(poly.Contains(new GeoPoint(5.0, 2.0)));  // Điểm ngoài
+            Assert.True(poly.Contains(new GeoPoint(2.0, 2.0)));   // Point inside
+            Assert.True(poly.Contains(new GeoPoint(0.0, 2.0)));   // Point on boundary
+            Assert.False(poly.Contains(new GeoPoint(5.0, 2.0)));  // Point outside
         }
 
         [Fact]
@@ -65,17 +65,17 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(4.0, 0.0),
                 new GeoPoint(4.0, 4.0),
                 new GeoPoint(0.0, 4.0)
-            ); // Hình vuông 4x4
+            ); // 4x4 square
 
-            // 1. Cắt chéo nhau
-            var rect1 = new GeoRectangle(new GeoPoint(4.0, 4.0), 2.0, 2.0, Math.PI / 4.0); // Tâm ở đỉnh hình vuông, xoay 45 độ
+            // 1. Mutually intersecting
+            var rect1 = new GeoRectangle(new GeoPoint(4.0, 4.0), 2.0, 2.0, Math.PI / 4.0); // Center at square vertex, rotated 45 degrees
             Assert.True(poly.IntersectsWith(rect1));
 
-            // 2. Chứa trọn hình chữ nhật
+            // 2. Containing the rectangle entirely
             var rect2 = new GeoRectangle(new GeoPoint(2.0, 2.0), 1.0, 1.0, 0.1);
             Assert.True(poly.IntersectsWith(rect2));
 
-            // 3. Tách biệt hoàn toàn
+            // 3. Completely separated
             var rect3 = new GeoRectangle(new GeoPoint(8.0, 8.0), 2.0, 2.0, 0.5);
             Assert.False(poly.IntersectsWith(rect3));
         }
@@ -88,18 +88,18 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(4.0, 0.0),
                 new GeoPoint(4.0, 4.0),
                 new GeoPoint(0.0, 4.0)
-            ); // Hình vuông 4x4
+            ); // 4x4 square
 
-            // 1. Đoạn thẳng xuyên qua hình vuông
+            // 1. Line segment passing through the square
             Assert.True(poly.IntersectsWith(new GeoLine(-2.0, 2.0, 6.0, 2.0)));
 
-            // 2. Đoạn thẳng nằm trọn bên trong (không cắt cạnh nào)
+            // 2. Line segment completely inside (does not intersect any edges)
             Assert.True(poly.IntersectsWith(new GeoLine(1.0, 1.0, 3.0, 3.0)));
 
-            // 3. Đoạn thẳng chạm biên
+            // 3. Line segment touching boundary
             Assert.True(poly.IntersectsWith(new GeoLine(-2.0, 4.0, 2.0, 4.0)));
 
-            // 4. Tách biệt hoàn toàn
+            // 4. Completely separated
             Assert.False(poly.IntersectsWith(new GeoLine(6.0, 6.0, 8.0, 8.0)));
         }
 
@@ -111,9 +111,9 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(4.0, 0.0),
                 new GeoPoint(4.0, 4.0),
                 new GeoPoint(0.0, 4.0)
-            ); // Hình vuông 4x4
+            ); // 4x4 square
 
-            // 1. Chồng lấn một phần
+            // 1. Partially overlapping
             var overlapping = new GeoPolygon(
                 new GeoPoint(2.0, 2.0),
                 new GeoPoint(6.0, 2.0),
@@ -122,7 +122,7 @@ namespace ArrangeAlgorithms.UnitTest
             );
             Assert.True(poly.IntersectsWith(overlapping));
 
-            // 2. Nằm lọt hẳn bên trong: không cạnh nào cắt nhau, phải nhận ra qua phép bao chứa
+            // 2. Nested entirely inside: no edges intersect, must be recognized via containment check
             var inner = new GeoPolygon(
                 new GeoPoint(1.0, 1.0),
                 new GeoPoint(3.0, 1.0),
@@ -131,10 +131,10 @@ namespace ArrangeAlgorithms.UnitTest
             );
             Assert.True(poly.IntersectsWith(inner));
 
-            // 3. Quan hệ bao chứa phải đối xứng theo cả hai chiều gọi
+            // 3. Containment relation must be symmetric in both calling directions
             Assert.True(inner.IntersectsWith(poly));
 
-            // 4. Tách biệt hoàn toàn
+            // 4. Completely separated
             var far = new GeoPolygon(
                 new GeoPoint(10.0, 10.0),
                 new GeoPoint(12.0, 10.0),
@@ -146,8 +146,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Polygon_Constructor_RejectsDegeneratePolygon()
         {
-            // Đa giác chỉ có 2 đỉnh là suy biến. Hàm dựng chặn ngay từ đầu thay vì tạo ra một đối tượng
-            // không thể trả lời Contains một cách có nghĩa, nên phép thử đúng là kiểm tra ngoại lệ.
+            // A polygon with only 2 vertices is degenerate. The constructor blocks it immediately instead of creating
+            // an object that cannot answer Contains meaningfully, so the correct test is to assert an exception.
             Assert.Throws<ArgumentException>(
                 () => new GeoPolygon(new GeoPoint(0.0, 0.0), new GeoPoint(1.0, 1.0)));
         }
@@ -155,7 +155,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Polygon_CentroidConcavePolygon_WorksCorrectly()
         {
-            // Đa giác hình chữ L (lõm)
+            // L-shaped polygon (concave)
             var poly = new GeoPolygon(
                 new GeoPoint(0.0, 0.0),
                 new GeoPoint(4.0, 0.0),
@@ -165,19 +165,19 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(0.0, 4.0)
             );
 
-            // Công thức diện tích và trọng tâm đa giác tự do bằng giải thuật Shoelace / Green Theorem
-            // Diện tích = 12
+            // Centroid and area of arbitrary polygon using Shoelace / Green Theorem algorithm
+            // Area = 12
             Assert.Equal(12.0, poly.GetArea(), 12);
 
-            // Ghép từ hai hình chữ nhật: [0,4]x[0,2] diện tích 8 tâm (2,1) và [0,2]x[2,4] diện tích 4 tâm (1,3).
-            // Trọng tâm = (8*2 + 4*1)/12 = 5/3 theo X, (8*1 + 4*3)/12 = 5/3 theo Y.
+            // Composed of two rectangles: [0,4]x[0,2] area 8 center (2,1) and [0,2]x[2,4] area 4 center (1,3).
+            // Centroid = (8*2 + 4*1)/12 = 5/3 along X, (8*1 + 4*3)/12 = 5/3 along Y.
             Assert.True(poly.GetCentroid().IsEqualTo(new GeoPoint(5.0 / 3.0, 5.0 / 3.0)));
         }
 
         [Fact]
         public void Polygon_ContainsPointConcavePolygon_WorksCorrectly()
         {
-            // Đa giác hình chữ L (lõm)
+            // L-shaped polygon (concave)
             var poly = new GeoPolygon(
                 new GeoPoint(0.0, 0.0),
                 new GeoPoint(4.0, 0.0),
@@ -187,20 +187,20 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(0.0, 4.0)
             );
 
-            // Điểm (3, 3) nằm ngoài đa giác, mặc dù nó nằm trong bounding box [0, 4] x [0, 4] của đa giác
+            // Point (3, 3) lies outside the polygon, although it is within the polygon's [0, 4] x [0, 4] bounding box
             Assert.False(poly.Contains(new GeoPoint(3.0, 3.0)));
 
-            // Điểm (1, 3) nằm trong phần nhánh dọc của L
+            // Point (1, 3) lies inside the vertical branch of the L-shape
             Assert.True(poly.Contains(new GeoPoint(1.0, 3.0)));
 
-            // Điểm (3, 1) nằm trong phần nhánh ngang của L
+            // Point (3, 1) lies inside the horizontal branch of the L-shape
             Assert.True(poly.Contains(new GeoPoint(3.0, 1.0)));
         }
 
         [Fact]
         public void Polygon_ZeroAreaCollinear_ReturnsCorrectArea()
         {
-            // 3 điểm thẳng hàng -> Đa giác dẹt diện tích = 0
+            // 3 collinear points -> flat polygon area = 0
             var poly = new GeoPolygon(
                 new GeoPoint(0.0, 0.0),
                 new GeoPoint(5.0, 5.0),
@@ -214,8 +214,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Polygon_Constructor_DropsRepeatedClosingVertex()
         {
-            // Nhiều định dạng bản vẽ lặp lại đỉnh đầu ở cuối để khép kín vòng. Hàm dựng phải lược bỏ nó,
-            // nếu không đa giác sẽ có một cạnh suy biến dài bằng 0.
+            // Many drawing formats repeat the start vertex at the end to close the loop. The constructor must discard it,
+            // otherwise the polygon will have a degenerate edge of length 0.
             var poly = new GeoPolygon(
                 new GeoPoint(0.0, 0.0),
                 new GeoPoint(4.0, 0.0),
@@ -263,7 +263,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(3, edges.Count);
             for (int i = 0; i < edges.Count; i++)
             {
-                // Điểm cuối cạnh này phải trùng điểm đầu cạnh kế tiếp, cạnh cuối vòng về cạnh đầu.
+                // The end point of this edge must match the start point of the next edge, with the last edge wrapping back to the first.
                 Assert.Equal(edges[(i + 1) % edges.Count].StartPoint, edges[i].EndPoint);
             }
         }
@@ -280,7 +280,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.False(a.Equals(different));
             Assert.False(a.Equals((GeoPolygon)null));
 
-            object notAPolygon = "không phải GeoPolygon";
+            object notAPolygon = "not a GeoPolygon";
             Assert.False(a.Equals(notAPolygon));
         }
 
@@ -293,17 +293,17 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(4.0, 4.0),
                 new GeoPoint(0.0, 4.0));
 
-            // Đoạn thẳng chỉ chạm đúng một đỉnh vẫn tính là giao nhau.
+            // A line segment touching exactly one vertex still counts as an intersection.
             Assert.True(poly.IntersectsWith(new GeoLine(4.0, 4.0, 8.0, 8.0)));
 
-            // Đoạn thẳng chạy sát ngoài biên thì không.
+            // A line segment running just outside the boundary does not.
             Assert.False(poly.IntersectsWith(new GeoLine(4.5, 0.0, 4.5, 4.0)));
         }
 
         [Fact]
         public void Polygon_IntersectsWithPolygon_ConcaveNotchIsNotOccupied()
         {
-            // Đa giác hình chữ L, phần khuyết nằm ở góc trên-phải.
+            // L-shaped polygon, the missing corner is at the top-right.
             var lShape = new GeoPolygon(
                 new GeoPoint(0.0, 0.0),
                 new GeoPoint(4.0, 0.0),
@@ -312,7 +312,7 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(2.0, 4.0),
                 new GeoPoint(0.0, 4.0));
 
-            // Đa giác nhỏ nằm gọn trong phần khuyết: nằm trong hộp bao nhưng KHÔNG giao với hình chữ L.
+            // Small polygon fits entirely inside the missing corner: inside bounding box but does NOT intersect the L-shape.
             var inNotch = new GeoPolygon(
                 new GeoPoint(2.5, 2.5),
                 new GeoPoint(3.5, 2.5),
@@ -341,7 +341,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.False(ccw.IsClockwise());
             Assert.True(cw.IsClockwise());
 
-            // Chiều đi của đỉnh không được ảnh hưởng tới kết quả bao chứa hay diện tích tuyệt đối.
+            // Vertices traversal direction must not affect containment checks or absolute area.
             Assert.Equal(ccw.GetArea(), cw.GetArea(), 12);
             Assert.Equal(ccw.Contains(new GeoPoint(2.0, 2.0)), cw.Contains(new GeoPoint(2.0, 2.0)));
             Assert.Equal(ccw.Contains(new GeoPoint(9.0, 9.0)), cw.Contains(new GeoPoint(9.0, 9.0)));

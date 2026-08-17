@@ -43,8 +43,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_ForceDirected_PushesLabelsAwayFromObstacleNotToward()
         {
-            // Lực từ vật cản đa giác từng bị đảo dấu — nó HÚT nhãn vào vật cản thay vì đẩy ra.
-            // Vùng cấm nằm hẳn phía trên đoạn dẫn, nên nhãn buộc phải kết thúc ở phía dưới.
+            // Repulsive force from polygon obstacles was once inverted — it ATTRACTED labels to obstacles instead of repelling them.
+            // The blocked region is completely above the guide segment, so the label must end up below it.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var blockPoly = new GeoPolygon(
                 new GeoPoint(-60.0, 2.0),
@@ -78,7 +78,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_ForceDirected_ZeroIterations_StillProducesValidLayout()
         {
-            // Không chạy vòng mô phỏng nào thì bước ánh xạ rời rạc vẫn phải cho kết quả hợp lệ.
+            // Even with zero simulation iterations, the discrete mapping step must still yield a valid layout.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
             var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };

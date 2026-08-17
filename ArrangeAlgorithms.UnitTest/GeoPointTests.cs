@@ -31,11 +31,11 @@ namespace ArrangeAlgorithms.UnitTest
             var origin = new GeoPoint(0.0, 0.0);
             var p = new GeoPoint(1.0, 0.0);
 
-            // Xoay 90 độ ngược chiều kim đồng hồ
+            // Rotate 90 degrees counter-clockwise
             var rotated = p.RotateBy(Math.PI / 2.0, origin);
             Assert.True(rotated.IsEqualTo(new GeoPoint(0.0, 1.0)));
 
-            // Co giãn theo hệ số 2.5
+            // Scale by factor of 2.5
             var scaled = p.ScaleBy(2.5, origin);
             Assert.True(scaled.IsEqualTo(new GeoPoint(2.5, 0.0)));
         }
@@ -59,13 +59,13 @@ namespace ArrangeAlgorithms.UnitTest
             var origin = new GeoPoint(2.0, 2.0);
             var p = new GeoPoint(5.0, 6.0);
 
-            // Xoay 0 độ
+            // Rotate 0 degrees
             Assert.True(p.RotateBy(0.0, origin).IsEqualTo(p));
 
-            // Xoay 360 độ (2 * PI)
+            // Rotate 360 degrees (2 * PI)
             Assert.True(p.RotateBy(2.0 * Math.PI, origin).IsEqualTo(p));
 
-            // Xoay 180 độ (PI): Điểm đối xứng qua tâm
+            // Rotate 180 degrees (PI): Symmetric point across center
             var rotated180 = p.RotateBy(Math.PI, origin);
             Assert.True(rotated180.IsEqualTo(new GeoPoint(-1.0, -2.0)));
         }
@@ -76,10 +76,10 @@ namespace ArrangeAlgorithms.UnitTest
             var origin = new GeoPoint(1.0, 1.0);
             var p = new GeoPoint(3.0, 5.0);
 
-            // Co giãn hệ số 0: Trở về đúng tâm co giãn
+            // Scale by factor 0: Returns exactly to scaling center
             Assert.True(p.ScaleBy(0.0, origin).IsEqualTo(origin));
 
-            // Co giãn hệ số âm (-1.0): Đối xứng ngược hướng qua tâm
+            // Scale by negative factor (-1.0): Symmetric point in opposite direction across center
             Assert.True(p.ScaleBy(-1.0, origin).IsEqualTo(new GeoPoint(-1.0, -3.0)));
         }
     }

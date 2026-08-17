@@ -24,14 +24,14 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Line_ProjectionAndClosestPoint_WorkCorrectly()
         {
-            var GeoLine = new GeoLine(0.0, 0.0, 10.0, 0.0); // Nằm ngang trên trục X
+            var GeoLine = new GeoLine(0.0, 0.0, 10.0, 0.0); // Horizontal on the X-axis
 
-            // Điểm trên đoạn thẳng
+            // Point on the line segment
             Assert.Equal(0.5, GeoLine.GetParameterOf(new GeoPoint(5.0, 0.0)), 12);
             Assert.Equal(new GeoPoint(5.0, 0.0), GeoLine.GetClosestPointTo(new GeoPoint(5.0, 5.0)));
             Assert.Equal(5.0, GeoLine.DistanceTo(new GeoPoint(5.0, 5.0)), 12);
 
-            // Điểm ngoài khoảng đầu mút
+            // Point outside the endpoints
             Assert.Equal(-0.2, GeoLine.GetParameterOf(new GeoPoint(-2.0, 0.0)), 12);
             Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointTo(new GeoPoint(-2.0, 5.0)));
 
@@ -45,7 +45,7 @@ namespace ArrangeAlgorithms.UnitTest
             var l1 = new GeoLine(0.0, 0.0, 10.0, 10.0);
             var l2 = new GeoLine(0.0, 10.0, 10.0, 0.0);
 
-            // Cắt nhau tại tâm (5, 5)
+            // Intersect at the center (5, 5)
             Assert.True(l1.TryIntersectWith(l2, out var hit));
             Assert.True(hit.IsEqualTo(new GeoPoint(5.0, 5.0)));
 
@@ -53,7 +53,7 @@ namespace ArrangeAlgorithms.UnitTest
             var l3 = new GeoLine(0.0, 2.0, 10.0, 12.0);
             Assert.False(l1.TryIntersectWith(l3, out _));
 
-            // Không cắt nhau trực tiếp (chỉ cắt trên đường kéo dài)
+            // Do not intersect directly (only intersect on extended line)
             var l4 = new GeoLine(20.0, 10.0, 30.0, 0.0);
             Assert.False(l1.TryIntersectWith(l4, out _));
         }
@@ -61,7 +61,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Line_Direction_ReturnsZeroForDegenerateLine()
         {
-            var GeoLine = new GeoLine(1.0, 1.0, 1.0, 1.0); // Điểm đầu trùng điểm cuối
+            var GeoLine = new GeoLine(1.0, 1.0, 1.0, 1.0); // Start point equals end point
             Assert.Equal(GeoVector.Zero, GeoLine.Direction);
             Assert.Equal(0.0, GeoLine.Length);
             Assert.False(GeoLine.Direction.TryGetNormal(out _));
@@ -70,17 +70,17 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Line_CollinearAndOverlappingIntersection_WorkCorrectly()
         {
-            // Hai đoạn thẳng cùng nằm trên 1 đường thẳng
+            // Two line segments lying on the same line
             var l1 = new GeoLine(0.0, 0.0, 5.0, 0.0);
 
-            // Trường hợp 1: Nằm trên đường thẳng kéo dài nhưng không chạm nhau
+            // Case 1: Lying on the extended line but not touching
             var l2 = new GeoLine(10.0, 0.0, 15.0, 0.0);
             Assert.False(l1.TryIntersectWith(l2, out _));
 
-            // Trường hợp 2: Chồng lấn một phần (Collinear Overlap)
+            // Case 2: Collinear Overlap
             var l3 = new GeoLine(3.0, 0.0, 8.0, 0.0);
-            // Thuật toán hình học cơ bản của AutoCAD/thư viện thường trả về false cho collinear overlap
-            // vì có vô số giao điểm, ta kiểm thử hành vi thực tế của thư viện:
+            // Basic geometric algorithms in AutoCAD/libraries typically return false for collinear overlap
+            // because there are infinite intersection points; we test the library's actual behavior:
             Assert.False(l1.TryIntersectWith(l3, out _));
         }
 
@@ -89,11 +89,11 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var GeoLine = new GeoLine(0.0, 0.0, 10.0, 0.0);
 
-            // Chi chiếu điểm rơi chính xác vào điểm đầu (parameter t = 0)
+            // Projection falls exactly on the start point (parameter t = 0)
             Assert.Equal(0.0, GeoLine.GetParameterOf(new GeoPoint(0.0, 5.0)), 12);
             Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointTo(new GeoPoint(0.0, 5.0)));
 
-            // Chi chiếu điểm rơi chính xác vào điểm cuối (parameter t = 1)
+            // Projection falls exactly on the end point (parameter t = 1)
             Assert.Equal(1.0, GeoLine.GetParameterOf(new GeoPoint(10.0, -5.0)), 12);
             Assert.Equal(GeoLine.EndPoint, GeoLine.GetClosestPointTo(new GeoPoint(10.0, -5.0)));
         }
@@ -103,7 +103,7 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var l1 = new GeoLine(0.0, 0.0, 10.0, 0.0);
 
-            // Một đoạn thẳng vuông góc và chạm chính xác vào điểm mút
+            // A perpendicular segment touching exactly at the endpoint
             var l2 = new GeoLine(5.0, 0.0, 5.0, 5.0);
             Assert.True(l1.TryIntersectWith(l2, out var hit));
             Assert.True(hit.IsEqualTo(new GeoPoint(5.0, 0.0)));
@@ -118,7 +118,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(line.GetPointAtParameter(1.0).IsEqualTo(line.EndPoint));
             Assert.True(line.GetPointAtParameter(0.5).IsEqualTo(line.MidPoint));
 
-            // Tham số ngoài [0, 1] cho điểm trên đường thẳng kéo dài.
+            // Parameter outside [0, 1] for points on the extended line.
             Assert.True(line.GetPointAtParameter(2.0).IsEqualTo(new GeoPoint(20.0, 40.0)));
             Assert.True(line.GetPointAtParameter(-0.5).IsEqualTo(new GeoPoint(-5.0, -10.0)));
         }
@@ -126,7 +126,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Line_GetParameterOf_ReturnsZeroForDegenerateLine()
         {
-            // Đoạn suy biến không có hướng nên không định nghĩa được tham số; phải trả 0 chứ không chia cho 0.
+            // A degenerate segment has no direction so parameter is undefined; must return 0 instead of dividing by 0.
             var degenerate = new GeoLine(3.0, 3.0, 3.0, 3.0);
 
             Assert.Equal(0.0, degenerate.GetParameterOf(new GeoPoint(10.0, 10.0)));
@@ -145,10 +145,10 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
             Assert.True(a.Equals((object)b));
 
-            object notALine = "không phải GeoLine";
+            object notALine = "not a GeoLine";
             Assert.False(a.Equals(notALine));
 
-            // Đảo chiều tạo ra một đoạn thẳng KHÁC: hướng là một phần định danh của nó.
+            // Reversing direction creates a DIFFERENT line segment: direction is part of its identity.
             Assert.True(a != reversed);
         }
 
@@ -179,10 +179,10 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var line = new GeoLine(0.0, 0.0, 10.0, 0.0);
 
-            // Hình chiếu rơi giữa đoạn: khoảng cách vuông góc.
+            // Projection falls inside the segment: perpendicular distance.
             Assert.Equal(3.0, line.DistanceTo(new GeoPoint(4.0, 3.0)), 9);
 
-            // Hình chiếu rơi ngoài đầu mút: đo tới chính đầu mút đó.
+            // Projection falls outside the endpoints: measure directly to that endpoint.
             Assert.Equal(5.0, line.DistanceTo(new GeoPoint(-3.0, 4.0)), 9);
             Assert.Equal(5.0, line.DistanceTo(new GeoPoint(13.0, 4.0)), 9);
         }
@@ -192,9 +192,9 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var l1 = new GeoLine(0.0, 0.0, 10.0, 0.0);
 
-            Assert.True(l1.IntersectsWith(new GeoLine(5.0, -5.0, 5.0, 5.0)));   // Cắt nhau
-            Assert.False(l1.IntersectsWith(new GeoLine(0.0, 5.0, 10.0, 5.0)));  // Song song
-            Assert.False(l1.IntersectsWith(new GeoLine(20.0, -5.0, 20.0, 5.0))); // Cắt phần kéo dài, không cắt đoạn
+            Assert.True(l1.IntersectsWith(new GeoLine(5.0, -5.0, 5.0, 5.0)));   // Intersects
+            Assert.False(l1.IntersectsWith(new GeoLine(0.0, 5.0, 10.0, 5.0)));  // Parallel
+            Assert.False(l1.IntersectsWith(new GeoLine(20.0, -5.0, 20.0, 5.0))); // Intersects extension, not segment
         }
 
         [Fact]
@@ -217,7 +217,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(crossing.IntersectsWith(poly));
             Assert.False(outside.IntersectsWith(poly));
 
-            // Gọi theo chiều ngược lại phải cho cùng kết quả
+            // Calling in reverse direction must give the same result
             Assert.True(rect.IntersectsWith(crossing));
             Assert.True(poly.IntersectsWith(crossing));
         }

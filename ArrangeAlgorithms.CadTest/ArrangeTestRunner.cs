@@ -14,9 +14,9 @@ using System.Globalization;
 namespace ArrangeAlgorithms.CadTest
 {
     /// <summary>
-    /// Lệnh thử nghiệm thuật toán sắp xếp nhãn ArrangeDrawing trong AutoCAD.
-    /// Quét chọn các thực thể GeoLine và LWPOLYLINE, giả định mỗi đối tượng có một nhãn xoay (GeoRectangle OBB)
-    /// tương ứng, chạy sắp xếp nhãn để tránh chồng lấn và vẽ kết quả lên bản vẽ.
+    /// Test runner command for label arrangement algorithms in AutoCAD.
+    /// Scans and selects GeoLine and LWPOLYLINE entities, assumes each object has a corresponding rotated label (GeoRectangle OBB),
+    /// runs label arrangement to avoid overlaps, and draws the results on the drawing.
     /// </summary>
     public class ArrangeTestRunner
     {
@@ -27,13 +27,13 @@ namespace ArrangeAlgorithms.CadTest
         private const string BoxToLayer = "BoxTo";
         private const string LineMoveLayer = "LineMove";
 
-        private const short OriginalColour = 8; // Màu xám: Hộp ở vị trí giả định ban đầu
-        private const short PlacedColour = 3; // Màu xanh lá: Tìm được chỗ trống và sắp xếp thành công
-        private const short FallbackColour = 1; // Màu đỏ: Bị vướng va chạm, phải dùng phương án lùi
-        private const short LeaderColour = 253; // Màu xám nhạt: Đường dẫn nối từ đối tượng đến nhãn mới
+        private const short OriginalColour = 8; // Grey: Box at initial assumed position
+        private const short PlacedColour = 3; // Green: Found empty space and successfully arranged
+        private const short FallbackColour = 1; // Red: Collision encountered, forced to use fallback position
+        private const short LeaderColour = 253; // Light grey: Leader connecting from object to the new label
 
         /// <summary>
-        /// Thực thi logic sắp xếp nhãn chung cho tất cả các loại thuật toán.
+        /// Executes common label arrangement logic for all algorithm types.
         /// </summary>
         public void RunArrangeTest(ArrangeAlgorithmType algorithmType, string algorithmName)
         {
@@ -51,7 +51,7 @@ namespace ArrangeAlgorithms.CadTest
                 PromptSelectionResult selection = editor.GetSelection();
                 if (selection.Status != PromptStatus.OK)
                 {
-                    editor.WriteMessage("\nĐã hủy: không chọn được đối tượng nào.");
+                    editor.WriteMessage("\nCancelled: no objects selected.");
                     return;
                 }
 
@@ -84,17 +84,17 @@ namespace ArrangeAlgorithms.CadTest
                     arranges.Add(new Arrange
                     {
                         GeoLine = leader,
-                        // Tạo hộp nhãn xoay dọc theo hướng của đối tượng dẫn
+                        // Create rotated label box along the direction of the guide object
                         GeoRectangle = MakeBox(leader, BoxWidth, BoxHeight),
                         BlockPolygons = new List<GeoPolygon>(),
-                        // Né tránh tất cả các đoạn dẫn được chọn khác
+                        // Avoid all other selected guide segments
                         BlockLines = selectedLines.FindAll(l => !l.Equals(leader))
                     });
                 }
 
                 if (arranges.Count == 0)
                 {
-                    editor.WriteMessage("\nKhông có đối tượng nào hợp lệ để sắp xếp.");
+                    editor.WriteMessage("\nNo valid objects to arrange.");
                     transaction.Commit();
                     return;
                 }
@@ -117,14 +117,14 @@ namespace ArrangeAlgorithms.CadTest
             {
                 editor.WriteMessage(string.Format(
                     CultureInfo.CurrentCulture,
-                    "\nLỗi khi thực thi sắp xếp nhãn [{0}]: {1}\nChi tiết: {2}",
+                    "\nError executing label arrangement [{0}]: {1}\nStack Trace: {2}",
                     algorithmName, ex.Message, ex.StackTrace));
             }
         }
 
         /// <summary>
-        /// Trích xuất đoạn dẫn hình học từ thực thể AutoCAD.
-        /// Đối với LWPOLYLINE thì lấy đoạn thẳng dài nhất.
+        /// Extracts geometric guide segment from AutoCAD entity.
+        /// For LWPOLYLINE, the longest line segment is taken.
         /// </summary>
         private static bool TryGetLeaderLine(Entity entity, out GeoLine leader)
         {
@@ -164,8 +164,8 @@ namespace ArrangeAlgorithms.CadTest
         }
 
         /// <summary>
-        /// Tạo một hình chữ nhật OBB xoay dọc song song theo hướng của đoạn thẳng dẫn,
-        /// có điểm tâm đặt tại trung điểm của đoạn dẫn đó.
+        /// Creates a rotated rectangle OBB parallel to the guide line segment direction,
+        /// with its center at the midpoint of the guide segment.
         /// </summary>
         private static GeoRectangle MakeBox(GeoLine leader, double width, double height)
         {
@@ -200,7 +200,7 @@ namespace ArrangeAlgorithms.CadTest
             {
                 Arrange arrange = arranges[i];
 
-                // Vẽ hộp giả định ở vị trí ban đầu (xám)
+                // Draw assumed box at initial position (grey)
                 Polyline original = ToAcadPolyline(arrange.GeoRectangle);
                 original.LayerId = boxFromLayerId;
                 original.ColorIndex = OriginalColour;
@@ -209,14 +209,14 @@ namespace ArrangeAlgorithms.CadTest
                 transaction.AddNewlyCreatedDBObject(original, true);
                 createdEntities.Add(original);
 
-                // Dịch chuyển hộp nhãn theo GeoVector kết quả sắp xếp
+                // Translate label box according to result translation GeoVector
                 GeoRectangle movedRect = new GeoRectangle(
                     arrange.GeoRectangle.Center + moves[i],
                     arrange.GeoRectangle.Width,
                     arrange.GeoRectangle.Height,
                     arrange.GeoRectangle.AngleRad);
 
-                // Vẽ hộp sau khi sắp xếp (xanh lá nếu thành công, đỏ nếu bị chồng lấn/thất bại)
+                // Draw box after arrangement (green if successful, red if overlapped/failed)
                 Polyline moved = ToAcadPolyline(movedRect);
                 moved.LayerId = boxToLayerId;
                 moved.ColorIndex = arrange.Placed ? PlacedColour : FallbackColour;
@@ -225,7 +225,7 @@ namespace ArrangeAlgorithms.CadTest
                 transaction.AddNewlyCreatedDBObject(moved, true);
                 createdEntities.Add(moved);
 
-                // Vẽ đường nối từ trung điểm đối tượng dẫn đến tâm mới của nhãn
+                // Draw leader connecting from guide segment midpoint to new label center
                 var leader = new Line(
                     new Point3d(arrange.GeoLine.MidPoint.X, arrange.GeoLine.MidPoint.Y, 0.0),
                     new Point3d(movedRect.Center.X, movedRect.Center.Y, 0.0))
@@ -238,7 +238,7 @@ namespace ArrangeAlgorithms.CadTest
                 transaction.AddNewlyCreatedDBObject(leader, true);
                 createdEntities.Add(leader);
 
-                // Vẽ đường connection từ BoxTo (tâm nhãn mới) tới điểm gần nhất trên GeoLine
+                // Draw connection line from BoxTo (new label center) to the closest point on GeoLine
                 GeoPoint closestOnLine = arrange.GeoLine.GetClosestPointTo(movedRect.Center);
                 var connection = new Line(
                     new Point3d(movedRect.Center.X, movedRect.Center.Y, 0.0),
@@ -282,7 +282,7 @@ namespace ArrangeAlgorithms.CadTest
                     }
                     catch
                     {
-                        // Bỏ qua nếu đối tượng không lấy được Extents
+                        // Ignore if entity cannot get Extents
                     }
                 }
 
@@ -320,12 +320,12 @@ namespace ArrangeAlgorithms.CadTest
         }
 
         /// <summary>
-        /// Chuyển đối tượng hình chữ nhật xoay GeoRectangle thành lwpolyline AutoCAD khép kín 4 đỉnh.
+        /// Converts rotated rectangle GeoRectangle into a closed 4-vertex AutoCAD lwpolyline.
         /// </summary>
         private static Polyline ToAcadPolyline(GeoRectangle rect)
         {
             var result = new Polyline();
-            var vertices = rect.GetVertices(); // Trả về mảng 4 đỉnh: LowerLeft, LowerRight, UpperRight, UpperLeft
+            var vertices = rect.GetVertices(); // Returns 4 vertices array: LowerLeft, LowerRight, UpperRight, UpperLeft
 
             for (int i = 0; i < vertices.Length; i++)
             {
@@ -337,7 +337,7 @@ namespace ArrangeAlgorithms.CadTest
         }
 
         /// <summary>
-        /// Đảm bảo layer tồn tại trong bản vẽ, nếu chưa có sẽ tự động tạo mới.
+        /// Ensures layer exists in drawing, automatically creates it if not present.
         /// </summary>
         private static ObjectId EnsureLayer(Database database, Transaction transaction, string name)
         {
@@ -356,7 +356,7 @@ namespace ArrangeAlgorithms.CadTest
         }
 
         /// <summary>
-        /// Xuất báo cáo thống kê kết quả sắp xếp ra màn hình Command GeoLine của AutoCAD.
+        /// Prints statistics report of arrangement results to AutoCAD command line.
         /// </summary>
         private static void Report(Editor editor, List<Arrange> arranges, int skipped, long milliseconds, string algorithmName)
         {
@@ -371,16 +371,15 @@ namespace ArrangeAlgorithms.CadTest
 
             editor.WriteMessage(string.Format(
                 CultureInfo.CurrentCulture,
-                "\nSắp xếp {0} nhãn bằng thuật toán [{1}] trong {2} ms." +
-                "\n  Đặt được       : {3}" +
-                "\n  Phải lùi (đỏ)  : {4}" +
-                "\n  Bỏ qua         : {5}" +
-                "\nLớp {6}: hộp {7}x{8} ở vị trí giả định ban đầu (xám)." +
-                "\nLớp {9}: hộp sau khi sắp xếp (xanh lá/đỏ)." +
-                "\nLớp {10}: đường nối chỉ sự di chuyển.",
+                "\nArranged {0} labels using [{1}] algorithm in {2} ms." +
+                "\n  Placed         : {3}" +
+                "\n  Fallback (red) : {4}" +
+                "\n  Skipped        : {5}" +
+                "\nLayer {6}: box {7}x{8} at initial assumed position (grey)." +
+                "\nLayer {9}: box after arrangement (green/red)." +
+                "\nLayer {10}: connection line showing movement.",
                 arranges.Count, algorithmName, milliseconds, placed, arranges.Count - placed, skipped,
                 BoxFromLayer, BoxWidth, BoxHeight, BoxToLayer, LineMoveLayer));
         }
     }
 }
-

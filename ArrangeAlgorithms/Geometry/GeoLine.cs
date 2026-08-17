@@ -3,25 +3,25 @@ using System;
 namespace ArrangeAlgorithms.Geometry
 {
     /// <summary>
-    /// Biểu diễn một đoạn thẳng 2D giữa điểm đầu và điểm cuối.
+    /// Represents a 2D line segment between start and end points.
     /// </summary>
     public readonly struct GeoLine : IEquatable<GeoLine>
     {
         /// <summary>
-        /// Lấy điểm đầu của đoạn thẳng.
+        /// Gets the start point of the line segment.
         /// </summary>
         public GeoPoint StartPoint { get; }
 
         /// <summary>
-        /// Lấy điểm cuối của đoạn thẳng.
+        /// Gets the end point of the line segment.
         /// </summary>
         public GeoPoint EndPoint { get; }
 
         /// <summary>
-        /// Khởi tạo một thực thể GeoLine mới từ điểm đầu và điểm cuối.
+        /// Initializes a new GeoLine instance from start and end points.
         /// </summary>
-        /// <param name="startPoint">Điểm đầu.</param>
-        /// <param name="endPoint">Điểm cuối.</param>
+        /// <param name="startPoint">Start point.</param>
+        /// <param name="endPoint">End point.</param>
         public GeoLine(GeoPoint startPoint, GeoPoint endPoint)
         {
             StartPoint = startPoint;
@@ -29,7 +29,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Khởi tạo một thực thể GeoLine từ tọa độ các điểm đầu mút.
+        /// Initializes a new GeoLine instance from the coordinates of the endpoints.
         /// </summary>
         public GeoLine(double startX, double startY, double endX, double endY)
             : this(new GeoPoint(startX, startY), new GeoPoint(endX, endY))
@@ -37,27 +37,27 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy GeoVector hướng từ điểm đầu tới điểm cuối.
+        /// Gets the GeoVector pointing from start point to end point.
         /// </summary>
         public GeoVector Direction => StartPoint.GetVectorTo(EndPoint);
 
         /// <summary>
-        /// Lấy độ dài đoạn thẳng.
+        /// Gets the length of the line segment.
         /// </summary>
         public double Length => StartPoint.DistanceTo(EndPoint);
 
         /// <summary>
-        /// Lấy bình phương độ dài đoạn thẳng.
+        /// Gets the squared length of the line segment.
         /// </summary>
         public double LengthSquared => StartPoint.GetDistanceSquaredTo(EndPoint);
 
         /// <summary>
-        /// Lấy trung điểm của đoạn thẳng.
+        /// Gets the midpoint of the line segment.
         /// </summary>
         public GeoPoint MidPoint => StartPoint.GetMiddlePoint(EndPoint);
 
         /// <summary>
-        /// Lấy điểm trên đoạn thẳng theo tham số t (t=0 là điểm đầu, t=1 là điểm cuối).
+        /// Gets the point on the line segment at parameter t (t=0 is the start point, t=1 is the end point).
         /// </summary>
         public GeoPoint GetPointAtParameter(double parameter)
         {
@@ -65,7 +65,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Chiếu một điểm lên đường thẳng và lấy giá trị tham số dọc theo đoạn thẳng.
+        /// Projects a point onto the line and gets the parameter value along the segment.
         /// </summary>
         public double GetParameterOf(GeoPoint GeoPoint)
         {
@@ -76,7 +76,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy điểm gần nhất trên đoạn thẳng tới một điểm cho trước.
+        /// Gets the closest point on the line segment to a given point.
         /// </summary>
         public GeoPoint GetClosestPointTo(GeoPoint GeoPoint)
         {
@@ -87,7 +87,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính khoảng cách từ một điểm tới điểm gần nhất trên đoạn thẳng này.
+        /// Calculates the distance from a point to the closest point on this line segment.
         /// </summary>
         public double DistanceTo(GeoPoint GeoPoint)
         {
@@ -95,7 +95,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem một điểm có nằm trên đoạn thẳng sử dụng dung sai mặc định hay không.
+        /// Checks whether a point lies on the line segment using default tolerance.
         /// </summary>
         public bool IsPointOn(GeoPoint GeoPoint)
         {
@@ -103,7 +103,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem một điểm có nằm trên đoạn thẳng trong khoảng dung sai hay không.
+        /// Checks whether a point lies on the line segment within tolerance.
         /// </summary>
         public bool IsPointOn(GeoPoint GeoPoint, Tolerance tolerance)
         {
@@ -111,7 +111,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Thử tính giao điểm với một đoạn thẳng khác sử dụng dung sai mặc định.
+        /// Tries to calculate the intersection with another line segment using default tolerance.
         /// </summary>
         public bool TryIntersectWith(GeoLine other, out GeoPoint intersection)
         {
@@ -119,7 +119,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Thử tính giao điểm với một đoạn thẳng khác trong khoảng dung sai.
+        /// Tries to calculate the intersection with another line segment within tolerance.
         /// </summary>
         public bool TryIntersectWith(GeoLine other, out GeoPoint intersection, Tolerance tolerance)
         {
@@ -130,7 +130,7 @@ namespace ArrangeAlgorithms.Geometry
 
             if (Math.Abs(rCrossS) <= tolerance.EqualPoint)
             {
-                return false; // Song song hoặc trùng phương
+                return false; // Parallel or collinear
             }
 
             GeoVector qMinusP = StartPoint.GetVectorTo(other.StartPoint);
@@ -148,7 +148,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đoạn thẳng này có giao với một đoạn thẳng khác hay không, sử dụng dung sai mặc định.
+        /// Checks whether this line segment intersects with another line segment using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoLine other)
         {
@@ -156,7 +156,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đoạn thẳng này có giao với một đoạn thẳng khác hay không.
+        /// Checks whether this line segment intersects with another line segment.
         /// </summary>
         public bool IntersectsWith(GeoLine other, Tolerance tolerance)
         {
@@ -164,7 +164,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đoạn thẳng này có giao với một hình chữ nhật xoay (GeoRectangle OBB) hay không, sử dụng dung sai mặc định.
+        /// Checks whether this line segment intersects with a rotated rectangle (GeoRectangle OBB) using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoRectangle rect)
         {
@@ -172,7 +172,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đoạn thẳng này có giao với một hình chữ nhật xoay (GeoRectangle OBB) hay không.
+        /// Checks whether this line segment intersects with a rotated rectangle (GeoRectangle OBB).
         /// </summary>
         public bool IntersectsWith(GeoRectangle rect, Tolerance tolerance)
         {
@@ -180,7 +180,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đoạn thẳng này có giao với một đa giác hay không, sử dụng dung sai mặc định.
+        /// Checks whether this line segment intersects with a polygon using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoPolygon poly)
         {
@@ -188,7 +188,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đoạn thẳng này có giao với một đa giác hay không.
+        /// Checks whether this line segment intersects with a polygon.
         /// </summary>
         public bool IntersectsWith(GeoPolygon poly, Tolerance tolerance)
         {
@@ -221,4 +221,3 @@ namespace ArrangeAlgorithms.Geometry
         public override string ToString() => $"GeoLine[{StartPoint} -> {EndPoint}]";
     }
 }
-

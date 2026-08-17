@@ -6,8 +6,7 @@ using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest
 {
-    /// <summary>
-    /// Kiểm thử API công khai của <see cref="Arrange"/> và các hợp đồng mà MỌI thuật toán đều phải giữ.
+    /// Tests the public API of <see cref="Arrange"/> and contracts that EVERY algorithm must uphold.
     /// </summary>
     public class ArrangeTests
     {
@@ -41,7 +40,7 @@ namespace ArrangeAlgorithms.UnitTest
         }
 
         // ------------------------------------------------------------------
-        // Kiểm tra tham số đầu vào
+        // Check input parameters
         // ------------------------------------------------------------------
 
         [Fact]
@@ -70,7 +69,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_SingleArgumentOverload_UsesDefaultOptions()
         {
-            // Nhãn không đặt MarkOffsetFromLine nên nó giữ giá trị mặc định 50 của chính Arrange.
+            // Label does not set MarkOffsetFromLine, so it keeps Arrange's default value of 50.
             var label = new Arrange
             {
                 GeoLine = new GeoLine(0.0, 0.0, 400.0, 0.0),
@@ -81,12 +80,12 @@ namespace ArrangeAlgorithms.UnitTest
 
             Assert.Single(translations);
 
-            // BaseOffset mặc định = nửa chiều cao (5) + MarkOffsetFromLine (50) = 55.
+            // Default BaseOffset = half height (5) + MarkOffsetFromLine (50) = 55.
             Assert.Equal(55.0, Math.Abs(MovedBox(label, translations[0]).Center.Y), 6);
         }
 
         // ------------------------------------------------------------------
-        // Sinh vị trí ứng viên
+        // Generate candidate positions
         // ------------------------------------------------------------------
 
         [Fact]
@@ -97,7 +96,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             var points = label.GetPlacePoints(options);
 
-            // BaseOffset = nửa chiều cao nhãn (5) + MarkOffsetFromLine (5) = 10, đo từ trung điểm đoạn dẫn (20, 0).
+            // BaseOffset = half label height (5) + MarkOffsetFromLine (5) = 10, measured from guide midpoint (20, 0).
             Assert.True(points[0].IsEqualTo(new GeoPoint(20.0, 10.0)));
             Assert.True(points[1].IsEqualTo(new GeoPoint(20.0, -10.0)));
         }
@@ -105,8 +104,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_MarkOffsetFromLine_IsPerLabelNotGlobal()
         {
-            // Khoảng hở nằm trên từng nhãn, nên hai nhãn dùng chung một ArrangeOptions vẫn phải
-            // loang ứng viên từ hai cấp vuông góc khác nhau.
+            // Offset is per-label, so two labels sharing the same ArrangeOptions must still
+            // expand candidates from two different perpendicular levels.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var near = LabelOn(leader);                       // MarkOffsetFromLine = 5
             var far = LabelOn(leader);
@@ -114,7 +113,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             var options = OptionsFor(ArrangeAlgorithmType.Greedy);
 
-            // BaseOffset = nửa chiều cao nhãn (5) cộng khoảng hở riêng của chính nhãn đó.
+            // BaseOffset = half label height (5) plus the label's own specific offset.
             Assert.True(near.GetPlacePoints(options)[0].IsEqualTo(new GeoPoint(20.0, 10.0)));
             Assert.True(far.GetPlacePoints(options)[0].IsEqualTo(new GeoPoint(20.0, 35.0)));
         }
@@ -122,8 +121,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_HonoursEachLabelsOwnMarkOffsetFromLine()
         {
-            // Cùng một đoạn dẫn, cùng một bộ tùy chọn: nhãn khai báo khoảng hở lớn hơn phải
-            // dừng xa đoạn dẫn hơn, và cả hai đều nằm đúng cấp vuông góc đầu tiên của mình.
+            // Same guide segment, same options: label declaring larger offset must
+            // stop further from the guide segment, and both must lie exactly on their first perpendicular level.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var near = LabelOn(leader);                       // MarkOffsetFromLine = 5
             var far = LabelOn(leader);
@@ -161,15 +160,15 @@ namespace ArrangeAlgorithms.UnitTest
 
             var points = label.GetPlacePoints(options);
 
-            // Trần này chỉ chặn vòng trượt dọc, không chặn hai vị trí vuông góc thuần của mỗi cấp.
-            // Với 3 cấp thì luôn còn đúng 2 x 3 = 6 ứng viên — đủ để vòng lặp không thể chạy vô hạn.
+            // This cap only limits the longitudinal sliding loop, not the two pure perpendicular positions of each level.
+            // With 3 levels, there are always exactly 2 x 3 = 6 candidates — enough to prevent infinite loops.
             Assert.Equal(6, points.Count);
         }
 
         [Fact]
         public void Arrange_GetPlacePoints_DegenerateLeader_ProducesNoCandidates()
         {
-            // Đoạn dẫn dài bằng 0 thì không có hướng, không thể suy ra trục để loang ứng viên.
+            // A guide segment of length 0 has no direction, making it impossible to derive axis for candidate expansion.
             var label = new Arrange
             {
                 GeoLine = new GeoLine(5.0, 0.0, 5.0, 0.0),
@@ -183,7 +182,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_GetPlacePoints_BoxAtMinimumSize_IsStillValid()
         {
-            // Tài liệu nói nhãn NHỎ HƠN ngưỡng mới bị loại, nên nhãn đúng bằng ngưỡng phải hợp lệ.
+            // Specification says labels SMALLER than threshold are discarded, so label exactly equal to threshold must be valid.
             var label = new Arrange
             {
                 GeoLine = new GeoLine(0.0, 0.0, 40.0, 0.0),
@@ -198,7 +197,7 @@ namespace ArrangeAlgorithms.UnitTest
         }
 
         // ------------------------------------------------------------------
-        // Kích thước nhãn không hợp lệ
+        // Invalid label dimensions
         // ------------------------------------------------------------------
 
         [Fact]
@@ -207,7 +206,7 @@ namespace ArrangeAlgorithms.UnitTest
             var leaderLine = new GeoLine(0.0, 0.0, 10.0, 0.0);
             var a1 = new Arrange
             {
-                GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 2.0, 2.0), // Quá nhỏ
+                GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 2.0, 2.0), // Too small
                 GeoLine = leaderLine
             };
 
@@ -235,15 +234,15 @@ namespace ArrangeAlgorithms.UnitTest
 
             Assert.Equal(GeoVector.Zero, translations[0]);
 
-            // Nhãn không đè ai cả, nhưng nó cũng chưa từng được sắp xếp nên không được báo thành công.
+            // The label does not overlap anyone, but it has never been arranged either, so it must not be reported as successful.
             Assert.False(label.Placed);
         }
 
         [Fact]
         public void Arrange_LabelAlreadyOnFirstCandidate_ProducesZeroTranslation()
         {
-            // Nhãn đã nằm sẵn đúng vị trí ứng viên đầu tiên: không có gì để dịch chuyển,
-            // và MinimumMoveDistance phải nuốt luôn mọi sai số nhỏ.
+            // Label is already at the first candidate position: nothing to translate,
+            // and MinimumMoveDistance must suppress any minor errors.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var label = new Arrange
             {
@@ -259,7 +258,7 @@ namespace ArrangeAlgorithms.UnitTest
         }
 
         // ------------------------------------------------------------------
-        // Hợp đồng chung cho cả năm thuật toán
+        // Common contract for all five algorithms
         // ------------------------------------------------------------------
 
         public static IEnumerable<object[]> AllAlgorithms()
@@ -307,9 +306,9 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(3, translations.Count);
             Assert.Equal(GeoVector.Zero, translations[1]);
 
-            // Mỗi nhãn thật vẫn phải bám đoạn dẫn của chính nó, không bị hoán chỉ số.
-            // Không so tọa độ tuyệt đối: Force-directed cố ý trượt nhãn dọc đoạn dẫn để giãn chúng ra,
-            // nên tiêu chí đúng là "gần đoạn dẫn của mình hơn là gần đoạn dẫn của nhãn kia".
+            // Each real label must still stick to its own guide segment without index swap.
+            // Do not compare absolute coordinates: Force-directed intentionally slides labels along guide segment to spread them,
+            // so the correct assertion is "closer to its own guide segment than to the other label's guide segment".
             GeoPoint firstCentre = MovedBox(first, translations[0]).Center;
             GeoPoint secondCentre = MovedBox(second, translations[2]).Center;
 
@@ -382,9 +381,9 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_PlacedFlagMatchesFinalLayout(ArrangeAlgorithmType algorithm)
         {
-            // Cờ Placed phải mô tả bố cục CUỐI CÙNG. Ba nhãn chung một đoạn dẫn ngắn với một cấp
-            // vuông góc thì chỉ đủ chỗ cho hai, nên số nhãn báo thành công phải khớp đúng số nhãn
-            // thực sự không đè ai — kể cả nhãn bị nhãn khác lùi vào đè lên.
+            // The Placed flag must describe the FINAL layout. Three labels sharing a short guide segment with one
+            // perpendicular level only have room for two, so the count of successful labels must match the count of
+            // labels that actually do not overlap anyone — including labels overlapped by others falling back.
             var leader = new GeoLine(0.0, 0.0, 10.0, 0.0);
             var labels = new List<Arrange> { LabelOn(leader), LabelOn(leader), LabelOn(leader) };
 

@@ -3,40 +3,40 @@ using System;
 namespace ArrangeAlgorithms.Geometry
 {
     /// <summary>
-    /// Biểu diễn một GeoVector 2D với tọa độ kiểu double.
+    /// Represents a 2D vector with double precision coordinates.
     /// </summary>
     public readonly struct GeoVector : IEquatable<GeoVector>
     {
         /// <summary>
-        /// Lấy tọa độ X của GeoVector.
+        /// Gets the X coordinate of the vector.
         /// </summary>
         public double X { get; }
 
         /// <summary>
-        /// Lấy tọa độ Y của GeoVector.
+        /// Gets the Y coordinate of the vector.
         /// </summary>
         public double Y { get; }
 
         /// <summary>
-        /// Lấy GeoVector không (0, 0).
+        /// Gets the zero vector (0, 0).
         /// </summary>
         public static GeoVector Zero => new GeoVector(0.0, 0.0);
 
         /// <summary>
-        /// Lấy GeoVector đơn vị dọc theo trục X (1, 0).
+        /// Gets the unit vector along the X-axis (1, 0).
         /// </summary>
         public static GeoVector XAxis => new GeoVector(1.0, 0.0);
 
         /// <summary>
-        /// Lấy GeoVector đơn vị dọc theo trục Y (0, 1).
+        /// Gets the unit vector along the Y-axis (0, 1).
         /// </summary>
         public static GeoVector YAxis => new GeoVector(0.0, 1.0);
 
         /// <summary>
-        /// Khởi tạo một GeoVector mới.
+        /// Initializes a new vector.
         /// </summary>
-        /// <param name="x">Thành phần X.</param>
-        /// <param name="y">Thành phần Y.</param>
+        /// <param name="x">X component.</param>
+        /// <param name="y">Y component.</param>
         public GeoVector(double x, double y)
         {
             X = x;
@@ -44,29 +44,29 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy chiều dài của GeoVector.
+        /// Gets the length of the vector.
         /// </summary>
         public double Length => Math.Sqrt(LengthSquared);
 
         /// <summary>
-        /// Lấy bình phương chiều dài của GeoVector.
+        /// Gets the squared length of the vector.
         /// </summary>
         public double LengthSquared => X * X + Y * Y;
 
         /// <summary>
-        /// Lấy GeoVector đơn vị đã chuẩn hóa. Ném ngoại lệ InvalidOperationException nếu GeoVector có chiều dài bằng 0.
+        /// Gets the normalized unit vector. Throws InvalidOperationException if the vector length is zero.
         /// </summary>
         public GeoVector Normalize()
         {
             if (!TryGetNormal(out GeoVector normal))
             {
-                throw new InvalidOperationException("Không thể chuẩn hóa GeoVector có chiều dài bằng không.");
+                throw new InvalidOperationException("Cannot normalize a zero-length vector.");
             }
             return normal;
         }
 
         /// <summary>
-        /// Thử chuẩn hóa GeoVector mà không ném ngoại lệ sử dụng dung sai mặc định.
+        /// Tries to normalize the vector without throwing an exception using default tolerance.
         /// </summary>
         public bool TryGetNormal(out GeoVector normal)
         {
@@ -74,7 +74,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Thử chuẩn hóa GeoVector với một dung sai cụ thể.
+        /// Tries to normalize the vector with a specific tolerance.
         /// </summary>
         public bool TryGetNormal(out GeoVector normal, Tolerance tolerance)
         {
@@ -90,7 +90,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Cộng GeoVector này với GeoVector khác.
+        /// Adds this vector to another vector.
         /// </summary>
         public GeoVector Add(GeoVector other)
         {
@@ -98,7 +98,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Trừ GeoVector khác khỏi GeoVector này.
+        /// Subtracts another vector from this vector.
         /// </summary>
         public GeoVector Subtract(GeoVector other)
         {
@@ -106,7 +106,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Nhân các thành phần của GeoVector với một số vô hướng.
+        /// Multiplies vector components by a scalar.
         /// </summary>
         public GeoVector Multiply(double scalar)
         {
@@ -114,7 +114,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính tích vô hướng (dot product) với GeoVector khác.
+        /// Calculates the dot product with another vector.
         /// </summary>
         public double DotProduct(GeoVector other)
         {
@@ -122,7 +122,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính tích có hướng 2D (cross product) với GeoVector khác (trả về thành phần Z).
+        /// Calculates the 2D cross product with another vector (returns the Z component).
         /// </summary>
         public double CrossProduct(GeoVector other)
         {
@@ -130,7 +130,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy GeoVector vuông góc bằng cách xoay ngược chiều kim đồng hồ 90 độ.
+        /// Gets the perpendicular vector by rotating 90 degrees counter-clockwise.
         /// </summary>
         public GeoVector GetPerpendicularVector()
         {
@@ -138,7 +138,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Xoay GeoVector một góc tính theo radian (ngược chiều kim đồng hồ).
+        /// Rotates the vector by an angle in radians (counter-clockwise).
         /// </summary>
         public GeoVector RotateBy(double angleRad)
         {
@@ -148,37 +148,37 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy góc không dấu tới một GeoVector khác tính theo radian, trong đoạn [0, PI].
+        /// Gets the unsigned angle to another vector in radians, in the range [0, PI].
         /// </summary>
         public double GetAngleTo(GeoVector other)
         {
             if (IsZeroLength() || other.IsZeroLength())
             {
-                throw new InvalidOperationException("Không thể tính góc đến hoặc từ GeoVector có độ dài bằng không.");
+                throw new InvalidOperationException("Cannot calculate the angle to or from a zero-length vector.");
             }
 
-            // Dùng Atan2(|cross|, dot) thay cho Acos(dot). Acos mất chính xác nghiêm trọng khi hai
-            // GeoVector gần cùng phương hoặc gần ngược phương: đạo hàm của nó tiến ra vô cực ở lân cận
-            // ±1, nên sai số làm tròn cỡ 1e-16 của tích vô hướng bị khuếch đại thành sai số góc cỡ 1e-8.
-            // Atan2 ổn định trên toàn dải và không cần chuẩn hóa: cả hai đối số đều tỷ lệ với |a|*|b|.
+            // Use Atan2(|cross|, dot) instead of Acos(dot). Acos loses accuracy severely when two
+            // vectors are nearly collinear or nearly opposite: its derivative approaches infinity near
+            // ±1, so rounding errors around 1e-16 of the dot product are amplified to angle errors around 1e-8.
+            // Atan2 is stable across the entire range and does not require normalization: both arguments are proportional to |a|*|b|.
             return Math.Atan2(Math.Abs(CrossProduct(other)), DotProduct(other));
         }
 
         /// <summary>
-        /// Lấy góc có dấu tới một GeoVector khác tính theo radian, trong khoảng (-PI, PI].
+        /// Gets the signed angle to another vector in radians, in the range (-PI, PI].
         /// </summary>
         public double GetSignedAngleTo(GeoVector other)
         {
             if (IsZeroLength() || other.IsZeroLength())
             {
-                throw new InvalidOperationException("Không thể tính góc đến hoặc từ GeoVector có độ dài bằng không.");
+                throw new InvalidOperationException("Cannot calculate the angle to or from a zero-length vector.");
             }
 
             return Math.Atan2(CrossProduct(other), DotProduct(other));
         }
 
         /// <summary>
-        /// Kiểm tra xem GeoVector có độ dài bằng không sử dụng dung sai mặc định hay không.
+        /// Checks whether the vector has zero length using default tolerance.
         /// </summary>
         public bool IsZeroLength()
         {
@@ -186,7 +186,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem GeoVector có độ dài bằng không trong khoảng dung sai hay không.
+        /// Checks whether the vector has zero length within tolerance.
         /// </summary>
         public bool IsZeroLength(Tolerance tolerance)
         {
@@ -194,7 +194,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// So sánh GeoVector này có bằng GeoVector khác sử dụng dung sai mặc định hay không.
+        /// Compares whether this vector equals another vector using default tolerance.
         /// </summary>
         public bool IsEqualTo(GeoVector other)
         {
@@ -202,7 +202,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// So sánh GeoVector này có bằng GeoVector khác trong khoảng dung sai hay không.
+        /// Compares whether this vector equals another vector within tolerance.
         /// </summary>
         public bool IsEqualTo(GeoVector other, Tolerance tolerance)
         {
@@ -212,7 +212,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem GeoVector này có song song với GeoVector khác sử dụng dung sai mặc định hay không.
+        /// Checks whether this vector is parallel to another vector using default tolerance.
         /// </summary>
         public bool IsParallelTo(GeoVector other)
         {
@@ -220,7 +220,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem GeoVector này có song song với GeoVector khác hay không.
+        /// Checks whether this vector is parallel to another vector.
         /// </summary>
         public bool IsParallelTo(GeoVector other, Tolerance tolerance)
         {
@@ -232,7 +232,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem GeoVector này có vuông góc với GeoVector khác sử dụng dung sai mặc định hay không.
+        /// Checks whether this vector is perpendicular to another vector using default tolerance.
         /// </summary>
         public bool IsPerpendicularTo(GeoVector other)
         {
@@ -240,7 +240,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem GeoVector này có vuông góc với GeoVector khác hay không.
+        /// Checks whether this vector is perpendicular to another vector.
         /// </summary>
         public bool IsPerpendicularTo(GeoVector other, Tolerance tolerance)
         {
@@ -282,4 +282,3 @@ namespace ArrangeAlgorithms.Geometry
         public override string ToString() => $"({X:0.000}, {Y:0.000})";
     }
 }
-

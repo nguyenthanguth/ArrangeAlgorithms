@@ -6,23 +6,23 @@
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
-    <!-- 1. Cấu hình sinh NuGet Package và XML Documentation -->
+    <!-- 1. Configure NuGet Package generation and XML Documentation -->
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
         
-    <!-- 2. Thông tin Metadata của NuGet Package -->
+    <!-- 2. NuGet Package Metadata Info -->
     <PackageId>ArrangeAlgorithms</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Nguyen Thang</Authors>
     <Company>Nguyen Thang</Company>
-    <Description>Thư viện chứa các thuật toán sắp xếp.</Description>
+    <Description>A 2D label placement library for engineering drawings that automatically arranges labels to prevent overlaps with each other and blocked regions. Features 5 layout algorithms: Greedy, Bounded Backtracking, Simulated Annealing, Force-Directed, and Constraint Satisfaction.</Description>
     <PackageProjectUrl>https://github.com/nguyenthanguth/ArrangeAlgorithms</PackageProjectUrl>
     <RepositoryUrl>https://github.com/nguyenthanguth/ArrangeAlgorithms</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <!-- 3. Nhúng mã nguồn và file Debug vào DLL để hỗ trợ F12 xem code gốc -->
+    <!-- 3. Embed source code and Debug symbols into DLL to support F12 original code viewing -->
     <DebugType>embedded</DebugType>
     <EmbedAllSources>true</EmbedAllSources>
 

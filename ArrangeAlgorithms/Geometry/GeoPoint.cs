@@ -3,22 +3,22 @@ using System;
 namespace ArrangeAlgorithms.Geometry
 {
     /// <summary>
-    /// Biểu diện một điểm 2D với tọa độ kiểu double.
+    /// Represents a 2D point with double precision coordinates.
     /// </summary>
     public readonly struct GeoPoint : IEquatable<GeoPoint>
     {
         /// <summary>
-        /// Lấy tọa độ X của điểm.
+        /// Gets the X coordinate of the point.
         /// </summary>
         public double X { get; }
 
         /// <summary>
-        /// Lấy tọa độ Y của điểm.
+        /// Gets the Y coordinate of the point.
         /// </summary>
         public double Y { get; }
 
         /// <summary>
-        /// Khởi tạo một điểm mới tại gốc tọa độ (0, 0).
+        /// Initializes a new point at the origin (0, 0).
         /// </summary>
         public GeoPoint()
         {
@@ -27,10 +27,10 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Khởi tạo một điểm mới.
+        /// Initializes a new point.
         /// </summary>
-        /// <param name="x">Tọa độ X.</param>
-        /// <param name="y">Tọa độ Y.</param>
+        /// <param name="x">X coordinate.</param>
+        /// <param name="y">Y coordinate.</param>
         public GeoPoint(double x, double y)
         {
             X = x;
@@ -38,9 +38,9 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Khởi tạo một điểm mới từ một điểm khác.
+        /// Initializes a new point from another point.
         /// </summary>
-        /// <param name="geoPoint">Điểm nguồn.</param>
+        /// <param name="geoPoint">Source point.</param>
         public GeoPoint(GeoPoint geoPoint)
         {
             X = geoPoint.X;
@@ -48,7 +48,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Cộng một GeoVector vào điểm để dịch chuyển tọa độ.
+        /// Adds a GeoVector to the point for translation.
         /// </summary>
         public GeoPoint Add(GeoVector GeoVector)
         {
@@ -56,7 +56,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Trừ một GeoVector khỏi điểm.
+        /// Subtracts a GeoVector from the point.
         /// </summary>
         public GeoPoint Subtract(GeoVector GeoVector)
         {
@@ -64,7 +64,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy GeoVector trỏ từ điểm này tới điểm khác.
+        /// Gets the GeoVector pointing from this point to another point.
         /// </summary>
         public GeoVector GetVectorTo(GeoPoint other)
         {
@@ -72,7 +72,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính khoảng cách Euclid tới điểm khác.
+        /// Calculates the Euclidean distance to another point.
         /// </summary>
         public double DistanceTo(GeoPoint other)
         {
@@ -80,7 +80,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính bình phương khoảng cách Euclid tới điểm khác.
+        /// Calculates the squared Euclidean distance to another point.
         /// </summary>
         public double GetDistanceSquaredTo(GeoPoint other)
         {
@@ -90,7 +90,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy trung điểm giữa điểm này và điểm khác.
+        /// Gets the midpoint between this point and another point.
         /// </summary>
         public GeoPoint GetMiddlePoint(GeoPoint other)
         {
@@ -98,7 +98,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Xoay điểm quanh một tâm xoay với góc xoay tính theo radian (ngược chiều kim đồng hồ).
+        /// Rotates the point around a center with a specified rotation angle in radians (counter-clockwise).
         /// </summary>
         public GeoPoint RotateBy(double angleRad, GeoPoint center)
         {
@@ -113,7 +113,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Co giãn khoảng cách từ tâm tới điểm này theo một hệ số.
+        /// Scales the distance from the center to this point by a factor.
         /// </summary>
         public GeoPoint ScaleBy(double factor, GeoPoint center)
         {
@@ -123,7 +123,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// So sánh điểm này có trùng với điểm khác trong khoảng dung sai cho phép hay không.
+        /// Compares whether this point is coincident with another point within the allowed tolerance.
         /// </summary>
         public bool IsEqualTo(GeoPoint other, Tolerance tolerance)
         {
@@ -131,7 +131,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// So sánh điểm này có trùng với điểm khác sử dụng dung sai mặc định hay không.
+        /// Compares whether this point is coincident with another point using default tolerance.
         /// </summary>
         public bool IsEqualTo(GeoPoint other) => IsEqualTo(other, Tolerance.Global);
 
@@ -163,4 +163,3 @@ namespace ArrangeAlgorithms.Geometry
         public override string ToString() => $"({X:0.000}, {Y:0.000})";
     }
 }
-

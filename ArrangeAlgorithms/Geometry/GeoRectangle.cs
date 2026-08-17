@@ -3,42 +3,42 @@ using System;
 namespace ArrangeAlgorithms.Geometry
 {
     /// <summary>
-    /// Biểu diễn một hình chữ nhật xoay (Oriented Bounding Box - OBB) 2D, có thể xoay.
+    /// Represents a 2D Oriented Bounding Box (OBB) that can be rotated.
     /// </summary>
     public readonly struct GeoRectangle : IEquatable<GeoRectangle>
     {
         /// <summary>
-        /// Lấy điểm tâm của hình chữ nhật.
+        /// Gets the center point of the rectangle.
         /// </summary>
         public GeoPoint Center { get; }
 
         /// <summary>
-        /// Lấy chiều rộng của hình chữ nhật (dọc theo trục X cục bộ của nó).
+        /// Gets the width of the rectangle (along its local X-axis).
         /// </summary>
         public double Width { get; }
 
         /// <summary>
-        /// Lấy chiều cao của hình chữ nhật (dọc theo trục Y cục bộ của nó).
+        /// Gets the height of the rectangle (along its local Y-axis).
         /// </summary>
         public double Height { get; }
 
         /// <summary>
-        /// Lấy góc xoay theo radian (ngược chiều kim đồng hồ).
+        /// Gets the rotation angle in radians (counter-clockwise).
         /// </summary>
         public double AngleRad { get; }
 
         /// <summary>
-        /// Lấy giá trị cho biết hình chữ nhật có đang xoay hay không (góc xoay khác không).
+        /// Gets a value indicating whether the rectangle is rotated (non-zero rotation angle).
         /// </summary>
         public bool IsRotated => Math.Abs(AngleRad) > Tolerance.Global.EqualVector;
 
         /// <summary>
-        /// Khởi tạo một thực thể GeoRectangle mới từ tâm, chiều rộng, chiều cao và góc xoay.
+        /// Initializes a new GeoRectangle instance from center, width, height, and rotation angle.
         /// </summary>
-        /// <param name="center">Điểm tâm của hình chữ nhật.</param>
-        /// <param name="width">Chiều rộng hình chữ nhật.</param>
-        /// <param name="height">Chiều cao hình chữ nhật.</param>
-        /// <param name="angleRad">Góc xoay theo radian.</param>
+        /// <param name="center">Center point of the rectangle.</param>
+        /// <param name="width">Rectangle width.</param>
+        /// <param name="height">Rectangle height.</param>
+        /// <param name="angleRad">Rotation angle in radians.</param>
         public GeoRectangle(GeoPoint center, double width, double height, double angleRad = 0.0)
         {
             Center = center;
@@ -48,19 +48,19 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Khởi tạo một thực thể GeoRectangle từ vị trí góc dưới-trái (khi chưa xoay) và kích thước.
+        /// Initializes a new GeoRectangle instance from the bottom-left corner position (unrotated) and dimensions.
         /// </summary>
-        /// <param name="x">Tọa độ X của góc dưới-trái của hình chữ nhật khi chưa xoay.</param>
-        /// <param name="y">Tọa độ Y của góc dưới-trái của hình chữ nhật khi chưa xoay.</param>
-        /// <param name="width">Chiều rộng hình chữ nhật.</param>
-        /// <param name="height">Chiều cao hình chữ nhật.</param>
+        /// <param name="x">X coordinate of the bottom-left corner when unrotated.</param>
+        /// <param name="y">Y coordinate of the bottom-left corner when unrotated.</param>
+        /// <param name="width">Rectangle width.</param>
+        /// <param name="height">Rectangle height.</param>
         public GeoRectangle(double x, double y, double width, double height)
             : this(new GeoPoint(x + width * 0.5, y + height * 0.5), width, height, 0.0)
         {
         }
 
         /// <summary>
-        /// Lấy tọa độ điểm góc dưới-trái (bottom-left).
+        /// Gets the bottom-left corner coordinates.
         /// </summary>
         public GeoPoint LowerLeft
         {
@@ -77,7 +77,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy tọa độ điểm góc dưới-phải (bottom-right).
+        /// Gets the bottom-right corner coordinates.
         /// </summary>
         public GeoPoint LowerRight
         {
@@ -94,7 +94,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy tọa độ điểm góc trên-trái (top-left).
+        /// Gets the top-left corner coordinates.
         /// </summary>
         public GeoPoint UpperLeft
         {
@@ -111,7 +111,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy tọa độ điểm góc trên-phải (top-right).
+        /// Gets the top-right corner coordinates.
         /// </summary>
         public GeoPoint UpperRight
         {
@@ -128,7 +128,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy danh sách 4 đỉnh của hình chữ nhật theo chiều ngược chiều kim đồng hồ: LowerLeft, LowerRight, UpperRight, UpperLeft.
+        /// Gets the 4 vertices of the rectangle in counter-clockwise order: LowerLeft, LowerRight, UpperRight, UpperLeft.
         /// </summary>
         public GeoPoint[] GetVertices()
         {
@@ -136,7 +136,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy 4 cạnh khép kín của hình chữ nhật, nối lần lượt các đỉnh do <see cref="GetVertices"/> trả về.
+        /// Gets the 4 closed edges of the rectangle, sequentially connecting the vertices returned by <see cref="GetVertices"/>.
         /// </summary>
         public GeoLine[] GetEdges()
         {
@@ -151,7 +151,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật có chứa một điểm hay không.
+        /// Checks whether the rectangle contains a point.
         /// </summary>
         public bool Contains(GeoPoint GeoPoint)
         {
@@ -161,7 +161,7 @@ namespace ArrangeAlgorithms.Geometry
             double cos = Math.Cos(AngleRad);
             double sin = Math.Sin(AngleRad);
 
-            // Chiếu điểm lên hệ tọa độ cục bộ quanh Center
+            // Project point onto the local coordinate system around Center
             double localX = dx * cos + dy * sin;
             double localY = -dx * sin + dy * cos;
 
@@ -173,7 +173,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật này có giao với hình chữ nhật khác hay không, sử dụng dung sai mặc định.
+        /// Checks whether this rectangle intersects with another rectangle using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoRectangle other)
         {
@@ -181,26 +181,26 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật này có giao với hình chữ nhật khác hay không bằng thuật toán Separating Axis Theorem (SAT).
-        /// Khe hở hẹp hơn dung sai vẫn được coi là hai hình chạm nhau.
+        /// Checks whether this rectangle intersects with another rectangle using the Separating Axis Theorem (SAT).
+        /// Clearance smaller than the tolerance is still considered a collision.
         /// </summary>
         public bool IntersectsWith(GeoRectangle other, Tolerance tolerance)
         {
             GeoPoint[] r1 = GetVertices();
             GeoPoint[] r2 = other.GetVertices();
 
-            // Các trục cần kiểm tra (vuông góc với các cạnh của cả hai hình chữ nhật)
+            // Axes to check (perpendicular to the edges of both rectangles)
             GeoVector[] axes = new GeoVector[4];
-            axes[0] = new GeoVector(r1[1].X - r1[0].X, r1[1].Y - r1[0].Y).Normalize(); // Trục X của R1
-            axes[1] = new GeoVector(r1[3].X - r1[0].X, r1[3].Y - r1[0].Y).Normalize(); // Trục Y của R1
-            axes[2] = new GeoVector(r2[1].X - r2[0].X, r2[1].Y - r2[0].Y).Normalize(); // Trục X của R2
-            axes[3] = new GeoVector(r2[3].X - r2[0].X, r2[3].Y - r2[0].Y).Normalize(); // Trục Y của R2
+            axes[0] = new GeoVector(r1[1].X - r1[0].X, r1[1].Y - r1[0].Y).Normalize(); // X-axis of R1
+            axes[1] = new GeoVector(r1[3].X - r1[0].X, r1[3].Y - r1[0].Y).Normalize(); // Y-axis of R1
+            axes[2] = new GeoVector(r2[1].X - r2[0].X, r2[1].Y - r2[0].Y).Normalize(); // X-axis of R2
+            axes[3] = new GeoVector(r2[3].X - r2[0].X, r2[3].Y - r2[0].Y).Normalize(); // Y-axis of R2
 
             foreach (var axis in axes)
             {
                 if (axis.X == 0 && axis.Y == 0) continue;
 
-                // Chiếu R1 lên trục
+                // Project R1 onto axis
                 double min1 = double.MaxValue;
                 double max1 = double.MinValue;
                 foreach (var p in r1)
@@ -210,7 +210,7 @@ namespace ArrangeAlgorithms.Geometry
                     if (proj > max1) max1 = proj;
                 }
 
-                // Chiếu R2 lên trục
+                // Project R2 onto axis
                 double min2 = double.MaxValue;
                 double max2 = double.MinValue;
                 foreach (var p in r2)
@@ -220,19 +220,19 @@ namespace ArrangeAlgorithms.Geometry
                     if (proj > max2) max2 = proj;
                 }
 
-                // Kiểm tra sự tách biệt trên trục này. Hai hình chỉ thực sự rời nhau khi khe hở
-                // giữa hai hình chiếu vượt quá dung sai; hẹp hơn thế thì coi như chạm nhau.
+                // Check separation on this axis. The two shapes are only truly disjoint when the clearance
+                // between projections exceeds tolerance; anything narrower is considered contact.
                 if (min2 - max1 > tolerance.EqualPoint || min1 - max2 > tolerance.EqualPoint)
                 {
-                    return false; // Tìm thấy trục phân tách, hai hình không giao nhau
+                    return false; // Separating axis found, the two shapes do not intersect
                 }
             }
 
-            return true; // Không tìm thấy trục phân tách nào, hai hình giao nhau
+            return true; // No separating axis found, the two shapes intersect
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật này có giao với một đoạn thẳng hay không, sử dụng dung sai mặc định.
+        /// Checks whether this rectangle intersects with a line segment using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoLine geoLine)
         {
@@ -240,11 +240,11 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật này có giao với một đoạn thẳng hay không.
+        /// Checks whether this rectangle intersects with a line segment.
         /// </summary>
         public bool IntersectsWith(GeoLine geoLine, Tolerance tolerance)
         {
-            // Nếu đoạn thẳng cắt bất kỳ cạnh nào của hình chữ nhật
+            // If the line segment intersects with any edge of the rectangle
             foreach (var edge in GetEdges())
             {
                 if (geoLine.TryIntersectWith(edge, out _, tolerance))
@@ -253,9 +253,9 @@ namespace ArrangeAlgorithms.Geometry
                 }
             }
 
-            // Hoặc nếu đoạn thẳng nằm hoàn toàn bên trong hình chữ nhật.
-            // Chỉ cần xét điểm đầu: đoạn thẳng không cắt cạnh nào mà có một mút bên trong
-            // thì toàn bộ đoạn nằm trong.
+            // Or if the line segment lies entirely inside the rectangle.
+            // Just check the start point: if the segment does not intersect any edge
+            // and one endpoint is inside, then the entire segment is inside.
             if (Contains(geoLine.StartPoint))
             {
                 return true;
@@ -265,7 +265,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật này có giao với một đa giác hay không, sử dụng dung sai mặc định.
+        /// Checks whether this rectangle intersects with a polygon using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoPolygon poly)
         {
@@ -273,7 +273,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem hình chữ nhật này có giao với một đa giác hay không.
+        /// Checks whether this rectangle intersects with a polygon.
         /// </summary>
         public bool IntersectsWith(GeoPolygon poly, Tolerance tolerance)
         {
@@ -283,7 +283,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính khoảng cách biên ngắn nhất từ hình chữ nhật này tới một đa giác.
+        /// Calculates the shortest boundary distance from this rectangle to a polygon.
         /// </summary>
         public double DistanceTo(GeoPolygon poly)
         {
@@ -316,7 +316,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính khoảng cách biên ngắn nhất từ hình chữ nhật này tới một đoạn thẳng.
+        /// Calculates the shortest boundary distance from this rectangle to a line segment.
         /// </summary>
         public double DistanceTo(GeoLine GeoLine)
         {
@@ -342,7 +342,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính khoảng cách biên ngắn nhất từ hình chữ nhật này tới một hình chữ nhật khác.
+        /// Calculates the shortest boundary distance from this rectangle to another rectangle.
         /// </summary>
         public double DistanceTo(GeoRectangle other)
         {
@@ -407,4 +407,3 @@ namespace ArrangeAlgorithms.Geometry
         }
     }
 }
-

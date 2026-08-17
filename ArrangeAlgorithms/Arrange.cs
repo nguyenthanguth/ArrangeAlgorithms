@@ -7,62 +7,62 @@ using System.Linq;
 namespace ArrangeAlgorithms
 {
     /// <summary>
-    /// Biểu diễn một nhãn cần sắp xếp cùng với các đối tượng hình học xung quanh (vật cản).
+    /// Represents a label to be arranged along with surrounding geometric objects (obstacles).
     /// </summary>
     public class Arrange
     {
-        /// <summary>Lấy hoặc đặt hình chữ nhật bao của nhãn — phần hình học sẽ được dịch chuyển.</summary>
+        /// <summary>Gets or sets the bounding rectangle of the label — the geometry to be translated.</summary>
         public GeoRectangle GeoRectangle { get; set; }
 
         /// <summary>
-        /// Lấy hoặc đặt đoạn dẫn của đối tượng mà nhãn trỏ tới.
-        /// Trung điểm của nó là gốc để loang vị trí ứng viên.
+        /// Gets or sets the path segment of the object the label points to.
+        /// Its midpoint is the origin for expanding candidate positions.
         /// </summary>
         public GeoLine GeoLine { get; set; }
 
         /// <summary>
-        /// Lấy hoặc đặt khoảng hở vuông góc tối thiểu giữa mép nhãn và đường dẫn.
-        /// Cộng với nửa chiều cao nhãn sẽ ra khoảng cách từ đường dẫn tới tâm nhãn.
+        /// Gets or sets the minimum perpendicular clearance between the label edge and the path.
+        /// Added to half the label height, it determines the distance from the path to the label center.
         /// <para>
-        /// Thuộc tính này nằm trên từng nhãn chứ không nằm trong <see cref="ArrangeOptions"/> vì
-        /// mỗi nhãn có thể cần một khoảng hở riêng — chẳng hạn nhãn chữ lớn phải lùi xa hơn nhãn chữ nhỏ.
+        /// This property is defined per label rather than in <see cref="ArrangeOptions"/> because
+        /// each label may require a unique offset — e.g., larger text labels may need to be placed further away than smaller ones.
         /// </para>
         /// </summary>
         public double MarkOffsetFromLine { get; set; } = 50.0;
 
-        /// <summary>Lấy hoặc đặt danh sách đa giác cấm tĩnh mà nhãn không được đè lên.</summary>
+        /// <summary>Gets or sets the list of static block polygons that the label must not overlap.</summary>
         public List<GeoPolygon> BlockPolygons { get; set; }
 
-        /// <summary>Lấy hoặc đặt danh sách đoạn thẳng cấm tĩnh mà nhãn không được đè lên.</summary>
+        /// <summary>Gets or sets the list of static block lines that the label must not overlap.</summary>
         public List<GeoLine> BlockLines { get; set; }
 
         /// <summary>
-        /// Cho biết nhãn có được đặt thành công vào một vị trí hoàn toàn trống hay không.
+        /// Indicates whether the label has been successfully placed in a completely empty position.
         /// </summary>
         public bool Placed { get; private set; }
 
         /// <summary>
-        /// Thiết lập trạng thái đặt nhãn thành công hay thất bại.
+        /// Sets the success or failure status of the label placement.
         /// </summary>
         internal void SetPlaced(bool value)
         {
             Placed = value;
         }
 
-        /// <summary>Sắp xếp danh sách nhãn bằng cấu hình tham số mặc định.</summary>
-        /// <param name="arranges">Danh sách nhãn cần sắp xếp.</param>
-        /// <returns>Danh sách GeoVector dịch chuyển tương ứng cho từng nhãn theo đúng thứ tự đầu vào.</returns>
+        /// <summary>Arranges the list of labels using the default configuration parameters.</summary>
+        /// <param name="arranges">List of labels to be arranged.</param>
+        /// <returns>List of translation GeoVectors for each label in the same input order.</returns>
         public static List<GeoVector> Run(List<Arrange> arranges)
         {
             return Run(arranges, ArrangeOptions.Default);
         }
 
         /// <summary>
-        /// Sắp xếp danh sách nhãn để chúng không đè lên nhau và không đè lên vùng cấm.
+        /// Arranges the list of labels to ensure they do not overlap each other or any blocked regions.
         /// </summary>
-        /// <param name="arranges">Danh sách nhãn cần sắp xếp.</param>
-        /// <param name="options">Cấu hình điều khiển thuật toán.</param>
-        /// <returns>Danh sách GeoVector dịch chuyển tương ứng cho từng nhãn theo đúng thứ tự đầu vào.</returns>
+        /// <param name="arranges">List of labels to be arranged.</param>
+        /// <param name="options">Configuration options controlling the algorithm.</param>
+        /// <returns>List of translation GeoVectors for each label in the same input order.</returns>
         public static List<GeoVector> Run(List<Arrange> arranges, ArrangeOptions options)
         {
             if (arranges == null)
@@ -75,7 +75,7 @@ namespace ArrangeAlgorithms
                 throw new ArgumentNullException(nameof(options));
             }
 
-            // Lựa chọn thuật toán sắp xếp dựa trên cấu hình tùy chọn
+            // Select arrangement algorithm based on options
             IArrangeAlgorithm algorithm;
             switch (options.Algorithm)
             {
@@ -99,19 +99,20 @@ namespace ArrangeAlgorithms
 
             List<GeoVector> translations = algorithm.Arrange(arranges, options);
 
-            // Cờ Placed do một chỗ duy nhất quyết định, dựa trên bố cục cuối cùng chứ không dựa vào
-            // lời tự khai của từng thuật toán. Xem MarkPlacementResults.
+            // Placed flag is determined in a single place based on the final layout,
+            // not on the self-reporting of each algorithm. See MarkPlacementResults.
             MarkPlacementResults(arranges, translations, options);
 
             return translations;
         }
 
         /// <summary>
-        /// Thu thập tất cả các vật cản tĩnh (đa giác cấm và đoạn thẳng cấm) từ danh sách nhãn.
+        /// Collects all static obstacles (block polygons and block lines) from the list of labels.
         /// <para>
-        /// Vật cản trùng nhau chỉ được giữ một bản. Cách dùng thư viện phổ biến là gán cùng một tập vùng cấm
-        /// cho mọi nhãn — chẳng hạn mỗi nhãn né tất cả đoạn dẫn còn lại — khiến danh sách phình theo bình phương
-        /// số nhãn dù số hình học phân biệt vẫn nhỏ. Khử trùng ở đây có lợi cho toàn bộ các thuật toán.
+        /// Duplicate obstacles are deduplicated to retain only a single instance. A common library usage pattern
+        /// is to assign the same set of blocked regions to every label — e.g., each label avoids all other path segments —
+        /// causing the list to grow quadratically with the number of labels, even though the number of distinct
+        /// geometries remains small. Deduplication here benefits all algorithms.
         /// </para>
         /// </summary>
         internal static List<Obstacle> CollectStaticObstacles(List<Arrange> arranges)
@@ -152,7 +153,7 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Kiểm xem hình chữ nhật nhãn sau dịch chuyển có đè lên bất kỳ vật cản nào không.
+        /// Checks whether the label rectangle after translation overlaps any obstacles.
         /// </summary>
         internal static bool Collides(List<Obstacle> obstacles, GeoRectangle moved, Tolerance tolerance)
         {
@@ -160,27 +161,27 @@ namespace ArrangeAlgorithms
 
             foreach (Obstacle obstacle in obstacles)
             {
-                // Lọc thô bằng bounding box (AABB) trước để tăng hiệu năng kiểm tra va chạm
+                // Rough filtering using bounding box (AABB) first to improve collision check performance
                 if (!movedBox.Overlaps(obstacle.Box))
                 {
                     continue;
                 }
 
-                // Kiểm tra va chạm chi tiết theo kiểu hình học cụ thể
+                // Detailed collision check based on specific geometric type
                 switch (obstacle.Type)
                 {
                     case ObstacleType.GeoRectangle:
-                        // OBB vs OBB: Sử dụng thuật toán SAT (Separating Axis Theorem)
+                        // OBB vs OBB: Using SAT (Separating Axis Theorem)
                         if (moved.IntersectsWith(obstacle.GeoRectangle, tolerance))
                             return true;
                         break;
                     case ObstacleType.GeoPolygon:
-                        // OBB vs Đa giác: Kiểm tra giao cắt cạnh và bao chứa
+                        // OBB vs Polygon: Check edge intersections and containment
                         if (moved.IntersectsWith(obstacle.GeoPolygon, tolerance))
                             return true;
                         break;
                     case ObstacleType.GeoLine:
-                        // OBB vs Đoạn thẳng: Kiểm tra giao cắt cạnh và điểm mút
+                        // OBB vs Line Segment: Check edge intersections and endpoints
                         if (moved.IntersectsWith(obstacle.GeoLine, tolerance))
                             return true;
                         break;
@@ -191,12 +192,13 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Xác minh lại kết quả trên bố cục cuối cùng và cập nhật cờ <see cref="Placed"/> cho từng nhãn.
+        /// Re-verifies results on the final layout and updates the <see cref="Placed"/> flag for each label.
         /// <para>
-        /// Từng thuật toán chỉ biết trạng thái tại thời điểm nó đặt nhãn, nên cờ do chúng tự đặt mang nghĩa
-        /// "lúc đến lượt tôi thì chỗ này trống". Một nhãn xếp sau khi bí có thể lùi về vị trí đè lên nhãn đã đặt,
-        /// khiến nhãn bị đè vẫn báo thành công. Người dùng cần biết bố cục cuối cùng có chồng lấn hay không,
-        /// nên phép kiểm tra dứt điểm phải nằm ở đây, sau khi mọi nhãn đã yên vị.
+        /// Each algorithm only knows the state at the time it places a label, so the flag set by them means
+        /// "this spot was empty when my turn came". A label placed later, when stuck, might fallback to a position
+        /// that overlaps an already placed label, causing the overlapped label to still report success.
+        /// Users need to know if the final layout has overlaps, so the final verification must be done here,
+        /// after all labels have settled.
         /// </para>
         /// </summary>
         internal static void MarkPlacementResults(List<Arrange> arranges, IList<GeoVector> translations, ArrangeOptions options)
@@ -221,8 +223,8 @@ namespace ArrangeAlgorithms
             {
                 if (arranges[i] == null) continue;
 
-                // Nhãn không dựng nổi bố cục thì chưa từng được sắp xếp. Nó ngẫu nhiên không đè ai
-                // không có nghĩa là thành công, nên phải loại trước khi xét va chạm.
+                // A label that cannot form a layout has never been arranged. Just because it randomly
+                // does not overlap anyone does not mean success, so it must be filtered out before collision checking.
                 if (!arranges[i].TryGetLayout(options, out _))
                 {
                     arranges[i].SetPlaced(false);
@@ -242,13 +244,13 @@ namespace ArrangeAlgorithms
             }
         }
 
-        /// <summary>Sinh danh sách vị trí ứng viên với cấu hình mặc định.</summary>
+        /// <summary>Generates candidate position list with default configuration.</summary>
         public List<GeoPoint> GetPlacePoints()
         {
             return GetPlacePoints(ArrangeOptions.Default);
         }
 
-        /// <summary>Sinh danh sách các vị trí ứng viên cho tâm nhãn.</summary>
+        /// <summary>Generates candidate positions for the label center.</summary>
         public List<GeoPoint> GetPlacePoints(ArrangeOptions options)
         {
             if (options == null)
@@ -260,10 +262,10 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Bộ sinh lặp (iterator) các điểm ứng viên tiềm năng cho tâm nhãn.
-        /// Quá trình loang điểm bắt đầu từ trung điểm của đoạn dẫn (Anchor):
-        /// - Dịch chuyển vuông góc (perpendicular offset) để tạo ra các hàng nhãn khác nhau.
-        /// - Trượt dọc (longitudinal shift) dọc theo hướng đoạn dẫn song song.
+        /// Iterator for potential candidate points for the label center.
+        /// The point expansion process starts from the path segment midpoint (Anchor):
+        /// - Perpendicular offset to create different label rows.
+        /// - Longitudinal shift along the parallel path direction.
         /// </summary>
         internal IEnumerable<GeoPoint> EnumeratePlacePoints(ArrangeOptions options)
         {
@@ -274,36 +276,36 @@ namespace ArrangeAlgorithms
 
             int produced = 0;
 
-            // Tính bước trượt dọc động dựa trên 5% chiều dài trượt tối đa.
-            // Áp dụng ngưỡng bảo vệ tối thiểu là 0.1 để tránh bước nhảy bằng không gây vòng lặp vô hạn.
+            // Calculate dynamic longitudinal shift step based on 5% of maximum shift.
+            // Enforce a minimum protection threshold of 0.1 to avoid zero steps causing infinite loops.
             double step = layout.MaximumShift / 20.0;
             if (step < 0.1)
             {
                 step = layout.Height;
             }
 
-            // Duyệt qua từng cấp độ khoảng cách vuông góc (từng hàng nhãn)
+            // Iterate through each perpendicular distance level (each label row)
             for (int level = 0; level < options.PerpendicularLevels; level++)
             {
                 double offset = layout.BaseOffset + level * (layout.Height + options.RowGap);
 
-                // Dịch chuyển vuông góc thuần túy (không trượt dọc): bên phải và bên trái
+                // Pure perpendicular shift (no longitudinal shift): right and left sides
                 yield return layout.Anchor + layout.Perpendicular * offset;
                 yield return layout.Anchor + layout.Perpendicular * -offset;
                 produced += 2;
 
                 double shift = step;
 
-                // Trượt dọc nhãn theo cả hai chiều (tiến và lùi) song song với hướng đối tượng
+                // Slide label longitudinally in both directions (forward and backward) parallel to object direction
                 while (shift <= layout.MaximumShift && produced < options.MaximumCandidates)
                 {
-                    // Hàng trên/phải - trượt lùi
+                    // Top/Right row - backward shift
                     yield return layout.Anchor + layout.Perpendicular * offset - layout.Direction * shift;
-                    // Hàng dưới/trái - trượt lùi
+                    // Bottom/Left row - backward shift
                     yield return layout.Anchor + layout.Perpendicular * -offset - layout.Direction * shift;
-                    // Hàng trên/phải - trượt tiến
+                    // Top/Right row - forward shift
                     yield return layout.Anchor + layout.Perpendicular * offset + layout.Direction * shift;
-                    // Hàng dưới/trái - trượt tiến
+                    // Bottom/Left row - forward shift
                     yield return layout.Anchor + layout.Perpendicular * -offset + layout.Direction * shift;
 
                     produced += 4;
@@ -313,88 +315,88 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Tính toán các tham số bố cục hình học cơ sở dựa trên đường dẫn và kích thước nhãn.
+        /// Calculates base geometric layout parameters based on path and label dimensions.
         /// </summary>
         internal bool TryGetLayout(ArrangeOptions options, out Layout layout)
         {
             layout = default(Layout);
 
-            // BƯỚC 1: Kiểm tra tính hợp lệ ban đầu của kích thước hộp nhãn
-            // Nếu chiều rộng hoặc chiều cao nhỏ hơn cấu hình tối thiểu, bỏ qua không xử lý để tránh lỗi chia 0 hoặc sai lệch hình học.
-            // So sánh chặt (<): nhãn có kích thước đúng bằng ngưỡng vẫn là nhãn hợp lệ.
+            // STEP 1: Initial validity check of label box dimensions.
+            // If width or height is smaller than minimum configuration, ignore it to prevent division by zero or geometric distortion.
+            // Strict comparison (<): label dimensions exactly equal to threshold are still valid.
             if (GeoRectangle.Width < options.MinimumBoxSize || GeoRectangle.Height < options.MinimumBoxSize)
             {
                 return false;
             }
 
-            // BƯỚC 2: Xác định trục hướng (GeoVector đơn vị) dọc theo đường dẫn dẫn nhãn (Anchor GeoLine)
-            // Trục này chỉ ra hướng mà nhãn có thể di chuyển trượt dọc.
+            // STEP 2: Determine directional axis (unit GeoVector) along the label guide path (Anchor GeoLine).
+            // This axis points in the direction where the label can slide longitudinally.
             if (!GeoLine.Direction.TryGetNormal(out GeoVector direction))
             {
                 return false;
             }
 
-            // Xác định trục vuông góc với đường dẫn dẫn nhãn
-            // Trục này chỉ ra hướng dịch chuyển nhãn ra xa hoặc lại gần đối tượng (tạo các hàng nhãn).
+            // Determine axis perpendicular to the label guide path.
+            // This axis points in the direction to shift the label away or towards the object (forming label rows).
             GeoVector perpendicular = direction.GetPerpendicularVector();
 
-            // Khởi tạo các giá trị cực trị để đo kích thước bao của nhãn sau khi chiếu lên hệ trục cục bộ mới
+            // Initialize extremum values to measure label bounding box after projection onto the new local coordinate system
             double alongMin = double.MaxValue;
             double alongMax = double.MinValue;
             double acrossMin = double.MaxValue;
             double acrossMax = double.MinValue;
 
-            // BƯỚC 3: Đo kích thước bao của nhãn theo hệ trục tọa độ cục bộ mới
-            // Duyệt qua 4 đỉnh của hình chữ nhật nhãn (có thể đang bị xoay một góc bất kỳ)
+            // STEP 3: Measure label bounding box in the new local coordinate system.
+            // Iterate through 4 vertices of the label rectangle (which can be rotated at an arbitrary angle)
             var vertices = GeoRectangle.GetVertices();
             for (int i = 0; i < vertices.Length; i++)
             {
-                // Biến đổi tọa độ đỉnh thành GeoVector từ gốc tọa độ (0,0)
+                // Transform vertex coordinates into a GeoVector from origin (0,0)
                 GeoVector offset = new GeoPoint(0.0, 0.0).GetVectorTo(vertices[i]);
 
-                // Chiếu đỉnh lên trục dọc của đường dẫn (tích vô hướng)
+                // Project vertex onto the longitudinal path axis (dot product)
                 double along = offset.DotProduct(direction);
 
-                // Chiếu đỉnh lên trục vuông góc của đường dẫn (tích vô hướng)
+                // Project vertex onto the perpendicular path axis (dot product)
                 double across = offset.DotProduct(perpendicular);
 
-                // Cập nhật các biên tọa độ tối đa, tối thiểu trên cả hai trục
+                // Update minimum and maximum coordinate bounds on both axes
                 alongMin = Math.Min(alongMin, along);
                 alongMax = Math.Max(alongMax, along);
                 acrossMin = Math.Min(acrossMin, across);
                 acrossMax = Math.Max(acrossMax, across);
             }
 
-            // Tính toán chiều rộng và chiều cao thực tế của nhãn theo hệ trục cục bộ
+            // Calculate actual width and height of the label in the local coordinate system
             double width = alongMax - alongMin;
             double height = acrossMax - acrossMin;
 
-            // Kiểm tra lại kích thước sau chiếu để đảm bảo không bị suy biến về 0
+            // Verify size after projection to ensure it does not degenerate to zero
             if (width < options.MinimumBoxSize || height < options.MinimumBoxSize)
             {
                 return false;
             }
 
-            // BƯỚC 4: Thiết lập cấu trúc bố cục Layout hoàn chỉnh
+            // STEP 4: Set up the complete Layout structure
             layout = new Layout(
-                GeoLine.MidPoint, // Điểm neo xuất phát (trung điểm của đường dẫn)
-                direction,     // Trục dọc cục bộ
-                perpendicular, // Trục ngang/vuông góc cục bộ
-                height,        // Chiều cao thực tế của nhãn theo trục vuông góc
+                GeoLine.MidPoint, // Anchor point (midpoint of the guide path)
+                direction,        // Local longitudinal axis
+                perpendicular,    // Local perpendicular axis
+                height,           // Actual label height along perpendicular axis
 
-                // BaseOffset: Khoảng cách vuông góc tối thiểu từ đường dẫn tới tâm hàng nhãn đầu tiên
-                // bằng nửa chiều cao nhãn cộng thêm khoảng cách lề riêng của nhãn này (MarkOffsetFromLine)
+                // BaseOffset: Minimum perpendicular distance from the path to the center of the first label row,
+                // which equals half the label height plus this label's unique offset margin (MarkOffsetFromLine)
                 height * 0.5 + MarkOffsetFromLine,
 
-                // MaximumShift: Khoảng cách trượt dọc tối đa cho phép dọc theo đường dẫn
-                // bằng nửa chiều dài đường dẫn cộng thêm một tỷ lệ chiều rộng nhãn nhô ra ngoài (LongitudinalOvershootRatio)
+                // MaximumShift: Maximum allowable longitudinal shift distance along the path,
+                // which equals half the path length plus a portion of the label width overshooting the ends (LongitudinalOvershootRatio)
                 GeoLine.Length * 0.5 + width * options.LongitudinalOvershootRatio);
 
             return true;
         }
 
         /// <summary>
-        /// Tính kích thước đường chéo lớn nhất của hộp nhãn.
+        /// Calculates the maximum bounding box diagonal dimension of the label.
         /// </summary>
         internal double GetBoxSpan(ArrangeOptions options)
         {
@@ -414,7 +416,7 @@ namespace ArrangeAlgorithms
     }
 
     /// <summary>
-    /// Cấu trúc nội bộ chứa thông tin bố cục hình học cơ sở để sinh ứng viên.
+    /// Internal structure containing base geometric layout information to generate candidates.
     /// </summary>
     internal readonly struct Layout
     {
@@ -445,7 +447,7 @@ namespace ArrangeAlgorithms
     }
 
     /// <summary>
-    /// Biểu diễn một vật cản tĩnh hoặc nhãn đã được chiếm dụng.
+    /// Represents a static obstacle or an occupied label.
     /// </summary>
     internal readonly struct Obstacle
     {
@@ -484,7 +486,7 @@ namespace ArrangeAlgorithms
     }
 
     /// <summary>
-    /// Biểu diễn hộp bao AABB để lọc va chạm nhanh.
+    /// Represents an AABB bounding box for fast collision filtering.
     /// </summary>
     internal readonly struct Bounds
     {
@@ -572,4 +574,3 @@ namespace ArrangeAlgorithms
         }
     }
 }
-

@@ -55,14 +55,14 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var v1 = new GeoVector(3.0, 4.0);
 
-            // Tích vô hướng với chính nó = bình phương độ dài
+            // Dot product with itself = squared length
             Assert.Equal(v1.LengthSquared, v1.DotProduct(v1), 12);
 
-            // Tích vô hướng với GeoVector ngược chiều = số âm của bình phương độ dài
+            // Dot product with opposite vector = negative squared length
             var vInv = v1 * -1.0;
             Assert.Equal(-v1.LengthSquared, v1.DotProduct(vInv), 12);
 
-            // Tích có hướng của 2 GeoVector song song phải bằng 0
+            // Cross product of 2 parallel vectors must be 0
             Assert.Equal(0.0, v1.CrossProduct(vInv), 12);
             Assert.Equal(0.0, v1.CrossProduct(v1), 12);
         }
@@ -71,12 +71,12 @@ namespace ArrangeAlgorithms.UnitTest
         public void Vector_AngleEdgeCases_WorkCorrectly()
         {
             var v1 = new GeoVector(2.0, 2.0);
-            var v2 = new GeoVector(-2.0, -2.0); // Ngược chiều
+            var v2 = new GeoVector(-2.0, -2.0); // Opposite direction
 
-            // Góc giữa 2 GeoVector ngược chiều là PI (180 độ)
+            // Angle between 2 opposite vectors is PI (180 degrees)
             Assert.Equal(Math.PI, v1.GetAngleTo(v2), 12);
 
-            // Góc giữa 2 GeoVector cùng chiều là 0
+            // Angle between 2 collinear vectors in the same direction is 0
             Assert.Equal(0.0, v1.GetAngleTo(v1), 12);
         }
 
@@ -84,13 +84,13 @@ namespace ArrangeAlgorithms.UnitTest
         public void Vector_ParallelAndPerpendicularTolerance_WorksCorrectly()
         {
             var v1 = new GeoVector(1.0, 0.0);
-            // Một GeoVector rất gần vuông góc (lệch một lượng cực nhỏ 1e-10)
+            // A vector very close to perpendicular (deviates by a tiny 1e-10)
             var vNearlyPerpendicular = new GeoVector(1e-10, 1.0);
 
             Assert.True(v1.IsPerpendicularTo(vNearlyPerpendicular, new Tolerance(1e-9, 1e-9)));
             Assert.False(v1.IsPerpendicularTo(vNearlyPerpendicular, new Tolerance(1e-11, 1e-11)));
 
-            // Một GeoVector rất gần song song
+            // A vector very close to parallel
             var vNearlyParallel = new GeoVector(1.0, 1e-10);
             Assert.True(v1.IsParallelTo(vNearlyParallel, new Tolerance(1e-9, 1e-9)));
             Assert.False(v1.IsParallelTo(vNearlyParallel, new Tolerance(1e-11, 1e-11)));
@@ -149,7 +149,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(a == b);
             Assert.False(a != b);
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
-            object notAVector = "không phải GeoVector";
+            object notAVector = "not a GeoVector";
             Assert.True(a.Equals((object)b));
             Assert.False(a.Equals(notAVector));
 
@@ -176,7 +176,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Vector_GetAngleTo_StaysAccurateNearCollinear()
         {
-            // Acos mất chính xác nghiêm trọng ở lân cận ±1; công thức Atan2 phải giữ được đủ số chữ số.
+            // Acos suffers severe loss of precision near ±1; Atan2 formula must preserve sufficient digits.
             var v = new GeoVector(2.0, 2.0);
 
             Assert.Equal(Math.PI, v.GetAngleTo(-v), 12);

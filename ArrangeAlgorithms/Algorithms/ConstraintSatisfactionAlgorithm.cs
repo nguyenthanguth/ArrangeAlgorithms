@@ -5,8 +5,8 @@ using System.Linq;
 namespace ArrangeAlgorithms.Algorithms
 {
     /// <summary>
-    /// Thuật toán sắp xếp nhãn dựa trên lý thuyết Thỏa mãn ràng buộc (Constraint Satisfaction Problem - CSP).
-    /// Áp dụng kỹ thuật duyệt quay lui kết hợp chọn biến MRV (Minimum Remaining Values) và kỹ thuật lọc sớm Forward Checking.
+    /// Label arrangement algorithm based on Constraint Satisfaction Problem (CSP) theory.
+    /// Applies backtracking search combined with MRV (Minimum Remaining Values) variable selection and Forward Checking pruning technique.
     /// </summary>
     internal class ConstraintSatisfactionAlgorithm : IArrangeAlgorithm
     {
@@ -14,7 +14,7 @@ namespace ArrangeAlgorithms.Algorithms
         {
             public int OriginalIndex { get; }
             public Arrange Arrange { get; }
-            // Danh sách các ứng viên dịch chuyển hợp lệ ban đầu (không va chạm tĩnh)
+            // List of initial valid translation candidates (no static collisions)
             public List<GeoVector> Domain { get; set; }
             public GeoVector AssignedValue { get; set; }
             public bool IsAssigned { get; set; }
@@ -35,10 +35,10 @@ namespace ArrangeAlgorithms.Algorithms
         public List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options)
         {
             var translations = new GeoVector[arranges.Count];
-            // BƯỚC 1: Thu thập vật cản tĩnh ban đầu
+            // STEP 1: Collect initial static obstacles
             var staticObstacles = ArrangeAlgorithms.Arrange.CollectStaticObstacles(arranges);
 
-            // BƯỚC 2: Khởi tạo các biến CSP và lọc miền giá trị (Domain) ban đầu
+            // STEP 2: Initialize CSP variables and filter initial domains
             var variables = new List<CSPVariable>();
             for (int i = 0; i < arranges.Count; i++)
             {
@@ -48,9 +48,9 @@ namespace ArrangeAlgorithms.Algorithms
                 var v = new CSPVariable(i, arrange);
                 GeoPoint centre = arrange.GeoRectangle.Center;
 
-                // Bỏ trước các vật cản nằm ngoài tầm với của nhãn. Vòng dưới chạy
-                // (số ứng viên × số vật cản) lần nên lọc một lượt ở đây cắt được phần lớn công việc.
-                // Nhãn suy biến không dựng nổi vùng thì giữ nguyên danh sách đầy đủ.
+                // Pre-filter obstacles out of the label's reach. The loop below runs
+                // (number of candidates x number of obstacles) times, so filtering once here cuts most of the work.
+                // Degenerate labels that cannot form bounds retain the full list.
                 List<Obstacle> nearby = PlacementHeuristics.TryGetCandidateBounds(arrange, options, out Bounds region)
                     ? staticObstacles.Where(o => region.Overlaps(o.Box)).ToList()
                     : staticObstacles;
@@ -60,14 +60,14 @@ namespace ArrangeAlgorithms.Algorithms
                     GeoVector trans = centre.GetVectorTo(candidate);
                     GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(trans), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
 
-                    // Chỉ đưa vào Domain nếu ứng viên đó không va chạm với vật cản tĩnh từ đầu
+                    // Only add to domain if candidate does not collide with static obstacles from the start
                     if (!ArrangeAlgorithms.Arrange.Collides(nearby, moved, options.Tolerance))
                     {
                         v.Domain.Add(trans);
                     }
                 }
 
-                // Sắp xếp trước Domain: các ứng viên có độ trượt dọc nhỏ hơn được xếp trước
+                // Pre-sort domain: candidates with smaller longitudinal shift are sorted first
                 v.Domain = v.Domain.OrderBy(t => t.Length).ToList();
                 variables.Add(v);
             }
@@ -75,18 +75,18 @@ namespace ArrangeAlgorithms.Algorithms
             _backtrackSteps = 0;
             _isTimeout = false;
 
-            // BƯỚC 3: Giải bài toán thỏa mãn ràng buộc
+            // STEP 3: Solve the constraint satisfaction problem
             bool success = SolveCSP(variables, options);
 
-            // BƯỚC 4: Nếu CSP thất bại hoàn toàn (không có giải pháp sạch),
-            // tự động lùi về giải thuật tham lam để giữ tính khả dụng
+            // STEP 4: If CSP fails completely (no clean solution),
+            // automatically fallback to the greedy algorithm to maintain availability
             if (!success)
             {
                 var greedy = new GreedyAlgorithm();
                 return greedy.Arrange(arranges, options);
             }
 
-            // BƯỚC 5: Tổng hợp kết quả dịch chuyển
+            // STEP 5: Aggregate translation results
             for (int i = 0; i < arranges.Count; i++)
             {
                 if (arranges[i] == null) continue;
@@ -99,11 +99,11 @@ namespace ArrangeAlgorithms.Algorithms
         }
 
         /// <summary>
-        /// Giải đệ quy CSP sử dụng heuristics MRV và kỹ thuật lọc sớm Forward Checking.
+        /// Recursively solves CSP using MRV heuristics and Forward Checking pruning.
         /// </summary>
         private bool SolveCSP(List<CSPVariable> variables, ArrangeOptions options)
         {
-            // Kiểm tra số lượng đã gán
+            // Check assignment count
             var unassigned = variables.Where(v => !v.IsAssigned).ToList();
             if (unassigned.Count == 0)
             {
@@ -117,25 +117,25 @@ namespace ArrangeAlgorithms.Algorithms
                 return false;
             }
 
-            // HEURISTIC MRV: Chọn biến chưa được gán có số lượng phần tử miền giá trị (Domain) nhỏ nhất
+            // HEURISTIC MRV: Select the unassigned variable with the smallest domain size
             CSPVariable currentVar = unassigned.OrderBy(v => v.Domain.Count).First();
 
             if (currentVar.Domain.Count == 0)
             {
-                // Bị kẹt: Biến chưa gán nhưng không còn ứng viên hợp lệ nào
+                // Stuck: Unassigned variable has no valid candidates left
                 return false;
             }
 
-            // Lưu trữ bản sao của các miền giá trị để khôi phục khi quay lui (backtrack)
+            // Store backups of domains to restore during backtracking
             var domainsBackup = variables.ToDictionary(v => v.OriginalIndex, v => v.Domain.ToList());
 
-            // Thử từng giá trị dịch chuyển trong miền của biến hiện tại
+            // Try each translation value in the current variable's domain
             foreach (GeoVector val in currentVar.Domain)
             {
                 currentVar.AssignedValue = val;
                 currentVar.IsAssigned = true;
 
-                // LỌC SỚM (Forward Checking): Lọc miền giá trị của các biến chưa gán khác
+                // FORWARD CHECKING: Filter the domains of other unassigned variables
                 bool forwardCheckOk = true;
                 GeoRectangle currentRect = new GeoRectangle(
                     currentVar.Arrange.GeoRectangle.Center.Add(val),
@@ -145,7 +145,7 @@ namespace ArrangeAlgorithms.Algorithms
 
                 foreach (var otherVar in variables.Where(v => !v.IsAssigned))
                 {
-                    // Loại bỏ các ứng viên của otherVar gây va chạm với nhãn currentVar vừa gán
+                    // Remove candidates of otherVar that collide with the newly assigned currentVar label
                     var newDomain = new List<GeoVector>();
                     foreach (GeoVector otherVal in otherVar.Domain)
                     {
@@ -163,7 +163,7 @@ namespace ArrangeAlgorithms.Algorithms
 
                     otherVar.Domain = newDomain;
 
-                    // Nếu miền của bất kỳ biến nào trở thành rỗng -> thất bại sớm
+                    // If the domain of any variable becomes empty -> fail early
                     if (otherVar.Domain.Count == 0)
                     {
                         forwardCheckOk = false;
@@ -173,14 +173,14 @@ namespace ArrangeAlgorithms.Algorithms
 
                 if (forwardCheckOk)
                 {
-                    // Tiến hành đệ quy gán biến tiếp theo
+                    // Recursively assign the next variable
                     if (SolveCSP(variables, options))
                     {
                         return true;
                     }
                 }
 
-                // QUAY LUI: Khôi phục lại trạng thái miền giá trị cũ
+                // BACKTRACK: Restore the previous domain states
                 currentVar.IsAssigned = false;
                 foreach (var v in variables)
                 {
@@ -197,4 +197,3 @@ namespace ArrangeAlgorithms.Algorithms
         }
     }
 }
-

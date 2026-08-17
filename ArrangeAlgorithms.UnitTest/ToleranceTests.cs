@@ -17,7 +17,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Tolerance_ZeroThresholds_AreAllowed()
         {
-            // Dung sai bằng 0 nghĩa là so sánh tuyệt đối chính xác — hợp lệ, không phải lỗi.
+            // Zero tolerance means exact comparison — valid, not an error.
             var tolerance = new Tolerance(0.0, 0.0);
 
             Assert.Equal(0.0, tolerance.EqualPoint);
@@ -54,7 +54,7 @@ namespace ArrangeAlgorithms.UnitTest
         public void Tolerance_Equals_ReturnsFalseForOtherTypes()
         {
             var tolerance = new Tolerance(1e-4, 1e-4);
-            object notATolerance = "không phải Tolerance";
+            object notATolerance = "not a Tolerance";
 
             Assert.False(tolerance.Equals(notATolerance));
             Assert.False(tolerance.Equals(null));
@@ -72,7 +72,7 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var tolerance = new Tolerance(0.5, 0.25);
 
-            // Phải luôn dùng dấu chấm thập phân, không phụ thuộc locale của máy chạy test.
+            // Must always use a decimal point, independent of the runner machine's locale.
             Assert.Equal("(EqualPoint: 0.5, EqualVector: 0.25)", tolerance.ToString());
         }
     }

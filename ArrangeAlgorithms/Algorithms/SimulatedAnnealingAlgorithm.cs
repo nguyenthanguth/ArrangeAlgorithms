@@ -6,8 +6,8 @@ using System.Linq;
 namespace ArrangeAlgorithms.Algorithms
 {
     /// <summary>
-    /// Thuật toán sắp xếp nhãn sử dụng chiến lược Luyện kim giả lập (Simulated Annealing).
-    /// Sử dụng mô phỏng vật lý nhiệt học để giảm va chạm và tìm vị trí tối ưu toàn cục.
+    /// Label arrangement algorithm using a Simulated Annealing strategy.
+    /// Simulates physical thermodynamics to reduce collisions and find global optimal solutions.
     /// </summary>
     internal class SimulatedAnnealingAlgorithm : IArrangeAlgorithm
     {
@@ -18,18 +18,18 @@ namespace ArrangeAlgorithms.Algorithms
                 return new List<GeoVector>();
             }
 
-            // BƯỚC 1: Thu thập vật cản tĩnh ban đầu
+            // STEP 1: Collect initial static obstacles
             var staticObstacles = ArrangeAlgorithms.Arrange.CollectStaticObstacles(arranges);
 
-            // BƯỚC 2: Sinh trước toàn bộ danh sách điểm ứng viên dịch chuyển cho mỗi nhãn
+            // STEP 2: Pre-generate lists of all candidate translation points for each label
             var candidates = new List<List<(GeoVector Translation, GeoPoint GeoPoint)>>();
             var currentTranslations = new GeoVector[arranges.Count];
             var currentIndices = new int[arranges.Count];
 
-            // Vật cản lân cận của mỗi nhãn, lọc SẴN một lần ở đây.
-            // Vùng lọc chỉ phụ thuộc đoạn dẫn và kích thước nhãn nên bất biến suốt quá trình luyện kim,
-            // trong khi CalculateEnergy được gọi hàng nghìn lần. Lọc bên trong vòng lặp sẽ lãng phí
-            // đúng số lần đó.
+            // Pre-filter nearby obstacles for each label once here.
+            // The filtered region only depends on the guide segment and label dimensions, so it remains constant
+            // throughout the annealing process, whereas CalculateEnergy is called thousands of times.
+            // Filtering inside the loop would waste performance.
             var nearby = new List<Obstacle>[arranges.Count];
 
             for (int i = 0; i < arranges.Count; i++)
@@ -53,7 +53,7 @@ namespace ArrangeAlgorithms.Algorithms
                 }
 
                 candidates.Add(list);
-                // Khởi đầu ở vị trí mặc định cấp 0
+                // Start at default level 0 position
                 if (list.Count > 0)
                 {
                     currentTranslations[i] = list[0].Translation;
@@ -70,22 +70,22 @@ namespace ArrangeAlgorithms.Algorithms
             double bestEnergy = currentEnergy;
             var bestTranslations = currentTranslations.ToArray();
 
-            // BƯỚC 3: Thiết lập các tham số nhiệt độ luyện kim
+            // STEP 3: Configure simulated annealing temperature parameters
             double T = options.AnnealingInitialTemperature;
             double coolingRate = options.AnnealingCoolingRate;
-            var random = new Random(42); // Seed cố định để kết quả ổn định
+            var random = new Random(42); // Fixed seed for reproducible results
 
-            // BƯỚC 4: Vòng lặp hạ nhiệt
+            // STEP 4: Cooling loop
             while (T > 0.1)
             {
-                // Thực hiện 50 lần thử thay đổi lân cận ở mỗi mức nhiệt độ
+                // Perform 50 neighbor modification attempts at each temperature level
                 for (int step = 0; step < 50; step++)
                 {
-                    // Chọn ngẫu nhiên một nhãn
+                    // Randomly select a label
                     int i = random.Next(arranges.Count);
                     if (candidates[i].Count == 0) continue;
 
-                    // Chọn ngẫu nhiên một ứng viên dịch chuyển khác cho nhãn đó
+                    // Randomly select a different translation candidate for that label
                     int oldCandidateIndex = currentIndices[i];
                     int newCandidateIndex = random.Next(candidates[i].Count);
                     if (newCandidateIndex == oldCandidateIndex) continue;
@@ -93,19 +93,19 @@ namespace ArrangeAlgorithms.Algorithms
                     GeoVector oldTranslation = currentTranslations[i];
                     GeoVector newTranslation = candidates[i][newCandidateIndex].Translation;
 
-                    // Thử cập nhật
+                    // Try updating
                     currentTranslations[i] = newTranslation;
                     currentIndices[i] = newCandidateIndex;
 
                     double nextEnergy = CalculateEnergy(arranges, currentTranslations, nearby, options);
                     double delta = nextEnergy - currentEnergy;
 
-                    // Chấp nhận trạng thái mới dựa trên năng lượng thấp hơn hoặc phân bố xác suất Boltzmann
+                    // Accept the new state based on lower energy or Boltzmann probability distribution
                     if (delta < 0 || random.NextDouble() < Math.Exp(-delta / T))
                     {
                         currentEnergy = nextEnergy;
 
-                        // Ghi nhận nếu đây là lời giải tốt nhất
+                        // Record if this is the best solution
                         if (currentEnergy < bestEnergy)
                         {
                             bestEnergy = currentEnergy;
@@ -114,22 +114,22 @@ namespace ArrangeAlgorithms.Algorithms
                     }
                     else
                     {
-                        // Khôi phục lại trạng thái cũ
+                        // Restore the previous state
                         currentTranslations[i] = oldTranslation;
                         currentIndices[i] = oldCandidateIndex;
                     }
                 }
 
-                // Hạ nhiệt độ
+                // Cool down temperature
                 T *= coolingRate;
             }
 
-            // Cờ Placed do Arrange.MarkPlacementResults quyết định trên bố cục cuối cùng.
+            // Placed flag is determined by Arrange.MarkPlacementResults on the final layout.
             return bestTranslations.ToList();
         }
 
         /// <summary>
-        /// Tính toán tổng năng lượng (hàm phạt) của cấu hình nhãn hiện tại.
+        /// Calculates the total energy (penalty function) of the current label configuration.
         /// </summary>
         private static double CalculateEnergy(
             List<Arrange> arranges, GeoVector[] translations, List<Obstacle>[] nearby, ArrangeOptions options)
@@ -159,13 +159,13 @@ namespace ArrangeAlgorithms.Algorithms
                 GeoRectangle rect = movedRects[i];
                 Bounds box = movedBoxes[i];
 
-                // 1. Phạt va chạm với vật cản tĩnh
+                // 1. Penalty for colliding with static obstacles
                 if (ArrangeAlgorithms.Arrange.Collides(nearby[i], rect, options.Tolerance))
                 {
                     energy += 10000.0;
                 }
 
-                // 2. Phạt va chạm chéo giữa các nhãn di động
+                // 2. Penalty for cross-collisions between mobile labels
                 for (int j = i + 1; j < arranges.Count; j++)
                 {
                     if (arranges[j] == null) continue;
@@ -179,7 +179,7 @@ namespace ArrangeAlgorithms.Algorithms
                     }
                 }
 
-                // 3. Phạt khoảng cách di lệch nhãn khỏi vị trí gốc (ưu tiên nhãn nằm sát đoạn dẫn nhất)
+                // 3. Penalty for label translation distance from original position (prioritizes labels staying closest to guide segment)
                 energy += translations[i].Length * 0.1;
             }
 
@@ -187,4 +187,3 @@ namespace ArrangeAlgorithms.Algorithms
         }
     }
 }
-

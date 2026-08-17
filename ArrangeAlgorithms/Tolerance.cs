@@ -4,41 +4,41 @@ using System.Globalization;
 namespace ArrangeAlgorithms
 {
     /// <summary>
-    /// Dung sai dùng cho các phép so sánh hình học.
+    /// Tolerance used for geometric comparisons.
     /// </summary>
     public readonly struct Tolerance : IEquatable<Tolerance>
     {
         /// <summary>
-        /// Dung sai mặc định khi so sánh điểm.
+        /// Default tolerance when comparing points.
         /// </summary>
         public const double DefaultEqualPoint = 1E-4;
 
         /// <summary>
-        /// Dung sai mặc định khi so sánh GeoVector.
+        /// Default tolerance when comparing GeoVectors.
         /// </summary>
         public const double DefaultEqualVector = 1E-4;
 
         /// <summary>
-        /// Dung sai áp dụng cho các overload không truyền dung sai tường minh.
+        /// Tolerance applied for overloads without explicit tolerance.
         /// </summary>
         public static Tolerance Global { get; set; } = new Tolerance(DefaultEqualPoint, DefaultEqualVector);
 
         /// <summary>
-        /// Khởi tạo một bộ dung sai với hai ngưỡng cho điểm và cho GeoVector.
+        /// Initializes a tolerance instance with two thresholds for points and GeoVectors.
         /// </summary>
-        /// <param name="equalPoint">Ngưỡng khoảng cách khi so sánh hai điểm.</param>
-        /// <param name="equalVector">Ngưỡng khi so sánh hai GeoVector.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Khi một trong hai ngưỡng mang giá trị âm.</exception>
+        /// <param name="equalPoint">Distance threshold when comparing two points.</param>
+        /// <param name="equalVector">Threshold when comparing two GeoVectors.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when one of the thresholds is negative.</exception>
         public Tolerance(double equalPoint, double equalVector)
         {
             if (equalPoint < 0.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(equalPoint), "Dung sai không được âm.");
+                throw new ArgumentOutOfRangeException(nameof(equalPoint), "Tolerance cannot be negative.");
             }
 
             if (equalVector < 0.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(equalVector), "Dung sai không được âm.");
+                throw new ArgumentOutOfRangeException(nameof(equalVector), "Tolerance cannot be negative.");
             }
 
             EqualPoint = equalPoint;
@@ -46,17 +46,17 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Ngưỡng khoảng cách để coi hai điểm là trùng nhau, tính theo đơn vị bản vẽ.
+        /// Distance threshold to consider two points as coincident, in drawing units.
         /// </summary>
         public double EqualPoint { get; }
 
         /// <summary>
-        /// Ngưỡng để coi hai GeoVector là bằng nhau.
+        /// Threshold to consider two GeoVectors as equal.
         /// </summary>
         public double EqualVector { get; }
 
         /// <summary>
-        /// So sánh chính xác hai bộ dung sai.
+        /// Compares two tolerance instances exactly.
         /// </summary>
         public bool Equals(Tolerance other)
         {
@@ -64,7 +64,7 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// So sánh với một đối tượng bất kỳ.
+        /// Compares with an arbitrary object.
         /// </summary>
         public override bool Equals(object obj)
         {
@@ -72,7 +72,7 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Mã băm dựng từ hai ngưỡng.
+        /// Hash code built from both thresholds.
         /// </summary>
         public override int GetHashCode()
         {
@@ -96,7 +96,7 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Biểu diễn hai ngưỡng dưới dạng chuỗi.
+        /// Represents the two thresholds as a string.
         /// </summary>
         public override string ToString()
         {

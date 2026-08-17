@@ -6,12 +6,12 @@ using System.Linq;
 namespace ArrangeAlgorithms.Algorithms
 {
     /// <summary>
-    /// Thuật toán sắp xếp nhãn sử dụng mô phỏng lực vật lý liên tục (Force-directed),
-    /// sau đó ánh xạ tâm nhãn về vị trí ứng viên rời rạc gần nhất không va chạm.
+    /// Label arrangement algorithm using continuous physical force simulation (Force-directed),
+    /// followed by discrete mapping of label centers to the nearest non-colliding candidate positions.
     /// </summary>
     internal class ForceDirectedAlgorithm : IArrangeAlgorithm
     {
-        /// <summary>Bán kính ảnh hưởng của lực đẩy từ vật cản tĩnh; xa hơn thì không góp lực.</summary>
+        /// <summary>Influence radius of repulsive force from static obstacles; beyond this, no force is contributed.</summary>
         private const double PushRadius = 1500.0;
 
         public List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options)
@@ -25,7 +25,7 @@ namespace ArrangeAlgorithms.Algorithms
             var anchors = new GeoPoint[arranges.Count];
             var positions = new GeoPoint[arranges.Count];
 
-            // BƯỚC 1: Ghi nhận vị trí mặc định ban đầu (Anchors)
+            // STEP 1: Record initial default positions (Anchors)
             for (int i = 0; i < arranges.Count; i++)
             {
                 var arrange = arranges[i];
@@ -35,7 +35,7 @@ namespace ArrangeAlgorithms.Algorithms
                 positions[i] = arrange.GeoRectangle.Center;
             }
 
-            // BƯỚC 2: Chạy giả lập mô phỏng lực vật lý liên tục
+            // STEP 2: Run continuous physical force simulation
             int iterations = options.ForceIterations;
             double timestep = 0.5;
 
@@ -47,16 +47,16 @@ namespace ArrangeAlgorithms.Algorithms
                     forces[i] = GeoVector.Zero;
                 }
 
-                // 1. Lực lò xo (Spring Force) kéo nhãn về vị trí gốc ban đầu để tránh bay quá xa
+                // 1. Spring Force pulling the label back to its original position to prevent it from drifting too far
                 for (int i = 0; i < arranges.Count; i++)
                 {
                     if (arranges[i] == null) continue;
 
                     GeoVector toAnchor = positions[i].GetVectorTo(anchors[i]);
-                    forces[i] = forces[i].Add(toAnchor * 0.05); // Hệ số đàn hồi lò xo
+                    forces[i] = forces[i].Add(toAnchor * 0.05); // Spring elasticity coefficient
                 }
 
-                // 2. Lực đẩy Coulomb (Repulsive Force) đẩy các nhãn ra xa nhau
+                // 2. Coulomb Repulsive Force pushing labels away from each other
                 for (int i = 0; i < arranges.Count; i++)
                 {
                     if (arranges[i] == null) continue;
@@ -68,7 +68,7 @@ namespace ArrangeAlgorithms.Algorithms
                         GeoVector toOther = positions[i].GetVectorTo(positions[j]);
                         double distance = Math.Max(toOther.Length, 10.0);
 
-                        // Chỉ đẩy nếu hai nhãn ở quá gần nhau (ngưỡng 2500mm)
+                        // Only repel if two labels are too close to each other (threshold 2500mm)
                         if (distance < 2500.0)
                         {
                             double pushMagnitude = 150000.0 / (distance * distance);
@@ -82,13 +82,13 @@ namespace ArrangeAlgorithms.Algorithms
                     }
                 }
 
-                // 3. Lực đẩy từ các vật cản tĩnh (đa giác, đoạn thẳng cấm)
+                // 3. Repulsive force from static obstacles (block polygons and lines)
                 for (int i = 0; i < arranges.Count; i++)
                 {
                     if (arranges[i] == null) continue;
 
-                    // Vật cản xa hơn PushRadius không góp lực. Loại chúng bằng phép so hộp bao trước,
-                    // vì GetClosestBoundaryPoint phải duyệt từng cạnh nên đắt hơn hẳn.
+                    // Obstacles further than PushRadius do not contribute force. Exclude them using bounding box
+                    // overlap checks first, since GetClosestBoundaryPoint must iterate through each edge and is significantly more expensive.
                     Bounds reach = Bounds.Around(new[] { positions[i] }).Expand(PushRadius);
 
                     foreach (Obstacle obstacle in staticObstacles)
@@ -98,8 +98,9 @@ namespace ArrangeAlgorithms.Algorithms
                             continue;
                         }
 
-                        // Lấy điểm gần nhất trên biên vật cản, rồi đẩy nhãn theo hướng đi TỪ điểm đó RA nhãn.
-                        // Lấy hướng ngược lại (nhãn -> tâm vật cản) sẽ biến lực đẩy thành lực hút.
+                        // Get the closest point on the obstacle boundary, then push the label along the direction
+                        // FROM that point TO the label. Taking the opposite direction (label -> obstacle center)
+                        // would turn the repulsive force into an attractive force.
                         GeoPoint closest = GetClosestBoundaryPoint(obstacle, positions[i]);
 
                         double dist = Math.Max(closest.DistanceTo(positions[i]), 10.0);
@@ -118,7 +119,7 @@ namespace ArrangeAlgorithms.Algorithms
                     }
                 }
 
-                // 4. Cập nhật vị trí nhãn (Khống chế độ dịch tối đa để hệ thống ổn định)
+                // 4. Update label positions (Enforce maximum displacement to keep system stable)
                 for (int i = 0; i < arranges.Count; i++)
                 {
                     if (arranges[i] == null) continue;
@@ -133,8 +134,8 @@ namespace ArrangeAlgorithms.Algorithms
                 }
             }
 
-            // BƯỚC 3: Ánh xạ rời rạc (Discrete Mapping)
-            // Tìm điểm ứng viên rời rạc không va chạm tĩnh gần nhất với vị trí vật lý cuối cùng
+            // STEP 3: Discrete Mapping
+            // Find the nearest non-colliding discrete candidate point to the final physical position
             var translations = new GeoVector[arranges.Count];
             var finalOccupied = new List<Obstacle>(staticObstacles);
 
@@ -149,19 +150,19 @@ namespace ArrangeAlgorithms.Algorithms
                 double bestDist = double.MaxValue;
                 bool mapped = false;
 
-                // Bỏ trước các vật cản ngoài tầm với của nhãn. finalOccupied phình dần theo số nhãn
-                // đã đặt nên bộ lọc có lãi ngay cả khi bản vẽ không có vùng cấm tĩnh nào.
+                // Pre-filter obstacles out of the label's reach. finalOccupied grows as labels
+                // are placed, so this filter is beneficial even if the drawing has no static blocked regions.
                 List<Obstacle> nearby = PlacementHeuristics.TryGetCandidateBounds(arrange, options, out Bounds region)
                     ? finalOccupied.Where(o => region.Overlaps(o.Box)).ToList()
                     : finalOccupied;
 
-                // Duyệt qua toàn bộ ứng viên rời rạc của nhãn
+                // Iterate through all discrete candidates of the label
                 foreach (GeoPoint candidate in arrange.EnumeratePlacePoints(options))
                 {
                     GeoVector translation = centre.GetVectorTo(candidate);
                     GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
 
-                    // Chỉ chấp nhận nếu ứng viên đó không va chạm với vật cản tĩnh và các nhãn đã được đặt trước
+                    // Only accept if the candidate does not collide with static obstacles and previously placed labels
                     if (!ArrangeAlgorithms.Arrange.Collides(nearby, moved, options.Tolerance))
                     {
                         double dist = candidate.DistanceTo(physTarget);
@@ -174,8 +175,8 @@ namespace ArrangeAlgorithms.Algorithms
                     }
                 }
 
-                // Nếu không tìm được vị trí trống nào, lùi về vị trí mặc định cấp 0 của nhãn.
-                // Cờ Placed do Arrange.MarkPlacementResults quyết định trên bố cục cuối cùng.
+                // If no empty position is found, fallback to the default level 0 position of the label.
+                // Placed flag is determined by Arrange.MarkPlacementResults on the final layout.
                 if (!mapped)
                 {
                     var points = arrange.EnumeratePlacePoints(options).ToList();
@@ -184,7 +185,7 @@ namespace ArrangeAlgorithms.Algorithms
 
                 translations[i] = bestTranslation;
 
-                // Thêm vị trí đã chọn làm vật cản tĩnh cho các nhãn xử lý tiếp theo
+                // Add the selected position as a static obstacle for subsequent labels
                 GeoRectangle finalRect = new GeoRectangle(arrange.GeoRectangle.Center.Add(bestTranslation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
                 finalOccupied.Add(new Obstacle(finalRect));
             }
@@ -193,7 +194,7 @@ namespace ArrangeAlgorithms.Algorithms
         }
 
         /// <summary>
-        /// Lấy điểm nằm trên biên vật cản gần một điểm cho trước nhất.
+        /// Gets the point on the obstacle boundary closest to a given point.
         /// </summary>
         private static GeoPoint GetClosestBoundaryPoint(Obstacle obstacle, GeoPoint from)
         {
@@ -209,7 +210,7 @@ namespace ArrangeAlgorithms.Algorithms
         }
 
         /// <summary>
-        /// Lấy điểm gần nhất tới một điểm cho trước trong số các điểm gần nhất trên từng cạnh.
+        /// Gets the closest point to a given point among the closest points on each edge.
         /// </summary>
         private static GeoPoint GetClosestPointOnEdges(IEnumerable<GeoLine> edges, GeoPoint from)
         {
@@ -231,4 +232,3 @@ namespace ArrangeAlgorithms.Algorithms
         }
     }
 }
-

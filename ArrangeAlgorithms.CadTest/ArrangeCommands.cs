@@ -3,7 +3,7 @@ using Autodesk.AutoCAD.Runtime;
 namespace ArrangeAlgorithms.CadTest
 {
     /// <summary>
-    /// Đăng ký các lệnh CommandMethod tĩnh với AutoCAD.
+    /// Registers static CommandMethod commands with AutoCAD.
     /// </summary>
     public static class ArrangeCommands
     {

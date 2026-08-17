@@ -43,8 +43,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_SimulatedAnnealing_UsesFixedSeedSoResultsAreReproducible()
         {
-            // Luyện kim giả lập vốn ngẫu nhiên, nhưng thư viện cố định seed để bản vẽ không đổi
-            // sau mỗi lần chạy lại. Đây là hợp đồng quan trọng với người dùng CAD.
+            // Simulated annealing is inherently random, but the library fixes the seed so that the layout remains unchanged
+            // after each rerun. This is an important contract with CAD users.
             List<GeoVector> Solve()
             {
                 var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
@@ -79,8 +79,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_SimulatedAnnealing_PenalisesDistanceFromLeader()
         {
-            // Hàm năng lượng cộng thêm phạt theo độ dịch chuyển, nên một nhãn đơn độc
-            // phải dừng ở cấp vuông góc gần nhất chứ không lang thang ra ngoài.
+            // The energy function adds a penalty based on translation magnitude, so a solitary label
+            // must stop at the nearest perpendicular level instead of wandering far away.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var label = new Arrange
             {
@@ -136,7 +136,7 @@ namespace ArrangeAlgorithms.UnitTest
             var movedA = new GeoRectangle(a.GeoRectangle.Center + translations[0], 20.0, 10.0);
             var movedB = new GeoRectangle(b.GeoRectangle.Center + translations[1], 20.0, 10.0);
 
-            // Vùng cấm thu thập chung cho cả danh sách nên cả hai nhãn đều phải tránh nó.
+            // The blocked region is collected globally for the list, so both labels must avoid it.
             Assert.False(movedA.IntersectsWith(blockPoly));
             Assert.False(movedB.IntersectsWith(blockPoly));
             Assert.False(movedA.IntersectsWith(movedB));

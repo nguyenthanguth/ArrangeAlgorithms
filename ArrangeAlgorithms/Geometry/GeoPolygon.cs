@@ -5,37 +5,37 @@ using System.Linq;
 namespace ArrangeAlgorithms.Geometry
 {
     /// <summary>
-    /// Biểu diễn một đa giác đơn khép kín 2D.
+    /// Represents a 2D simple closed polygon.
     /// </summary>
     public sealed class GeoPolygon : IEquatable<GeoPolygon>
     {
         private readonly GeoPoint[] _vertices;
 
         /// <summary>
-        /// Lấy danh sách đỉnh chỉ đọc của đa giác.
+        /// Gets the read-only list of vertices of the polygon.
         /// </summary>
         public IReadOnlyList<GeoPoint> Vertices => _vertices;
 
         /// <summary>
-        /// Lấy số lượng đỉnh của đa giác.
+        /// Gets the number of vertices of the polygon.
         /// </summary>
         public int VertexCount => _vertices.Length;
 
         /// <summary>
-        /// Lấy số lượng cạnh của đa giác.
+        /// Gets the number of edges of the polygon.
         /// </summary>
         public int EdgeCount => _vertices.Length;
 
         /// <summary>
-        /// Khởi tạo một đa giác mới từ danh sách đỉnh. Đỉnh trùng lặp ở cuối để khép kín vòng lặp sẽ tự động được lược bỏ.
+        /// Initializes a new polygon from a list of vertices. Duplicate vertex at the end to close the loop will be automatically removed.
         /// </summary>
-        /// <param name="vertices">Danh sách các đỉnh.</param>
+        /// <param name="vertices">List of vertices.</param>
         public GeoPolygon(IEnumerable<GeoPoint> vertices)
         {
             if (vertices == null) throw new ArgumentNullException(nameof(vertices));
 
             List<GeoPoint> list = vertices.ToList();
-            // Lược bỏ đỉnh cuối nếu trùng với đỉnh đầu tiên
+            // Remove duplicate last vertex if it equals the first vertex
             while (list.Count > 1 && list[list.Count - 1].Equals(list[0]))
             {
                 list.RemoveAt(list.Count - 1);
@@ -43,21 +43,21 @@ namespace ArrangeAlgorithms.Geometry
 
             if (list.Count < 3)
             {
-                throw new ArgumentException("Một đa giác phải có ít nhất 3 đỉnh phân biệt.");
+                throw new ArgumentException("A polygon must have at least 3 distinct vertices.");
             }
 
             _vertices = list.ToArray();
         }
 
         /// <summary>
-        /// Khởi tạo một đa giác mới trực tiếp từ các đỉnh truyền vào dưới dạng tham số.
+        /// Initializes a new polygon directly from parameter vertices.
         /// </summary>
         public GeoPolygon(params GeoPoint[] vertices) : this((IEnumerable<GeoPoint>)vertices)
         {
         }
 
         /// <summary>
-        /// Lấy đỉnh tại một chỉ số cho trước.
+        /// Gets the vertex at a given index.
         /// </summary>
         public GeoPoint this[int index]
         {
@@ -72,7 +72,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Lấy đoạn thẳng cạnh của đa giác tại chỉ số cho trước.
+        /// Gets the line segment edge of the polygon at a given index.
         /// </summary>
         public GeoLine GetEdgeAt(int index)
         {
@@ -84,7 +84,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Liệt kê tất cả các cạnh của đa giác.
+        /// Enumerates all edges of the polygon.
         /// </summary>
         public IEnumerable<GeoLine> GetEdges()
         {
@@ -95,8 +95,8 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính diện tích có dấu của đa giác bằng công thức Shoelace.
-        /// Dương nếu các đỉnh đi theo chiều ngược kim đồng hồ (CCW), âm nếu đi theo chiều kim đồng hồ (CW).
+        /// Calculates the signed area of the polygon using the Shoelace formula.
+        /// Positive if vertices are counter-clockwise (CCW), negative if clockwise (CW).
         /// </summary>
         public double GetSignedArea()
         {
@@ -112,24 +112,24 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Tính diện tích tuyệt đối của đa giác.
+        /// Calculates the absolute area of the polygon.
         /// </summary>
         public double GetArea() => Math.Abs(GetSignedArea());
 
         /// <summary>
-        /// Kiểm tra xem đa giác được định hướng theo chiều kim đồng hồ hay không.
+        /// Checks whether the polygon is oriented clockwise.
         /// </summary>
         public bool IsClockwise() => GetSignedArea() < 0.0;
 
         /// <summary>
-        /// Tính trọng tâm hình học của đa giác.
+        /// Calculates the geometric centroid of the polygon.
         /// </summary>
         public GeoPoint GetCentroid()
         {
             double signedArea = GetSignedArea();
             if (Math.Abs(signedArea) <= Tolerance.Global.EqualPoint * Tolerance.Global.EqualPoint)
             {
-                // Dự phòng: Lấy trung bình cộng tọa độ các đỉnh nếu đa giác bị suy biến
+                // Fallback: Calculate the average of vertex coordinates if the polygon is degenerate
                 double sumX = 0.0;
                 double sumY = 0.0;
                 foreach (var v in _vertices)
@@ -157,7 +157,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có chứa một điểm hay không sử dụng dung sai mặc định (chấp nhận điểm nằm trên biên).
+        /// Checks whether the polygon contains a point using default tolerance (accepts points on the boundary).
         /// </summary>
         public bool Contains(GeoPoint GeoPoint)
         {
@@ -165,12 +165,12 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có chứa một điểm hay không (chấp nhận điểm nằm trên biên).
-        /// Sử dụng thuật toán Ray Casting (bắn tia ngang và đếm số giao điểm).
+        /// Checks whether the polygon contains a point (accepts points on the boundary).
+        /// Uses the Ray Casting algorithm (shoots a horizontal ray and counts intersections).
         /// </summary>
         public bool Contains(GeoPoint GeoPoint, Tolerance tolerance)
         {
-            // Kiểm tra điểm trên biên đa giác trước
+            // Check if point is on the polygon boundary first
             for (int i = 0; i < EdgeCount; i++)
             {
                 if (GetEdgeAt(i).IsPointOn(GeoPoint, tolerance))
@@ -197,7 +197,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có giao với một hình chữ nhật xoay (GeoRectangle OBB) sử dụng dung sai mặc định.
+        /// Checks whether the polygon intersects with a rotated rectangle (GeoRectangle OBB) using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoRectangle rect)
         {
@@ -205,11 +205,11 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có giao với một hình chữ nhật xoay (GeoRectangle OBB) hay không.
+        /// Checks whether the polygon intersects with a rotated rectangle (GeoRectangle OBB).
         /// </summary>
         public bool IntersectsWith(GeoRectangle rect, Tolerance tolerance)
         {
-            // 1. Kiểm tra xem có bất kỳ cạnh nào của đa giác cắt cạnh của hình chữ nhật hay không
+            // 1. Check if any polygon edge intersects with any rectangle edge
             GeoLine[] rectEdges = rect.GetEdges();
 
             foreach (var polyEdge in GetEdges())
@@ -223,13 +223,13 @@ namespace ArrangeAlgorithms.Geometry
                 }
             }
 
-            // 2. Kiểm tra xem đa giác có nằm hoàn toàn bên trong hình chữ nhật hay không
+            // 2. Check if the polygon lies entirely inside the rectangle
             if (rect.Contains(_vertices[0]))
             {
                 return true;
             }
 
-            // 3. Kiểm tra xem hình chữ nhật có nằm hoàn toàn bên trong đa giác hay không
+            // 3. Check if the rectangle lies entirely inside the polygon
             if (Contains(rect.Center, tolerance))
             {
                 return true;
@@ -239,7 +239,7 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có giao với một đoạn thẳng hay không, sử dụng dung sai mặc định.
+        /// Checks whether the polygon intersects with a line segment using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoLine geoLine)
         {
@@ -247,11 +247,11 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có giao với một đoạn thẳng hay không.
+        /// Checks whether the polygon intersects with a line segment.
         /// </summary>
         public bool IntersectsWith(GeoLine geoLine, Tolerance tolerance)
         {
-            // 1. Kiểm tra xem đoạn thẳng có cắt bất kỳ cạnh nào của đa giác hay không
+            // 1. Check if the line segment intersects with any polygon edge
             foreach (var polyEdge in GetEdges())
             {
                 if (geoLine.TryIntersectWith(polyEdge, out _, tolerance))
@@ -260,14 +260,14 @@ namespace ArrangeAlgorithms.Geometry
                 }
             }
 
-            // 2. Hoặc đoạn thẳng nằm hoàn toàn bên trong đa giác.
-            // Chỉ cần xét điểm đầu: đoạn thẳng không cắt cạnh nào mà có một mút nằm trong
-            // thì toàn bộ đoạn nằm trong.
+            // 2. Or the line segment lies entirely inside the polygon.
+            // Just check the start point: if the segment does not intersect any edge
+            // and one endpoint is inside, then the entire segment is inside.
             return Contains(geoLine.StartPoint, tolerance);
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có giao với một đa giác khác hay không, sử dụng dung sai mặc định.
+        /// Checks whether the polygon intersects with another polygon using default tolerance.
         /// </summary>
         public bool IntersectsWith(GeoPolygon other)
         {
@@ -275,13 +275,13 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Kiểm tra xem đa giác có giao với một đa giác khác hay không.
+        /// Checks whether the polygon intersects with another polygon.
         /// </summary>
         public bool IntersectsWith(GeoPolygon other, Tolerance tolerance)
         {
             if (other == null) throw new ArgumentNullException(nameof(other));
 
-            // 1. Kiểm tra xem cạnh của hai đa giác có cắt nhau hay không
+            // 1. Check if edges of the two polygons intersect
             foreach (var edge in GetEdges())
             {
                 foreach (var otherEdge in other.GetEdges())
@@ -293,8 +293,8 @@ namespace ArrangeAlgorithms.Geometry
                 }
             }
 
-            // 2. Không cạnh nào cắt nhau: hoặc hai đa giác rời nhau, hoặc một đa giác nằm lọt
-            // hẳn bên trong đa giác kia. Xét một đỉnh của mỗi bên là đủ để phân biệt hai trường hợp.
+            // 2. No edges intersect: either the two polygons are disjoint, or one polygon lies
+            // entirely inside the other. Checking a single vertex on each side is sufficient to distinguish the two cases.
             return Contains(other._vertices[0], tolerance) || other.Contains(_vertices[0], tolerance);
         }
 
@@ -332,4 +332,3 @@ namespace ArrangeAlgorithms.Geometry
         public override string ToString() => $"GeoPolygon[{VertexCount} vertices, Area:{GetArea():0.000}]";
     }
 }
-

@@ -9,7 +9,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Rectangle_CreationAndProperties_WorkCorrectly()
         {
-            // Hình chữ nhật thẳng đứng (AABB) biểu diễn bằng Center
+            // Vertical rectangle (AABB) represented by Center
             var rect1 = new GeoRectangle(0.0, 0.0, 4.0, 6.0);
             Assert.Equal(new GeoPoint(2.0, 3.0), rect1.Center);
             Assert.Equal(4.0, rect1.Width);
@@ -22,19 +22,19 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(new GeoPoint(0.0, 6.0), rect1.UpperLeft);
             Assert.Equal(new GeoPoint(4.0, 6.0), rect1.UpperRight);
 
-            // Hình chữ nhật xoay (OBB)
+            // Rotated rectangle (OBB)
             var center = new GeoPoint(0.0, 0.0);
-            var rect2 = new GeoRectangle(center, 4.0, 2.0, Math.PI / 2.0); // Rộng 4 dọc theo trục X cục bộ (trục Y), cao 2 dọc theo trục Y cục bộ (-X)
+            var rect2 = new GeoRectangle(center, 4.0, 2.0, Math.PI / 2.0); // Width 4 along local X-axis (Y-axis), height 2 along local Y-axis (-X)
             Assert.True(rect2.IsRotated);
 
-            // Xoay 90 độ ngược chiều kim đồng hồ biến đổi toạ độ cục bộ theo (x, y) -> (-y, x).
-            // LowerLeft cục bộ là (-halfW, -halfH) = (-2, -1) -> (1.0, -2.0)
+            // Rotate 90 degrees counter-clockwise transforms local coordinates from (x, y) to (-y, x).
+            // Local LowerLeft is (-halfW, -halfH) = (-2, -1) -> (1.0, -2.0)
             Assert.True(rect2.LowerLeft.IsEqualTo(new GeoPoint(1.0, -2.0)));
-            // LowerRight cục bộ là (halfW, -halfH) = (2, -1) -> (1.0, 2.0)
+            // Local LowerRight is (halfW, -halfH) = (2, -1) -> (1.0, 2.0)
             Assert.True(rect2.LowerRight.IsEqualTo(new GeoPoint(1.0, 2.0)));
-            // UpperRight cục bộ là (halfW, halfH) = (2, 1) -> (-1.0, 2.0)
+            // Local UpperRight is (halfW, halfH) = (2, 1) -> (-1.0, 2.0)
             Assert.True(rect2.UpperRight.IsEqualTo(new GeoPoint(-1.0, 2.0)));
-            // UpperLeft cục bộ là (-halfW, halfH) = (-2, 1) -> (-1.0, -2.0)
+            // Local UpperLeft is (-halfW, halfH) = (-2, 1) -> (-1.0, -2.0)
             Assert.True(rect2.UpperLeft.IsEqualTo(new GeoPoint(-1.0, -2.0)));
         }
 
@@ -42,17 +42,17 @@ namespace ArrangeAlgorithms.UnitTest
         public void Rectangle_ContainsPoint_WorksCorrectly()
         {
             var center = new GeoPoint(0.0, 0.0);
-            var rect = new GeoRectangle(center, 4.0, 2.0, Math.PI / 4.0); // Xoay 45 độ
+            var rect = new GeoRectangle(center, 4.0, 2.0, Math.PI / 4.0); // Rotate 45 degrees
 
-            // Tâm chắc chắn nằm trong
+            // Center is definitely inside
             Assert.True(rect.Contains(center));
 
-            // Điểm (0, 0.9) - xoay 45 độ, trục X cục bộ là 0.9*sin(45) ~ 0.63, trục Y cục bộ là 0.9*cos(45) ~ 0.63.
-            // HalfWidth = 2.0, HalfHeight = 1.0. Cả hai 0.63 đều nằm trong giới hạn.
+            // Point (0, 0.9) - rotated 45 degrees, local X-axis is 0.9*sin(45) ~ 0.63, local Y-axis is 0.9*cos(45) ~ 0.63.
+            // HalfWidth = 2.0, HalfHeight = 1.0. Both 0.63 are within bounds.
             Assert.True(rect.Contains(new GeoPoint(0.0, 0.9)));
 
-            // Điểm (2, 0) - khi chưa xoay nằm ngay trên biên, nhưng xoay 45 độ làm nó rơi ra ngoài (khoảng cách 2 > HalfHeight của trục xoay)
-            // Chiếu cục bộ: X = 2*cos(45) ~ 1.41 (<= 2.0), Y = -2*sin(45) ~ -1.41 (không thuộc [-1.0, 1.0])
+            // Point (2, 0) - on the boundary when unrotated, but falls outside when rotated 45 degrees (distance 2 > HalfHeight of rotation axis)
+            // Local projection: X = 2*cos(45) ~ 1.41 (<= 2.0), Y = -2*sin(45) ~ -1.41 (not in [-1.0, 1.0])
             Assert.False(rect.Contains(new GeoPoint(2.0, 0.0)));
         }
 
@@ -62,7 +62,7 @@ namespace ArrangeAlgorithms.UnitTest
             var center1 = new GeoPoint(0.0, 0.0);
             var rect1 = new GeoRectangle(center1, 4.0, 2.0, 0.0);
 
-            // 1. Hai AABB hoàn toàn không giao nhau
+            // 1. Two AABBs completely disjoint
             var rect2 = new GeoRectangle(new GeoPoint(5.0, 0.0), 2.0, 2.0, 0.0);
             Assert.False(rect1.IntersectsWith(rect2));
 
@@ -70,15 +70,15 @@ namespace ArrangeAlgorithms.UnitTest
             var rect3 = new GeoRectangle(new GeoPoint(3.0, 0.0), 3.0, 2.0, 0.0);
             Assert.True(rect1.IntersectsWith(rect3));
 
-            // 3. Hai AABB lồng nhau
+            // 3. Two AABBs nested
             var rect4 = new GeoRectangle(center1, 1.0, 1.0, 0.0);
             Assert.True(rect1.IntersectsWith(rect4));
 
-            // 4. Hai OBB xoay cắt chéo nhau
-            var rect5 = new GeoRectangle(new GeoPoint(2.5, 1.5), 2.0, 2.0, Math.PI / 4.0); // Xoay 45 độ
+            // 4. Two rotated OBBs intersecting
+            var rect5 = new GeoRectangle(new GeoPoint(2.5, 1.5), 2.0, 2.0, Math.PI / 4.0); // Rotate 45 degrees
             Assert.True(rect1.IntersectsWith(rect5));
 
-            // 5. Hai OBB xoay không cắt nhau
+            // 5. Two rotated OBBs disjoint
             var rect6 = new GeoRectangle(new GeoPoint(4.0, 3.0), 2.0, 2.0, Math.PI / 4.0);
             Assert.False(rect1.IntersectsWith(rect6));
         }
@@ -89,10 +89,10 @@ namespace ArrangeAlgorithms.UnitTest
             var center = new GeoPoint(0.0, 0.0);
             var rect = new GeoRectangle(center, 4.0, 2.0, 0.0);
 
-            // Điểm nằm chính xác trên đỉnh góc
+            // Point lies exactly on the vertex corner
             Assert.True(rect.Contains(new GeoPoint(2.0, 1.0)));
 
-            // Điểm nằm chính xác trên cạnh bên
+            // Point lies exactly on the side edge
             Assert.True(rect.Contains(new GeoPoint(2.0, 0.5)));
         }
 
@@ -101,11 +101,11 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var rect1 = new GeoRectangle(0.0, 0.0, 4.0, 4.0); // X: [0, 4], Y: [0, 4]
 
-            // Tiếp xúc ngoài chạm cạnh
+            // External contact touching edge
             var rect2 = new GeoRectangle(4.0, 0.0, 4.0, 4.0); // X: [4, 8], Y: [0, 4]
             Assert.True(rect1.IntersectsWith(rect2));
 
-            // Tiếp xúc ngoài chạm đúng góc
+            // External contact touching corner
             var rect3 = new GeoRectangle(4.0, 4.0, 4.0, 4.0); // X: [4, 8], Y: [4, 8]
             Assert.True(rect1.IntersectsWith(rect3));
         }
@@ -113,7 +113,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Rectangle_IntersectsWithExtremeAspectRatios_WorksCorrectly()
         {
-            // Một hình chữ nhật siêu mảnh (dạng thanh dài)
+            // A extremely thin rectangle (long bar shape)
             var rectThin = new GeoRectangle(new GeoPoint(0.0, 0.0), 10.0, 0.0001, Math.PI / 4.0);
             var rectTarget = new GeoRectangle(new GeoPoint(1.0, 1.0), 2.0, 2.0, 0.0);
 
@@ -125,9 +125,9 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 4.0); // X: [-2, 2], Y: [-2, 2]
 
-            Assert.True(rect.IntersectsWith(new GeoLine(-5.0, 0.0, 5.0, 0.0)));   // Xuyên qua
-            Assert.True(rect.IntersectsWith(new GeoLine(-1.0, -1.0, 1.0, 1.0)));  // Nằm trọn bên trong
-            Assert.False(rect.IntersectsWith(new GeoLine(-5.0, 5.0, 5.0, 5.0)));  // Đi ngang phía trên, không chạm
+            Assert.True(rect.IntersectsWith(new GeoLine(-5.0, 0.0, 5.0, 0.0)));   // Passes through
+            Assert.True(rect.IntersectsWith(new GeoLine(-1.0, -1.0, 1.0, 1.0)));  // Completely inside
+            Assert.False(rect.IntersectsWith(new GeoLine(-5.0, 5.0, 5.0, 5.0)));  // Passes above, no contact
         }
 
         [Fact]
@@ -150,7 +150,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(rect.IntersectsWith(overlapping));
             Assert.False(rect.IntersectsWith(far));
 
-            // Gọi theo chiều ngược lại phải cho cùng kết quả
+            // Calling in reverse direction must give the same result
             Assert.True(overlapping.IntersectsWith(rect));
             Assert.False(far.IntersectsWith(rect));
         }
@@ -194,7 +194,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
             Assert.True(a.Equals((object)b));
 
-            object notARectangle = "không phải GeoRectangle";
+            object notARectangle = "not a GeoRectangle";
             Assert.False(a.Equals(notARectangle));
             Assert.True(a != rotatedDifferently);
         }
@@ -212,18 +212,18 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0); // X: [-2, 2], Y: [-1, 1]
 
-            // Chạm cạnh: khoảng cách biên-biên bằng 0.
+            // Edge contact: boundary-to-boundary distance is 0.
             var touching = new GeoRectangle(new GeoPoint(4.0, 0.0), 4.0, 2.0);
             Assert.Equal(0.0, rect.DistanceTo(touching), 9);
 
-            // Cách nhau 3 đơn vị theo trục X.
+            // Apart by 3 units along the X-axis.
             var apart = new GeoRectangle(new GeoPoint(7.0, 0.0), 4.0, 2.0);
             Assert.Equal(3.0, rect.DistanceTo(apart), 9);
 
-            // Tới đoạn thẳng nằm ngang phía trên, cách mép trên 4 đơn vị.
+            // To horizontal segment above, 4 units away from top edge.
             Assert.Equal(4.0, rect.DistanceTo(new GeoLine(-5.0, 5.0, 5.0, 5.0)), 9);
 
-            // Tới đa giác nằm bên phải, cách mép phải 3 đơn vị.
+            // To polygon on the right, 3 units away from right edge.
             var poly = new GeoPolygon(
                 new GeoPoint(5.0, -1.0),
                 new GeoPoint(9.0, -1.0),
@@ -244,13 +244,13 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Rectangle_IntersectsWith_NarrowGapCountsAsTouchingWithinTolerance()
         {
-            var left = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0);   // X tới 2.0
+            var left = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0);   // X extends to 2.0
 
-            // Khe hở hẹp hơn dung sai thì coi như chạm nhau.
+            // Gap narrower than tolerance is treated as touching.
             var almostTouching = new GeoRectangle(new GeoPoint(4.0 + 1e-6, 0.0), 4.0, 2.0);
             Assert.True(left.IntersectsWith(almostTouching));
 
-            // Khe hở rộng hơn dung sai thì tách hẳn.
+            // Gap wider than tolerance is completely disjoint.
             var clearlyApart = new GeoRectangle(new GeoPoint(4.1, 0.0), 4.0, 2.0);
             Assert.False(left.IntersectsWith(clearlyApart));
         }
@@ -261,13 +261,13 @@ namespace ArrangeAlgorithms.UnitTest
             var rect = new GeoRectangle(new GeoPoint(3.0, -2.0), 6.0, 4.0, 1.1);
             var vertices = rect.GetVertices();
 
-            // Cạnh kề nhau phải giữ đúng chiều rộng và chiều cao dù hình đã xoay.
+            // Adjacent edges must preserve correct width and height even if rotated.
             Assert.Equal(6.0, vertices[0].DistanceTo(vertices[1]), 9);
             Assert.Equal(4.0, vertices[1].DistanceTo(vertices[2]), 9);
             Assert.Equal(6.0, vertices[2].DistanceTo(vertices[3]), 9);
             Assert.Equal(4.0, vertices[3].DistanceTo(vertices[0]), 9);
 
-            // Tâm hình vẫn là trung điểm của hai đường chéo.
+            // Center of the shape is still the midpoint of the two diagonals.
             Assert.True(vertices[0].GetMiddlePoint(vertices[2]).IsEqualTo(rect.Center));
             Assert.True(vertices[1].GetMiddlePoint(vertices[3]).IsEqualTo(rect.Center));
         }

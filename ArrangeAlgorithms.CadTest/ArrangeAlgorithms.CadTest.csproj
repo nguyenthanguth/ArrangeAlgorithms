@@ -8,14 +8,14 @@
     <RootNamespace>ArrangeAlgorithms.CadTest</RootNamespace>
     <AssemblyName>ArrangeAlgorithms.CadTest</AssemblyName>
 
-    <!-- Đổi dòng này nếu cài AutoCAD ở chỗ khác hoặc dùng phiên bản khác. -->
+    <!-- Change this line if AutoCAD is installed in another location or uses a different version. -->
     <AutoCadPath>D:\Autodesk\AutoCAD\AutoCAD 2021</AutoCadPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Private=false là bắt buộc: các DLL này phải KHÔNG được chép vào thư mục output.
-         AutoCAD đã nạp sẵn bản của nó, chép thêm một bản nữa sẽ khiến plugin nạp
-         hai assembly cùng tên khác đường dẫn và ném lỗi ép kiểu rất khó lần. -->
+    <!-- Private=false is mandatory: these DLLs must NOT be copied to the output directory.
+         AutoCAD already loads its own version; copying another version will cause the plugin to load
+         two assemblies with the same name but different paths, throwing hard-to-debug type casting errors. -->
     <Reference Include="accoremgd">
       <HintPath>$(AutoCadPath)\accoremgd.dll</HintPath>
       <Private>false</Private>

@@ -1,21 +1,18 @@
 # ArrangeAlgorithms
 
-Thư viện sắp xếp nhãn (label placement) 2D cho bản vẽ kỹ thuật: cho một tập nhãn, mỗi nhãn gắn với một
-đoạn dẫn và các vùng cấm xung quanh, thư viện tính vector dịch chuyển để các nhãn không đè lên nhau và
-không đè lên vùng cấm.
+2D label placement library for engineering drawings: given a set of labels, each associated with a guide segment and surrounding blocked regions, the library calculates translation vectors to prevent labels from overlapping each other and encroaching on the blocked regions.
 
-Thư viện thuần hình học, không phụ thuộc AutoCAD. Project `ArrangeAlgorithms.CadTest` là plugin dùng để
-chạy thử trực quan trong AutoCAD, tách riêng.
+The library is pure geometry and does not depend on AutoCAD. The `ArrangeAlgorithms.CadTest` project is a plugin used for visual testing inside AutoCAD, kept separate.
 
-## Cấu trúc
+## Structure
 
-| Project | Vai trò | Target |
+| Project | Role | Target |
 |---|---|---|
-| `ArrangeAlgorithms` | Thư viện lõi: kiểu hình học + 5 thuật toán | net48 |
-| `ArrangeAlgorithms.UnitTest` | Bộ test xUnit | net48 |
-| `ArrangeAlgorithms.CadTest` | Plugin AutoCAD 2021 để chạy thử trực quan | net48 |
+| `ArrangeAlgorithms` | Core library: geometric types + 5 algorithms | net48 |
+| `ArrangeAlgorithms.UnitTest` | xUnit test suite | net48 |
+| `ArrangeAlgorithms.CadTest` | AutoCAD 2021 plugin for visual testing | net48 |
 
-## Dùng nhanh
+## Quick Start
 
 ```csharp
 var leader = new GeoLine(0.0, 0.0, 2000.0, 0.0);
@@ -24,29 +21,29 @@ var arranges = new List<Arrange>
 {
     new Arrange
     {
-        // Hộp bao nhãn: tâm, rộng, cao, góc xoay (radian, ngược chiều kim đồng hồ)
+        // Label bounding box: center, width, height, rotation angle (radians, counter-clockwise)
         GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 2000.0, 1000.0),
-        // Đoạn dẫn: trung điểm của nó là gốc để loang vị trí ứng viên
+        // Guide segment: its midpoint is the origin for candidate positions expansion
         GeoLine      = leader,
-        // Khoảng hở vuông góc tối thiểu giữa mép nhãn và đoạn dẫn, riêng cho nhãn này (mặc định 50)
+        // Minimum perpendicular offset between label edge and guide segment, specific to this label (default 50)
         MarkOffsetFromLine = 50.0,
-        // Các vùng nhãn không được đè lên
+        // Blocked regions the label must not overlap
         BlockPolygons = new List<GeoPolygon>(),
         BlockLines    = new List<GeoLine>()
     }
 };
 
-// Trả về vector dịch chuyển cho từng nhãn, đúng thứ tự đầu vào
+// Returns translation vector for each label, in the exact input order
 List<GeoVector> moves = Arrange.Run(arranges);
 
 for (int i = 0; i < arranges.Count; i++)
 {
-    GeoPoint viTriMoi = arranges[i].GeoRectangle.Center + moves[i];
-    bool datDuoc = arranges[i].Placed; // false = phải lùi về phương án dự phòng, vẫn còn chồng lấn
+    GeoPoint newPosition = arranges[i].GeoRectangle.Center + moves[i];
+    bool isPlaced = arranges[i].Placed; // false = forced to fallback, still has overlap
 }
 ```
 
-Muốn đổi thuật toán hoặc tinh chỉnh tham số thì truyền `ArrangeOptions`:
+To change the algorithm or fine-tune parameters, pass `ArrangeOptions`:
 
 ```csharp
 var options = new ArrangeOptions
@@ -59,87 +56,81 @@ var options = new ArrangeOptions
 List<GeoVector> moves = Arrange.Run(arranges, options);
 ```
 
-`ArrangeOptions` là cấu hình dùng chung cho cả danh sách. Riêng `MarkOffsetFromLine` nằm trên từng
-`Arrange` vì mỗi nhãn có thể cần một khoảng hở khác nhau:
+`ArrangeOptions` is the shared configuration for the entire list. `MarkOffsetFromLine` is set per `Arrange` because each label may require a different offset:
 
 ```csharp
-var nhanChuNho = new Arrange
+var smallTextLabel = new Arrange
 {
     GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 2000.0, 1000.0),
     GeoLine      = leader,
-    MarkOffsetFromLine = 50.0   // chữ nhỏ, bám sát đoạn dẫn
+    MarkOffsetFromLine = 50.0   // small text, closely sticks to guide segment
 };
 
-var nhanChuLon = new Arrange
+var largeTextLabel = new Arrange
 {
     GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 4000.0, 2000.0),
     GeoLine      = leader,
-    MarkOffsetFromLine = 200.0  // chữ lớn, phải lùi ra xa hơn
+    MarkOffsetFromLine = 200.0  // large text, must move further away
 };
 
-List<GeoVector> moves = Arrange.Run(new List<Arrange> { nhanChuNho, nhanChuLon }, options);
+List<GeoVector> moves = Arrange.Run(new List<Arrange> { smallTextLabel, largeTextLabel }, options);
 ```
 
-## Cách sinh vị trí ứng viên
+## Candidate Positions Generation
 
-Cả 5 thuật toán đều dùng chung một bộ ứng viên rời rạc, loang ra từ trung điểm đoạn dẫn:
+All 5 algorithms share the same set of discrete candidate positions, expanding from the midpoint of the guide segment:
 
-- **Dịch vuông góc** — mỗi cấp trong `PerpendicularLevels` tạo một hàng nhãn, đối xứng hai bên đoạn dẫn.
-  Cấp đầu cách đoạn dẫn nửa chiều cao nhãn cộng `MarkOffsetFromLine` của chính nhãn đó, mỗi cấp sau
-  cộng thêm chiều cao nhãn cộng `RowGap`.
-- **Trượt dọc** — trong mỗi hàng, nhãn trượt song song đoạn dẫn theo cả hai chiều, xa nhất là nửa chiều
-  dài đoạn dẫn cộng `LongitudinalOvershootRatio` lần chiều rộng nhãn.
+- **Perpendicular Translation** — each level in `PerpendicularLevels` creates a row of labels, symmetric on both sides of the guide segment. The first level is placed at half the label height plus the label's own `MarkOffsetFromLine`. Each subsequent level adds the label height plus `RowGap`.
+- **Longitudinal Sliding** — in each row, the label slides parallel to the guide segment in both directions, up to a maximum of half the guide segment length plus `LongitudinalOvershootRatio` times the label width.
 
-Các thuật toán chỉ khác nhau ở cách **chọn** trong tập ứng viên đó.
+The algorithms only differ in how they **select** from this candidate set.
 
-## Năm thuật toán
+## Five Algorithms
 
-| `ArrangeAlgorithmType` | Cách chọn | Đánh đổi |
+| `ArrangeAlgorithmType` | Selection Strategy | Trade-off |
 |---|---|---|
-| `Greedy` (mặc định) | Đặt tuần tự, ưu tiên nhãn bị bó hẹp nhất; trong nhóm ứng viên trống đầu tiên chọn chỗ thoáng nhất | Nhanh nhất, kết quả tái lập được, nhưng dễ kẹt ở tối ưu cục bộ |
-| `BoundedBacktracking` | Như Greedy nhưng quay lui khi nhãn sau bị kẹt, chặn bởi `MaxBacktrackSteps` | Tỷ lệ đặt sạch cao hơn, chậm hơn khi bản vẽ dày đặc |
-| `SimulatedAnnealing` | Tối ưu toàn cục theo hàm năng lượng phạt va chạm, hạ nhiệt dần | Tốt với bản vẽ chằng chịt, tốn CPU |
-| `ForceDirected` | Mô phỏng lò xo và lực đẩy, sau đó ánh xạ về ứng viên rời rạc gần nhất | Phân bố đều và tự nhiên |
-| `ConstraintSatisfaction` | CSP với heuristic MRV và forward checking | Chặt chẽ nhất, có thể bùng nổ tổ hợp khi số nhãn lớn |
+| `Greedy` (default) | Sequentially places labels, prioritizing the most constrained ones; selects the most open spot in the first group of free candidates | Fastest, reproducible results, but prone to local optima |
+| `BoundedBacktracking` | Same as Greedy, but backtracks when subsequent labels are stuck, bounded by `MaxBacktrackSteps` | Higher clean placement rate, slower on crowded drawings |
+| `SimulatedAnnealing` | Global optimization based on a collision-penalty energy function, gradually cooling down | Best for extremely crowded drawings, CPU-heavy |
+| `ForceDirected` | Simulates spring and repulsive forces, then maps to the nearest discrete candidate | Distributes labels evenly and naturally |
+| `ConstraintSatisfaction` | CSP with MRV heuristic and forward checking | Most rigorous, potential combinatorial explosion with large number of labels |
 
-`BoundedBacktracking` và `ConstraintSatisfaction` tự động lùi về `Greedy` nếu không tìm được lời giải
-sạch va chạm nào, nên mọi nhãn luôn có vị trí hiển thị.
+`BoundedBacktracking` and `ConstraintSatisfaction` automatically fallback to `Greedy` if no collision-free solution is found, ensuring every label always has a display position.
 
-Kết quả của `SimulatedAnnealing` dùng seed cố định nên vẫn tái lập được giữa các lần chạy.
+`SimulatedAnnealing` uses a fixed seed, so its results are reproducible between runs.
 
-## Tham số của từng `Arrange`
+## Parameters for each `Arrange`
 
-| Tham số | Mặc định | Ý nghĩa |
+| Parameter | Default | Meaning |
 |---|---|---|
-| `GeoRectangle` | — | Hộp bao nhãn, phần hình học sẽ được dịch chuyển |
-| `GeoLine` | — | Đoạn dẫn; trung điểm của nó là gốc để loang vị trí ứng viên |
-| `MarkOffsetFromLine` | 50.0 | Khoảng hở vuông góc tối thiểu giữa mép nhãn và đoạn dẫn |
-| `BlockPolygons` | — | Đa giác cấm nhãn không được đè lên |
-| `BlockLines` | — | Đoạn thẳng cấm nhãn không được đè lên |
+| `GeoRectangle` | — | Label bounding box, the geometry that will be translated |
+| `GeoLine` | — | Guide segment; its midpoint is the origin for candidate positions expansion |
+| `MarkOffsetFromLine` | 50.0 | Minimum perpendicular offset between label edge and guide segment |
+| `BlockPolygons` | — | Blocked polygons that the label must not overlap |
+| `BlockLines` | — | Blocked line segments that the label must not overlap |
 
-## Tham số chính của `ArrangeOptions`
+## Main Parameters of `ArrangeOptions`
 
-| Tham số | Mặc định | Ý nghĩa |
+| Parameter | Default | Meaning |
 |---|---|---|
-| `Algorithm` | `Greedy` | Thuật toán sử dụng |
-| `RowGap` | 20.0 | Khoảng hở giữa hai hàng nhãn liên tiếp |
-| `PerpendicularLevels` | 3 | Số cấp lùi vuông góc thử ở mỗi bên |
-| `LongitudinalOvershootRatio` | 0.75 | Tỷ lệ chiều rộng nhãn được phép nhô ra ngoài hai đầu đoạn dẫn |
-| `MinimumBoxSize` | 10.0 | Nhãn nhỏ hơn kích thước này bị bỏ qua |
-| `MinimumMoveDistance` | 0.1 | Dịch chuyển nhỏ hơn ngưỡng này bị làm tròn về không |
-| `NeighbourMargin` | 50.0 | Biên nới rộng khi lọc vật cản lân cận |
-| `PlaceMostConstrainedFirst` | true | Đặt nhãn ít lựa chọn nhất trước |
-| `PlaceFromInsideOut` | true | Ưu tiên nhãn gần trọng tâm khu vực |
-| `LookAheadCandidates` | 3 | Số vị trí trống được cân nhắc trước khi chọn |
-| `MaxBacktrackSteps` | 1000 | Trần số bước quay lui |
-| `Tolerance` | `Tolerance.Global` | Dung sai cho các phép so sánh hình học |
+| `Algorithm` | `Greedy` | Algorithm to use |
+| `RowGap` | 20.0 | Clearance between two consecutive rows of labels |
+| `PerpendicularLevels` | 3 | Number of perpendicular fallback levels to test on each side |
+| `LongitudinalOvershootRatio` | 0.75 | Ratio of label width allowed to overshoot beyond the two endpoints of the guide segment |
+| `MinimumBoxSize` | 10.0 | Labels smaller than this size are ignored |
+| `MinimumMoveDistance` | 0.1 | Translations smaller than this threshold are rounded to zero |
+| `NeighbourMargin` | 50.0 | Expanded margin when filtering nearby obstacles |
+| `PlaceMostConstrainedFirst` | true | Place labels with fewer options first |
+| `PlaceFromInsideOut` | true | Prioritize labels close to the area centroid |
+| `LookAheadCandidates` | 3 | Number of free positions considered before selection |
+| `MaxBacktrackSteps` | 1000 | Cap on the number of backtracking steps |
+| `Tolerance` | `Tolerance.Global` | Tolerance for geometric comparisons |
 
-Các giá trị mặc định tính theo milimét, hợp với bản vẽ kết cấu thông thường.
+Default values are in millimeters, matching conventional structural drawings.
 
-## Kiểu hình học
+## Geometric Types
 
-`GeoPoint`, `GeoVector`, `GeoLine`, `GeoRectangle` (hình chữ nhật xoay — OBB), `GeoPolygon`. Ba kiểu
-hình có `IntersectsWith` đối xứng đầy đủ với nhau, mỗi cặp đều có overload nhận `Tolerance` tường minh:
+`GeoPoint`, `GeoVector`, `GeoLine`, `GeoRectangle` (rotated rectangle — OBB), `GeoPolygon`. The three geometric shapes have fully symmetric `IntersectsWith` methods, with each pair having an overload that accepts an explicit `Tolerance`:
 
 ```csharp
 rect.IntersectsWith(line);         line.IntersectsWith(rect);
@@ -148,29 +139,23 @@ line.IntersectsWith(poly);         poly.IntersectsWith(line);
 rect.IntersectsWith(otherRect);    poly.IntersectsWith(otherPoly);    line.IntersectsWith(otherLine);
 ```
 
-`Tolerance.Global` là dung sai áp dụng cho các overload không truyền dung sai. Nó có setter tĩnh, cố ý
-làm giống `Autodesk.AutoCAD.Geometry.Tolerance.Global`; đổi nó ảnh hưởng toàn ứng dụng nên chỉ nên đặt
-một lần lúc khởi động.
+`Tolerance.Global` is the tolerance applied to overloads that do not pass a custom tolerance. It has a static setter, intentionally designed to mimic `Autodesk.AutoCAD.Geometry.Tolerance.Global`; changing it affects the entire application, so it should only be set once at startup.
 
-## Build và test
+## Build and Test
 
 ```bash
 dotnet build ArrangeAlgorithms/ArrangeAlgorithms.csproj
 dotnet test  ArrangeAlgorithms.UnitTest/ArrangeAlgorithms.UnitTest.csproj
 ```
 
-## Chạy thử trong AutoCAD
+## Running inside AutoCAD
 
-`ArrangeAlgorithms.CadTest` build ra một file DLL rồi nạp vào AutoCAD để dùng:
+`ArrangeAlgorithms.CadTest` builds a DLL file to be loaded into AutoCAD:
 
 ```bash
 dotnet build ArrangeAlgorithms.CadTest/ArrangeAlgorithms.CadTest.csproj
 ```
 
-Kết quả nằm ở `ArrangeAlgorithms.CadTest/bin/Debug/net48/ArrangeAlgorithms.CadTest.dll`. Nạp file này
-vào AutoCAD bằng lệnh `NETLOAD`, rồi chạy một trong các lệnh `T1_Greedy`, `T1_BoundedBacktracking`,
-`T1_SimulatedAnnealing`, `T1_ForceDirected`, `T1_ConstraintSatisfaction`: chọn các đối tượng LINE hoặc
-LWPOLYLINE, plugin sẽ vẽ hộp nhãn trước và sau khi sắp xếp cùng số liệu thống kê.
+The output is located at `ArrangeAlgorithms.CadTest/bin/Debug/net48/ArrangeAlgorithms.CadTest.dll`. Load this file into AutoCAD using the `NETLOAD` command, then run one of the following commands: `T1_Greedy`, `T1_BoundedBacktracking`, `T1_SimulatedAnnealing`, `T1_ForceDirected`, `T1_ConstraintSatisfaction`. Select LINE or LWPOLYLINE objects, and the plugin will draw the label box before and after arrangement, along with statistics.
 
-Project tham chiếu ba DLL `accoremgd`, `acdbmgd`, `acmgd` theo đường dẫn `AutoCadPath` khai báo trong
-`.csproj`. Nếu bộ DLL đó nằm ở chỗ khác trên máy, sửa lại dòng `AutoCadPath`.
+The project references three DLLs: `accoremgd`, `acdbmgd`, `acmgd` via the `AutoCadPath` declared in the `.csproj` file. If those DLLs are located elsewhere on your machine, edit the `AutoCadPath` line.

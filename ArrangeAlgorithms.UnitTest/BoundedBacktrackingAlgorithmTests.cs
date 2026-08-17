@@ -54,7 +54,7 @@ namespace ArrangeAlgorithms.UnitTest
                 MarkOffsetFromLine = 5.0
             };
 
-            // Đa giác cấm cực lớn bao trùm toàn bộ không gian ứng viên
+            // Huge blocked polygon wrapping the entire candidate space
             var blockPoly = new GeoPolygon(
                 new GeoPoint(-100.0, -100.0),
                 new GeoPoint(100.0, -100.0),
@@ -72,15 +72,15 @@ namespace ArrangeAlgorithms.UnitTest
 
             var translations = Arrange.Run(new List<Arrange> { a1 }, options);
 
-            // Bounded Backtracking khi bị cấm hoàn toàn sẽ trả về Placed = false
+            // Bounded Backtracking returns Placed = false when completely blocked
             Assert.False(a1.Placed);
         }
 
         [Fact]
         public void Arrange_Run_BoundedBacktracking_PrefersCandidateNearestTheLeader()
         {
-            // Chỗ này từng xếp ứng viên theo khoảng hở GIẢM dần, tức luôn chọn vị trí XA nhất và
-            // ném mọi nhãn ra cấp vuông góc ngoài cùng dù chỗ gần vẫn trống.
+            // Previously, this sorted candidates by DESCENDING clearance, meaning it always selected the FURTHEST position
+            // and threw all labels to the outermost perpendicular level even if closer spots were empty.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var label = new Arrange
             {
@@ -99,8 +99,8 @@ namespace ArrangeAlgorithms.UnitTest
             var translations = Arrange.Run(new List<Arrange> { label }, options);
             var moved = new GeoRectangle(label.GeoRectangle.Center + translations[0], 20.0, 10.0);
 
-            // Chỉ có một nhãn nên nó phải nằm ở cấp gần nhất: BaseOffset = 5 + 5 = 10.
-            // Cấp ngoài cùng sẽ cho |Y| = 10 + 2 * (10 + 5) = 40.
+            // There is only one label, so it must lie at the closest level: BaseOffset = 5 + 5 = 10.
+            // The outermost level would give |Y| = 10 + 2 * (10 + 5) = 40.
             Assert.Equal(10.0, Math.Abs(moved.Center.Y), 6);
             Assert.True(label.Placed);
         }
@@ -108,8 +108,8 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Arrange_Run_BoundedBacktracking_FallsBackToGreedyWhenNoCleanSolutionExists()
         {
-            // Bốn nhãn chung một đoạn dẫn ngắn, chỉ một cấp vuông góc: không tồn tại lời giải toàn vẹn.
-            // Thuật toán phải lùi về Greedy chứ không được ném lỗi hay bỏ nhãn lại chỗ cũ.
+            // Four labels share a short guide segment, only one perpendicular level: no complete solution exists.
+            // The algorithm must fallback to Greedy instead of throwing errors or leaving labels in their original places.
             var leader = new GeoLine(0.0, 0.0, 10.0, 0.0);
             var labels = new List<Arrange>();
             for (int i = 0; i < 4; i++)
@@ -133,21 +133,21 @@ namespace ArrangeAlgorithms.UnitTest
 
             Assert.Equal(4, translations.Count);
 
-            // Mọi nhãn đều phải rời khỏi đoạn dẫn, kể cả những nhãn không tìm được chỗ sạch.
+            // All labels must move away from the guide segment, even those that cannot find a clean spot.
             foreach (var translation in translations)
             {
                 Assert.NotEqual(GeoVector.Zero, translation);
             }
 
-            // Và ít nhất hai nhãn phải đặt được sạch (hai bên đoạn dẫn).
+            // And at least two labels must be placed cleanly (on opposite sides of the guide segment).
             Assert.True(labels.Count(x => x.Placed) >= 2);
         }
 
         [Fact]
         public void Arrange_Run_BoundedBacktracking_RespectsMaxBacktrackSteps()
         {
-            // Ngân sách bằng 0 buộc thuật toán bỏ cuộc ngay lập tức và lùi về Greedy,
-            // nhưng kết quả trả về vẫn phải hợp lệ chứ không được rỗng hay ném lỗi.
+            // Budget equal to 0 forces the algorithm to give up immediately and fallback to Greedy,
+            // but the returned result must still be valid and not empty or throwing errors.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
             var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };

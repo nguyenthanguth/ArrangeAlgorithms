@@ -4,17 +4,16 @@ using System.Collections.Generic;
 namespace ArrangeAlgorithms.Algorithms
 {
     /// <summary>
-    /// Giao diện chung cho các thuật toán sắp xếp nhãn.
+    /// Common interface for label arrangement algorithms.
     /// </summary>
     internal interface IArrangeAlgorithm
     {
         /// <summary>
-        /// Thực hiện sắp xếp danh sách nhãn.
+        /// Performs arrangement of the label list.
         /// </summary>
-        /// <param name="arranges">Danh sách nhãn cần sắp xếp.</param>
-        /// <param name="options">Cấu hình điều khiển thuật toán.</param>
-        /// <returns>Danh sách GeoVector dịch chuyển tương ứng cho từng nhãn.</returns>
+        /// <param name="arranges">List of labels to be arranged.</param>
+        /// <param name="options">Configuration options controlling the algorithm.</param>
+        /// <returns>List of translation GeoVectors corresponding to each label.</returns>
         List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options);
     }
 }
-
