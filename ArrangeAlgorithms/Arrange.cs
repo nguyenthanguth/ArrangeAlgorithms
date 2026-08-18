@@ -102,11 +102,16 @@ namespace ArrangeAlgorithms
                     break;
             }
 
+            // --- PASS 1: Strict arrangement with all constraints ---
             List<GeoVector> translations = algorithm.Arrange(arranges, options);
-
-            // Placed flag is determined in a single place based on the final layout,
-            // not on the self-reporting of each algorithm. See MarkPlacementResults.
             MarkPlacementResults(arranges, translations, options);
+
+            // --- PASS 2: Relaxation pass for failed labels ---
+            var failedArranges = arranges.Where(w => w != null && !w.Placed).ToList();
+            if (failedArranges.Count > 0)
+            {
+                RelaxFailedPlaced(arranges, failedArranges, translations, algorithm, options);
+            }
 
             // Store the calculated translation vectors directly in the Arrange objects
             for (int i = 0; i < arranges.Count; i++)
@@ -118,6 +123,85 @@ namespace ArrangeAlgorithms
             }
 
             return translations;
+        }
+
+        /// <summary>
+        /// Re-arranges only the failed labels by allowing them to overlap with their own BlockLines,
+        /// while freezing successfully placed labels and treating them as static block obstacles.
+        /// </summary>
+        private static void RelaxFailedPlaced(
+            List<Arrange> arranges,
+            List<Arrange> failedArranges,
+            List<GeoVector> translations,
+            IArrangeAlgorithm algorithm,
+            ArrangeOptions options)
+        {
+            // Record the original indices of failed labels to map results back later
+            var failedIndices = new List<int>();
+            for (int i = 0; i < arranges.Count; i++)
+            {
+                if (arranges[i] != null && !arranges[i].Placed)
+                {
+                    failedIndices.Add(i);
+                }
+            }
+
+            // Backup original static constraints of failed labels
+            var backupPolygons = new Dictionary<Arrange, List<GeoPolygon>>();
+            var backupLines = new Dictionary<Arrange, List<GeoLine>>();
+
+            // Convert successfully placed labels into static block polygons for failed labels to avoid
+            var greenBoxes = new List<GeoPolygon>();
+            for (int i = 0; i < arranges.Count; i++)
+            {
+                if (arranges[i] != null && arranges[i].Placed)
+                {
+                    var rect = new GeoRectangle(
+                        arranges[i].GeoRectangle.Center.Add(translations[i]),
+                        arranges[i].GeoRectangle.Width,
+                        arranges[i].GeoRectangle.Height,
+                        arranges[i].GeoRectangle.AngleRad);
+
+                    greenBoxes.Add(new GeoPolygon(rect.GetVertices()));
+                }
+            }
+
+            // Set up relaxed constraints (clear BlockLines and add green boxes to BlockPolygons)
+            foreach (var arrange in failedArranges)
+            {
+                backupPolygons[arrange] = arrange.BlockPolygons;
+                backupLines[arrange] = arrange.BlockLines;
+
+                // Relax: Allow overlaps with guide BlockLines
+                arrange.BlockLines = new List<GeoLine>();
+
+                // Hard block: Do not overlap with successfully placed green labels
+                var newPolygons = arrange.BlockPolygons != null 
+                                  ? new List<GeoPolygon>(arrange.BlockPolygons) 
+                                  : new List<GeoPolygon>();
+                newPolygons.AddRange(greenBoxes);
+                arrange.BlockPolygons = newPolygons;
+            }
+
+            // Re-run the arrangement algorithm ONLY for failed labels
+            List<GeoVector> translations2 = algorithm.Arrange(failedArranges, options);
+
+            // Restore original constraints to prevent side-effects on input data
+            foreach (var arrange in failedArranges)
+            {
+                arrange.BlockPolygons = backupPolygons[arrange];
+                arrange.BlockLines = backupLines[arrange];
+            }
+
+            // Map relaxation results back into the main translations list
+            for (int i = 0; i < failedArranges.Count; i++)
+            {
+                int originalIndex = failedIndices[i];
+                translations[originalIndex] = translations2[i];
+            }
+
+            // Re-evaluate final Placed flags on the combined layout
+            MarkPlacementResults(arranges, translations, options);
         }
 
         /// <summary>

@@ -50,17 +50,17 @@ namespace ArrangeAlgorithms.Geometry
         /// <summary>
         /// Adds a GeoVector to the point for translation.
         /// </summary>
-        public GeoPoint Add(GeoVector GeoVector)
+        public GeoPoint Add(GeoVector geoVector)
         {
-            return new GeoPoint(X + GeoVector.X, Y + GeoVector.Y);
+            return new GeoPoint(X + geoVector.X, Y + geoVector.Y);
         }
 
         /// <summary>
         /// Subtracts a GeoVector from the point.
         /// </summary>
-        public GeoPoint Subtract(GeoVector GeoVector)
+        public GeoPoint Subtract(GeoVector geoVector)
         {
-            return new GeoPoint(X - GeoVector.X, Y - GeoVector.Y);
+            return new GeoPoint(X - geoVector.X, Y - geoVector.Y);
         }
 
         /// <summary>
