@@ -10,6 +10,7 @@
 
     <!-- Change this line if AutoCAD is installed in another location or uses a different version. -->
     <AutoCadPath>D:\Autodesk\AutoCAD\AutoCAD 2021</AutoCadPath>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
