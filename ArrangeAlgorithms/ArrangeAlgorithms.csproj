@@ -35,6 +35,7 @@
     <!-- 3. Embed source code and Debug symbols into DLL to support F12 original code viewing -->
     <DebugType>embedded</DebugType>
     <EmbedAllSources>true</EmbedAllSources>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
 
   </PropertyGroup>
 
