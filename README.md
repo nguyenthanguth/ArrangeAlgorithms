@@ -20,8 +20,9 @@ Here is an example of reinforcement marks before and after arrangement:
 |:---:|:---:|
 | ![Before Arrangement](ArrangeAlgorithms.TeklaTest/img/ex-from.png) | ![After Arrangement](ArrangeAlgorithms.TeklaTest/img/ex-result.png) |
 
-And another view of arranged reinforcement marks avoiding dimension obstacles:
-![Tekla Result Detail](ArrangeAlgorithms.TeklaTest/img/ex-result-2.png)
+| Arranged Marks Avoiding Dimension Obstacles |
+|:---:|
+| ![Tekla Result Detail](ArrangeAlgorithms.TeklaTest/img/ex-result-2.png) |
 
 ## Structure
 
