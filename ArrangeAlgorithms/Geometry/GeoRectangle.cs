@@ -373,6 +373,11 @@ namespace ArrangeAlgorithms.Geometry
             return minDistance;
         }
 
+        /// <summary>
+        /// Indicates whether the current rectangle is equal to another rectangle.
+        /// </summary>
+        /// <param name="other">A rectangle to compare with this rectangle.</param>
+        /// <returns>true if the current rectangle is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(GeoRectangle other)
         {
             return Center.Equals(other.Center) &&
@@ -381,11 +386,20 @@ namespace ArrangeAlgorithms.Geometry
                    AngleRad.Equals(other.AngleRad);
         }
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
             return obj is GeoRectangle other && Equals(other);
         }
 
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
         public override int GetHashCode()
         {
             unchecked
@@ -398,9 +412,26 @@ namespace ArrangeAlgorithms.Geometry
             }
         }
 
+        /// <summary>
+        /// Compares two GeoRectangle instances for equality.
+        /// </summary>
+        /// <param name="left">The first rectangle.</param>
+        /// <param name="right">The second rectangle.</param>
+        /// <returns>true if they are equal; otherwise, false.</returns>
         public static bool operator ==(GeoRectangle left, GeoRectangle right) => left.Equals(right);
+
+        /// <summary>
+        /// Compares two GeoRectangle instances for inequality.
+        /// </summary>
+        /// <param name="left">The first rectangle.</param>
+        /// <param name="right">The second rectangle.</param>
+        /// <returns>true if they are not equal; otherwise, false.</returns>
         public static bool operator !=(GeoRectangle left, GeoRectangle right) => !left.Equals(right);
 
+        /// <summary>
+        /// Returns the string representation of the rectangle.
+        /// </summary>
+        /// <returns>A string representation detailing center, width, height, and angle.</returns>
         public override string ToString()
         {
             return $"GeoRectangle[Center:{Center}, Width:{Width:0.000}, Height:{Height:0.000}, AngleRad:{AngleRad:0.000}]";

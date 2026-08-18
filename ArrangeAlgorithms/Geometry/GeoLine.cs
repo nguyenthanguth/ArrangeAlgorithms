@@ -197,16 +197,30 @@ namespace ArrangeAlgorithms.Geometry
             return poly.IntersectsWith(this, tolerance);
         }
 
+        /// <summary>
+        /// Indicates whether the current line segment is equal to another line segment.
+        /// </summary>
+        /// <param name="other">A line segment to compare with this line segment.</param>
+        /// <returns>true if the current line segment is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(GeoLine other)
         {
             return StartPoint.Equals(other.StartPoint) && EndPoint.Equals(other.EndPoint);
         }
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
             return obj is GeoLine other && Equals(other);
         }
 
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
         public override int GetHashCode()
         {
             unchecked
@@ -215,9 +229,26 @@ namespace ArrangeAlgorithms.Geometry
             }
         }
 
+        /// <summary>
+        /// Compares two GeoLine instances for equality.
+        /// </summary>
+        /// <param name="left">The first line segment.</param>
+        /// <param name="right">The second line segment.</param>
+        /// <returns>true if they are equal; otherwise, false.</returns>
         public static bool operator ==(GeoLine left, GeoLine right) => left.Equals(right);
+
+        /// <summary>
+        /// Compares two GeoLine instances for inequality.
+        /// </summary>
+        /// <param name="left">The first line segment.</param>
+        /// <param name="right">The second line segment.</param>
+        /// <returns>true if they are not equal; otherwise, false.</returns>
         public static bool operator !=(GeoLine left, GeoLine right) => !left.Equals(right);
 
+        /// <summary>
+        /// Returns the string representation of the line segment.
+        /// </summary>
+        /// <returns>A string representation of the start and end points of the line.</returns>
         public override string ToString() => $"GeoLine[{StartPoint} -> {EndPoint}]";
     }
 }

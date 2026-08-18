@@ -251,23 +251,77 @@ namespace ArrangeAlgorithms.Geometry
             return Math.Abs(a.DotProduct(b)) <= tolerance.EqualVector;
         }
 
+        /// <summary>
+        /// Adds two vectors.
+        /// </summary>
+        /// <param name="v1">The first vector.</param>
+        /// <param name="v2">The second vector.</param>
+        /// <returns>A new GeoVector representing the sum of the two vectors.</returns>
         public static GeoVector operator +(GeoVector v1, GeoVector v2) => v1.Add(v2);
+
+        /// <summary>
+        /// Subtracts one vector from another.
+        /// </summary>
+        /// <param name="v1">The vector to subtract from.</param>
+        /// <param name="v2">The vector to subtract.</param>
+        /// <returns>A new GeoVector representing the difference of the two vectors.</returns>
         public static GeoVector operator -(GeoVector v1, GeoVector v2) => v1.Subtract(v2);
+
+        /// <summary>
+        /// Negates a vector.
+        /// </summary>
+        /// <param name="v">The vector to negate.</param>
+        /// <returns>A new GeoVector with negated coordinates.</returns>
         public static GeoVector operator -(GeoVector v) => new GeoVector(-v.X, -v.Y);
+
+        /// <summary>
+        /// Multiplies a vector by a scalar.
+        /// </summary>
+        /// <param name="v">The vector.</param>
+        /// <param name="s">The scalar value.</param>
+        /// <returns>A new GeoVector scaled by s.</returns>
         public static GeoVector operator *(GeoVector v, double s) => v.Multiply(s);
+
+        /// <summary>
+        /// Multiplies a vector by a scalar.
+        /// </summary>
+        /// <param name="s">The scalar value.</param>
+        /// <param name="v">The vector.</param>
+        /// <returns>A new GeoVector scaled by s.</returns>
         public static GeoVector operator *(double s, GeoVector v) => v.Multiply(s);
+
+        /// <summary>
+        /// Divides a vector by a scalar.
+        /// </summary>
+        /// <param name="v">The vector.</param>
+        /// <param name="s">The scalar value.</param>
+        /// <returns>A new GeoVector divided by s.</returns>
         public static GeoVector operator /(GeoVector v, double s) => new GeoVector(v.X / s, v.Y / s);
 
+        /// <summary>
+        /// Indicates whether the current vector is equal to another vector.
+        /// </summary>
+        /// <param name="other">A vector to compare with this vector.</param>
+        /// <returns>true if the current vector is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(GeoVector other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y);
         }
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
             return obj is GeoVector other && Equals(other);
         }
 
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
         public override int GetHashCode()
         {
             unchecked
@@ -276,9 +330,26 @@ namespace ArrangeAlgorithms.Geometry
             }
         }
 
+        /// <summary>
+        /// Compares two GeoVector instances for equality.
+        /// </summary>
+        /// <param name="left">The first vector.</param>
+        /// <param name="right">The second vector.</param>
+        /// <returns>true if they are equal; otherwise, false.</returns>
         public static bool operator ==(GeoVector left, GeoVector right) => left.Equals(right);
+
+        /// <summary>
+        /// Compares two GeoVector instances for inequality.
+        /// </summary>
+        /// <param name="left">The first vector.</param>
+        /// <param name="right">The second vector.</param>
+        /// <returns>true if they are not equal; otherwise, false.</returns>
         public static bool operator !=(GeoVector left, GeoVector right) => !left.Equals(right);
 
+        /// <summary>
+        /// Returns the string representation of the vector.
+        /// </summary>
+        /// <returns>A string representation formatted as (X, Y).</returns>
         public override string ToString() => $"({X:0.000}, {Y:0.000})";
     }
 }

@@ -135,20 +135,54 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         public bool IsEqualTo(GeoPoint other) => IsEqualTo(other, Tolerance.Global);
 
+        /// <summary>
+        /// Translates a point by a vector.
+        /// </summary>
+        /// <param name="p">The point to translate.</param>
+        /// <param name="v">The vector to apply.</param>
+        /// <returns>A new GeoPoint representing the translated position.</returns>
         public static GeoPoint operator +(GeoPoint p, GeoVector v) => p.Add(v);
+
+        /// <summary>
+        /// Translates a point back by a vector.
+        /// </summary>
+        /// <param name="p">The point to translate.</param>
+        /// <param name="v">The vector to subtract.</param>
+        /// <returns>A new GeoPoint representing the translated position.</returns>
         public static GeoPoint operator -(GeoPoint p, GeoVector v) => p.Subtract(v);
+
+        /// <summary>
+        /// Calculates the vector from one point to another.
+        /// </summary>
+        /// <param name="p2">The destination point.</param>
+        /// <param name="p1">The start point.</param>
+        /// <returns>A GeoVector representing the direction and distance from p1 to p2.</returns>
         public static GeoVector operator -(GeoPoint p2, GeoPoint p1) => p1.GetVectorTo(p2);
 
+        /// <summary>
+        /// Indicates whether the current point is equal to another point.
+        /// </summary>
+        /// <param name="other">A point to compare with this point.</param>
+        /// <returns>true if the current point is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(GeoPoint other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y);
         }
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
             return obj is GeoPoint other && Equals(other);
         }
 
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
         public override int GetHashCode()
         {
             unchecked
@@ -157,9 +191,26 @@ namespace ArrangeAlgorithms.Geometry
             }
         }
 
+        /// <summary>
+        /// Compares two GeoPoint instances for equality.
+        /// </summary>
+        /// <param name="left">The first point.</param>
+        /// <param name="right">The second point.</param>
+        /// <returns>true if they are equal; otherwise, false.</returns>
         public static bool operator ==(GeoPoint left, GeoPoint right) => left.Equals(right);
+
+        /// <summary>
+        /// Compares two GeoPoint instances for inequality.
+        /// </summary>
+        /// <param name="left">The first point.</param>
+        /// <param name="right">The second point.</param>
+        /// <returns>true if they are not equal; otherwise, false.</returns>
         public static bool operator !=(GeoPoint left, GeoPoint right) => !left.Equals(right);
 
+        /// <summary>
+        /// Returns the string representation of the point.
+        /// </summary>
+        /// <returns>A string representation formatted as (X, Y).</returns>
         public override string ToString() => $"({X:0.000}, {Y:0.000})";
     }
 }

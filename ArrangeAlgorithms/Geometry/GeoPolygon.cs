@@ -298,6 +298,11 @@ namespace ArrangeAlgorithms.Geometry
             return Contains(other._vertices[0], tolerance) || other.Contains(_vertices[0], tolerance);
         }
 
+        /// <summary>
+        /// Indicates whether the current polygon is equal to another polygon by comparing vertex arrays in order.
+        /// </summary>
+        /// <param name="other">A polygon to compare with this polygon.</param>
+        /// <returns>true if the current polygon is equal to the other parameter; otherwise, false.</returns>
         public bool Equals(GeoPolygon other)
         {
             if (other == null || other.VertexCount != VertexCount) return false;
@@ -311,11 +316,20 @@ namespace ArrangeAlgorithms.Geometry
             return true;
         }
 
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
         public override bool Equals(object obj)
         {
             return obj is GeoPolygon other && Equals(other);
         }
 
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
         public override int GetHashCode()
         {
             unchecked
@@ -329,6 +343,10 @@ namespace ArrangeAlgorithms.Geometry
             }
         }
 
+        /// <summary>
+        /// Returns the string representation of the polygon.
+        /// </summary>
+        /// <returns>A string representation of vertex count and area.</returns>
         public override string ToString() => $"GeoPolygon[{VertexCount} vertices, Area:{GetArea():0.000}]";
     }
 }

@@ -85,11 +85,23 @@ namespace ArrangeAlgorithms
             }
         }
 
+        /// <summary>
+        /// Compares two Tolerance instances for equality.
+        /// </summary>
+        /// <param name="tolerance1">The first tolerance.</param>
+        /// <param name="tolerance2">The second tolerance.</param>
+        /// <returns>true if they are equal; otherwise, false.</returns>
         public static bool operator ==(Tolerance tolerance1, Tolerance tolerance2)
         {
             return tolerance1.Equals(tolerance2);
         }
 
+        /// <summary>
+        /// Compares two Tolerance instances for inequality.
+        /// </summary>
+        /// <param name="tolerance1">The first tolerance.</param>
+        /// <param name="tolerance2">The second tolerance.</param>
+        /// <returns>true if they are not equal; otherwise, false.</returns>
         public static bool operator !=(Tolerance tolerance1, Tolerance tolerance2)
         {
             return !tolerance1.Equals(tolerance2);
