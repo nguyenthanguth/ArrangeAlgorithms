@@ -172,7 +172,7 @@ namespace ArrangeAlgorithms.Algorithms
 
                     if (box.Overlaps(movedBoxes[j]))
                     {
-                        if (rect.IntersectsWith(movedRects[j]))
+                        if (rect.IntersectsWith(movedRects[j], options.Tolerance))
                         {
                             energy += 10000.0;
                         }

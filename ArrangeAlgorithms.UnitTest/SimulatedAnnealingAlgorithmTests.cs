@@ -31,11 +31,10 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 2
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a1, a2 }, options);
+            Arrange.Run(new List<Arrange> { a1, a2 }, options);
 
-            Assert.Equal(2, translations.Count);
-            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + translations[0], a1.GeoRectangle.Width, a1.GeoRectangle.Height);
-            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + translations[1], a2.GeoRectangle.Width, a2.GeoRectangle.Height);
+            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
+            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
             Assert.False(moved1.IntersectsWith(moved2));
         }
@@ -45,7 +44,7 @@ namespace ArrangeAlgorithms.UnitTest
         {
             // Simulated annealing is inherently random, but the library fixes the seed so that the layout remains unchanged
             // after each rerun. This is an important contract with CAD users.
-            List<GeoVector> Solve()
+            List<Arrange> Solve()
             {
                 var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
                 var labels = new List<Arrange>();
@@ -59,12 +58,14 @@ namespace ArrangeAlgorithms.UnitTest
                     });
                 }
 
-                return Arrange.Run(labels, new ArrangeOptions
+                Arrange.Run(labels, new ArrangeOptions
                 {
                     Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
                     RowGap = 5.0,
                     PerpendicularLevels = 3
                 });
+
+                return labels;
             }
 
             var first = Solve();
@@ -72,7 +73,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             for (int i = 0; i < first.Count; i++)
             {
-                Assert.Equal(first[i], second[i]);
+                Assert.Equal(first[i].TranslationVector, second[i].TranslationVector);
             }
         }
 
@@ -89,14 +90,14 @@ namespace ArrangeAlgorithms.UnitTest
                 MarkOffsetFromLine = 5.0
             };
 
-            var translations = Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
+            Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
                 RowGap = 5.0,
                 PerpendicularLevels = 3
             });
 
-            var moved = new GeoRectangle(label.GeoRectangle.Center + translations[0], 20.0, 10.0);
+            var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
 
             Assert.Equal(10.0, Math.Abs(moved.Center.Y), 6);
             Assert.True(label.Placed);
@@ -126,15 +127,15 @@ namespace ArrangeAlgorithms.UnitTest
                 MarkOffsetFromLine = 5.0
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a, b }, new ArrangeOptions
+            Arrange.Run(new List<Arrange> { a, b }, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
                 RowGap = 5.0,
                 PerpendicularLevels = 3
             });
 
-            var movedA = new GeoRectangle(a.GeoRectangle.Center + translations[0], 20.0, 10.0);
-            var movedB = new GeoRectangle(b.GeoRectangle.Center + translations[1], 20.0, 10.0);
+            var movedA = new GeoRectangle(a.GeoRectangle.Center + a.TranslationVector, 20.0, 10.0);
+            var movedB = new GeoRectangle(b.GeoRectangle.Center + b.TranslationVector, 20.0, 10.0);
 
             // The blocked region is collected globally for the list, so both labels must avoid it.
             Assert.False(movedA.IntersectsWith(blockPoly));
@@ -143,4 +144,3 @@ namespace ArrangeAlgorithms.UnitTest
         }
     }
 }
-

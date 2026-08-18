@@ -64,11 +64,10 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 3
             };
 
-            var translations = Arrange.Run(list, options);
+            Arrange.Run(list, options);
 
-            Assert.Equal(2, translations.Count);
-            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + translations[0], a1.GeoRectangle.Width, a1.GeoRectangle.Height);
-            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + translations[1], a2.GeoRectangle.Width, a2.GeoRectangle.Height);
+            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
+            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
             Assert.False(moved1.IntersectsWith(moved2));
             Assert.True(a1.Placed);
@@ -105,9 +104,9 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 2
             };
 
-            var translations = Arrange.Run(new List<Arrange> { arrange }, options);
+            Arrange.Run(new List<Arrange> { arrange }, options);
 
-            var moved = new GeoRectangle(arrange.GeoRectangle.Center + translations[0], arrange.GeoRectangle.Width, arrange.GeoRectangle.Height);
+            var moved = new GeoRectangle(arrange.GeoRectangle.Center + arrange.TranslationVector, arrange.GeoRectangle.Width, arrange.GeoRectangle.Height);
 
             Assert.True(moved.Center.Y < 0.0);
             Assert.False(blockPoly.IntersectsWith(moved));
@@ -145,12 +144,12 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 2
             };
 
-            var translations = Arrange.Run(new List<Arrange> { arrange }, options);
+            Arrange.Run(new List<Arrange> { arrange }, options);
 
             // Regardless of constraints, the Greedy algorithm must fallback to the first candidate
             // instead of staying in place, which causes uncertainty.
             Assert.False(arrange.Placed);
-            Assert.NotEqual(GeoVector.Zero, translations[0]);
+            Assert.NotEqual(GeoVector.Zero, arrange.TranslationVector);
         }
 
         [Fact]
@@ -170,27 +169,28 @@ namespace ArrangeAlgorithms.UnitTest
                     new GeoPoint(990.0, 30.0))
             };
 
-            var translations = Arrange.Run(new List<Arrange> { near, far }, GreedyOptions());
+            Arrange.Run(new List<Arrange> { near, far }, GreedyOptions());
 
             // translations[0] must correspond to the left label, translations[1] to the right label.
-            Assert.Equal(20.0, MovedBox(near, translations[0]).Center.X, 6);
-            Assert.Equal(1020.0, MovedBox(far, translations[1]).Center.X, 6);
+            Assert.Equal(20.0, MovedBox(near, near.TranslationVector).Center.X, 6);
+            Assert.Equal(1020.0, MovedBox(far, far.TranslationVector).Center.X, 6);
 
             // And the label blocked above must dodge downwards.
-            Assert.True(MovedBox(far, translations[1]).Center.Y < 0.0);
+            Assert.True(MovedBox(far, far.TranslationVector).Center.Y < 0.0);
         }
 
         [Fact]
         public void Arrange_Run_Greedy_IsDeterministic()
         {
-            List<GeoVector> Solve()
+            List<Arrange> Solve()
             {
                 var labels = new List<Arrange>();
                 for (int i = 0; i < 6; i++)
                 {
                     labels.Add(LabelOn(new GeoLine(i * 12.0, 0.0, i * 12.0 + 30.0, 0.0)));
                 }
-                return Arrange.Run(labels, GreedyOptions());
+                Arrange.Run(labels, GreedyOptions());
+                return labels;
             }
 
             var first = Solve();
@@ -199,15 +199,14 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(first.Count, second.Count);
             for (int i = 0; i < first.Count; i++)
             {
-                Assert.Equal(first[i], second[i]);
+                Assert.Equal(first[i].TranslationVector, second[i].TranslationVector);
             }
         }
 
         [Fact]
-        public void Arrange_Run_Greedy_WithEmptyList_ReturnsEmptyResult()
+        public void Arrange_Run_Greedy_WithEmptyList_DoesNotThrow()
         {
-            var translations = Arrange.Run(new List<Arrange>(), GreedyOptions());
-            Assert.Empty(translations);
+            Arrange.Run(new List<Arrange>(), GreedyOptions());
         }
 
         [Fact]
@@ -216,14 +215,11 @@ namespace ArrangeAlgorithms.UnitTest
             var a = LabelOn(new GeoLine(0.0, 0.0, 40.0, 0.0));
             var b = LabelOn(new GeoLine(0.0, 0.0, 40.0, 0.0));
 
-            var translations = Arrange.Run(new List<Arrange> { a, null, b }, GreedyOptions());
-
-            // Null entry still occupies a slot in the results to prevent index shifting.
-            Assert.Equal(3, translations.Count);
-            Assert.Equal(GeoVector.Zero, translations[1]);
+            var labels = new List<Arrange> { a, null, b };
+            Arrange.Run(labels, GreedyOptions());
 
             // The two real labels must still be arranged normally.
-            Assert.False(MovedBox(a, translations[0]).IntersectsWith(MovedBox(b, translations[2])));
+            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -238,8 +234,8 @@ namespace ArrangeAlgorithms.UnitTest
             var blockLine = new GeoLine(-20.0, 10.0, 60.0, 10.0);
             arrange.BlockLines = new List<GeoLine> { blockLine };
 
-            var translations = Arrange.Run(new List<Arrange> { arrange }, GreedyOptions());
-            var moved = MovedBox(arrange, translations[0]);
+            Arrange.Run(new List<Arrange> { arrange }, GreedyOptions());
+            var moved = MovedBox(arrange, arrange.TranslationVector);
 
             Assert.True(moved.Center.Y < 0.0);
             Assert.False(moved.IntersectsWith(blockLine));
@@ -256,14 +252,14 @@ namespace ArrangeAlgorithms.UnitTest
             var a = new Arrange { GeoLine = leader, GeoRectangle = box, MarkOffsetFromLine = 5.0 };
             var b = new Arrange { GeoLine = leader, GeoRectangle = box, MarkOffsetFromLine = 5.0 };
 
-            var translations = Arrange.Run(new List<Arrange> { a, b }, GreedyOptions());
+            Arrange.Run(new List<Arrange> { a, b }, GreedyOptions());
 
-            Assert.False(MovedBox(a, translations[0]).IntersectsWith(MovedBox(b, translations[1])));
+            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
 
             // The two labels must be placed on opposite sides of the guide segment, i.e., shifted in perpendicular directions.
-            Assert.NotEqual(translations[0], translations[1]);
+            Assert.NotEqual(a.TranslationVector, b.TranslationVector);
         }
 
         [Fact]
@@ -277,7 +273,7 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(50.0, 30.0),
                 new GeoPoint(-50.0, 30.0));
 
-            List<GeoVector> Solve(bool onEveryLabel)
+            List<Arrange> Solve(bool onEveryLabel)
             {
                 var block = Block();
                 var labels = new List<Arrange>();
@@ -289,7 +285,8 @@ namespace ArrangeAlgorithms.UnitTest
                         : new List<GeoPolygon>();
                     labels.Add(label);
                 }
-                return Arrange.Run(labels, GreedyOptions());
+                Arrange.Run(labels, GreedyOptions());
+                return labels;
             }
 
             var once = Solve(false);
@@ -297,7 +294,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             for (int i = 0; i < once.Count; i++)
             {
-                Assert.Equal(once[i], everywhere[i]);
+                Assert.Equal(once[i].TranslationVector, everywhere[i].TranslationVector);
             }
         }
 
@@ -327,12 +324,11 @@ namespace ArrangeAlgorithms.UnitTest
             options.PlaceMostConstrainedFirst = false;
             options.PlaceFromInsideOut = false;
 
-            var translations = Arrange.Run(new List<Arrange> { a, b }, options);
+            Arrange.Run(new List<Arrange> { a, b }, options);
 
-            Assert.False(MovedBox(a, translations[0]).IntersectsWith(MovedBox(b, translations[1])));
+            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
     }
 }
-

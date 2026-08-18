@@ -30,11 +30,10 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 2
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a1, a2 }, options);
+            Arrange.Run(new List<Arrange> { a1, a2 }, options);
 
-            Assert.Equal(2, translations.Count);
-            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + translations[0], a1.GeoRectangle.Width, a1.GeoRectangle.Height);
-            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + translations[1], a2.GeoRectangle.Width, a2.GeoRectangle.Height);
+            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
+            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
             Assert.False(moved1.IntersectsWith(moved2));
             Assert.True(a1.Placed);
@@ -42,4 +41,3 @@ namespace ArrangeAlgorithms.UnitTest
         }
     }
 }
-

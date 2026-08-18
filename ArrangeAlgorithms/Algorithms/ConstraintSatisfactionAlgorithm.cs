@@ -155,7 +155,7 @@ namespace ArrangeAlgorithms.Algorithms
                             otherVar.Arrange.GeoRectangle.Height,
                             otherVar.Arrange.GeoRectangle.AngleRad);
 
-                        if (!currentRect.IntersectsWith(otherRect))
+                        if (!currentRect.IntersectsWith(otherRect, options.Tolerance))
                         {
                             newDomain.Add(otherVal);
                         }

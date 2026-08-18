@@ -32,11 +32,10 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 2
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a1, a2 }, options);
+            Arrange.Run(new List<Arrange> { a1, a2 }, options);
 
-            Assert.Equal(2, translations.Count);
-            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + translations[0], a1.GeoRectangle.Width, a1.GeoRectangle.Height);
-            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + translations[1], a2.GeoRectangle.Width, a2.GeoRectangle.Height);
+            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
+            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
             Assert.False(moved1.IntersectsWith(moved2));
             Assert.True(a1.Placed);
@@ -70,7 +69,7 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 2
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a1 }, options);
+            Arrange.Run(new List<Arrange> { a1 }, options);
 
             // Bounded Backtracking returns Placed = false when completely blocked
             Assert.False(a1.Placed);
@@ -96,8 +95,8 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 3
             };
 
-            var translations = Arrange.Run(new List<Arrange> { label }, options);
-            var moved = new GeoRectangle(label.GeoRectangle.Center + translations[0], 20.0, 10.0);
+            Arrange.Run(new List<Arrange> { label }, options);
+            var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
 
             // There is only one label, so it must lie at the closest level: BaseOffset = 5 + 5 = 10.
             // The outermost level would give |Y| = 10 + 2 * (10 + 5) = 40.
@@ -129,14 +128,12 @@ namespace ArrangeAlgorithms.UnitTest
                 PerpendicularLevels = 1
             };
 
-            var translations = Arrange.Run(labels, options);
-
-            Assert.Equal(4, translations.Count);
+            Arrange.Run(labels, options);
 
             // All labels must move away from the guide segment, even those that cannot find a clean spot.
-            foreach (var translation in translations)
+            foreach (var label in labels)
             {
-                Assert.NotEqual(GeoVector.Zero, translation);
+                Assert.NotEqual(GeoVector.Zero, label.TranslationVector);
             }
 
             // And at least two labels must be placed cleanly (on opposite sides of the guide segment).
@@ -160,14 +157,11 @@ namespace ArrangeAlgorithms.UnitTest
                 MaxBacktrackSteps = 0
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a, b }, options);
+            Arrange.Run(new List<Arrange> { a, b }, options);
 
-            Assert.Equal(2, translations.Count);
-
-            var movedA = new GeoRectangle(a.GeoRectangle.Center + translations[0], 20.0, 10.0);
-            var movedB = new GeoRectangle(b.GeoRectangle.Center + translations[1], 20.0, 10.0);
+            var movedA = new GeoRectangle(a.GeoRectangle.Center + a.TranslationVector, 20.0, 10.0);
+            var movedB = new GeoRectangle(b.GeoRectangle.Center + b.TranslationVector, 20.0, 10.0);
             Assert.False(movedA.IntersectsWith(movedB));
         }
     }
 }
-

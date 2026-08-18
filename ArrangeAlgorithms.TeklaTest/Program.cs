@@ -154,16 +154,16 @@ namespace ArrangeAlgorithms.TeklaTest
             };
 
             // Run the label placement optimization algorithm
-            var vectors = Arrange.Run(arranges, arrangeOptions);
+            Arrange.Run(arranges, arrangeOptions);
 
             // Apply calculated displacement vectors to move the marks in the drawing
-            for (int i = 0; i < vectors.Count; i++)
+            for (int i = 0; i < arranges.Count; i++)
             {
                 // Only move the mark if the calculated displacement exceeds the minimum distance threshold
-                if (vectors[i].Length < arrangeOptions.MinimumMoveDistance)
+                if (arranges[i].TranslationVector.Length < arrangeOptions.MinimumMoveDistance)
                     continue;
 
-                TSG.Vector translate = vectors[i].ToTeklaVector();
+                TSG.Vector translate = arranges[i].TranslationVector.ToTeklaVector();
                 markGroups[i].Mark.MoveObjectRelative(translate);
                 markGroups[i].Mark.Modify();
             }

@@ -42,6 +42,11 @@ namespace ArrangeAlgorithms
         public bool Placed { get; private set; }
 
         /// <summary>
+        /// Gets the translation vector calculated for the label.
+        /// </summary>
+        public GeoVector TranslationVector { get; internal set; } = GeoVector.Zero;
+
+        /// <summary>
         /// Sets the success or failure status of the label placement.
         /// </summary>
         internal void SetPlaced(bool value)
@@ -102,6 +107,15 @@ namespace ArrangeAlgorithms
             // Placed flag is determined in a single place based on the final layout,
             // not on the self-reporting of each algorithm. See MarkPlacementResults.
             MarkPlacementResults(arranges, translations, options);
+
+            // Store the calculated translation vectors directly in the Arrange objects
+            for (int i = 0; i < arranges.Count; i++)
+            {
+                if (arranges[i] != null)
+                {
+                    arranges[i].TranslationVector = translations[i];
+                }
+            }
 
             return translations;
         }

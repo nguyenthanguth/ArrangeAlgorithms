@@ -31,11 +31,10 @@ namespace ArrangeAlgorithms.UnitTest
                 ForceIterations = 10
             };
 
-            var translations = Arrange.Run(new List<Arrange> { a1, a2 }, options);
+            Arrange.Run(new List<Arrange> { a1, a2 }, options);
 
-            Assert.Equal(2, translations.Count);
-            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + translations[0], a1.GeoRectangle.Width, a1.GeoRectangle.Height);
-            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + translations[1], a2.GeoRectangle.Width, a2.GeoRectangle.Height);
+            var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
+            var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
             Assert.False(moved1.IntersectsWith(moved2));
         }
@@ -60,7 +59,7 @@ namespace ArrangeAlgorithms.UnitTest
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 
-            var translations = Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
+            Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.ForceDirected,
                 RowGap = 5.0,
@@ -68,7 +67,7 @@ namespace ArrangeAlgorithms.UnitTest
                 ForceIterations = 50
             });
 
-            var moved = new GeoRectangle(label.GeoRectangle.Center + translations[0], 20.0, 10.0);
+            var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
 
             Assert.True(moved.Center.Y < 0.0);
             Assert.False(moved.IntersectsWith(blockPoly));
@@ -83,7 +82,7 @@ namespace ArrangeAlgorithms.UnitTest
             var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
             var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
 
-            var translations = Arrange.Run(new List<Arrange> { a, b }, new ArrangeOptions
+            Arrange.Run(new List<Arrange> { a, b }, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.ForceDirected,
                 RowGap = 5.0,
@@ -91,8 +90,8 @@ namespace ArrangeAlgorithms.UnitTest
                 ForceIterations = 0
             });
 
-            var movedA = new GeoRectangle(a.GeoRectangle.Center + translations[0], 20.0, 10.0);
-            var movedB = new GeoRectangle(b.GeoRectangle.Center + translations[1], 20.0, 10.0);
+            var movedA = new GeoRectangle(a.GeoRectangle.Center + a.TranslationVector, 20.0, 10.0);
+            var movedB = new GeoRectangle(b.GeoRectangle.Center + b.TranslationVector, 20.0, 10.0);
 
             Assert.False(movedA.IntersectsWith(movedB));
             Assert.True(a.Placed);
@@ -114,7 +113,7 @@ namespace ArrangeAlgorithms.UnitTest
                 });
             }
 
-            var translations = Arrange.Run(labels, new ArrangeOptions
+            Arrange.Run(labels, new ArrangeOptions
             {
                 Algorithm = ArrangeAlgorithmType.ForceDirected,
                 RowGap = 5.0,
@@ -125,7 +124,7 @@ namespace ArrangeAlgorithms.UnitTest
             var boxes = new List<GeoRectangle>();
             for (int i = 0; i < labels.Count; i++)
             {
-                boxes.Add(new GeoRectangle(labels[i].GeoRectangle.Center + translations[i], 20.0, 10.0));
+                boxes.Add(new GeoRectangle(labels[i].GeoRectangle.Center + labels[i].TranslationVector, 20.0, 10.0));
             }
 
             for (int i = 0; i < boxes.Count; i++)
@@ -138,4 +137,3 @@ namespace ArrangeAlgorithms.UnitTest
         }
     }
 }
-

@@ -105,10 +105,10 @@ namespace ArrangeAlgorithms.CadTest
                 };
 
                 var stopwatch = Stopwatch.StartNew();
-                List<GeoVector> moves = Arrange.Run(arranges, options);
+                Arrange.Run(arranges, options);
                 stopwatch.Stop();
 
-                DrawResult(database, transaction, arranges, moves, algorithmName, stopwatch.ElapsedMilliseconds);
+                DrawResult(database, transaction, arranges, algorithmName, stopwatch.ElapsedMilliseconds);
                 transaction.Commit();
 
                 Report(editor, arranges, skipped, stopwatch.ElapsedMilliseconds, algorithmName);
@@ -181,7 +181,7 @@ namespace ArrangeAlgorithms.CadTest
         }
 
         private static void DrawResult(
-            Database database, Transaction transaction, List<Arrange> arranges, List<GeoVector> moves, string algorithmName, long elapsedMilliseconds)
+            Database database, Transaction transaction, List<Arrange> arranges, string algorithmName, long elapsedMilliseconds)
         {
             ObjectId boxFromLayerId = EnsureLayer(database, transaction, BoxFromLayer);
             ObjectId boxToLayerId = EnsureLayer(database, transaction, BoxToLayer);
@@ -211,7 +211,7 @@ namespace ArrangeAlgorithms.CadTest
 
                 // Translate label box according to result translation GeoVector
                 GeoRectangle movedRect = new GeoRectangle(
-                    arrange.GeoRectangle.Center + moves[i],
+                    arrange.GeoRectangle.Center + arrange.TranslationVector,
                     arrange.GeoRectangle.Width,
                     arrange.GeoRectangle.Height,
                     arrange.GeoRectangle.AngleRad);
