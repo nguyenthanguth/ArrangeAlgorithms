@@ -9,8 +9,9 @@ The library is pure geometry and does not depend on AutoCAD. The `ArrangeAlgorit
 ### AutoCAD Integration
 Here are some examples of labels arranged inside AutoCAD to avoid overlaps and blocked regions:
 
-![AutoCAD Arrangement Example 1](ArrangeAlgorithms.CadTest/img/ex-result-cad1.png)
-![AutoCAD Arrangement Example 2](ArrangeAlgorithms.CadTest/img/ex-result-cad2.png)
+| Greedy | Force Directed |
+|:---:|:---:|
+| ![Greedy](ArrangeAlgorithms.CadTest/img/ex-result-cad1.png) | ![Force Directed](ArrangeAlgorithms.CadTest/img/ex-result-cad2.png) |
 
 ### Tekla Structures Integration
 Here is an example of reinforcement marks before and after arrangement:
