@@ -54,12 +54,16 @@ var arranges = new List<Arrange>
     }
 };
 
-// Returns translation vector for each label, in the exact input order
+// Returns translation vector for each label, in the exact input order.
+// Each Arrange object is also automatically updated: arranges[i].TranslationVector contains the same vector.
 List<GeoVector> moves = Arrange.Run(arranges);
 
 for (int i = 0; i < arranges.Count; i++)
 {
-    GeoPoint newPosition = arranges[i].GeoRectangle.Center + moves[i];
+    // You can use the returned 'moves[i]' or read the property directly:
+    GeoVector move = arranges[i].TranslationVector; 
+    
+    GeoPoint newPosition = arranges[i].GeoRectangle.Center + move;
     bool isPlaced = arranges[i].Placed; // false = forced to fallback, still has overlap
 }
 ```
