@@ -21,6 +21,16 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <Copyright>Copyright © 2026 Nguyen Thang</Copyright>
+    <PackageTags>label-placement geometry cad autocad tekla algorithm greedy backtracking simulated-annealing force-directed csp</PackageTags>
+    <PackageReleaseNotes>
+      - Fixed backup state issue (null preservation for BlockPolygons and BlockLines) in the 2-pass relaxation algorithm.
+      - Added comprehensive XML documentation comments across all geometric types (GeoPoint, GeoLine, GeoPolygon, GeoRectangle, GeoVector, and Tolerance) to resolve compilation warning CS1591.
+      - Updated CAD and Tekla test runners to target x64 platform explicitly to prevent architecture mismatch warnings (MSB3270).
+      - Configured NuGet metadata with Copyright and PackageTags.
+      - Added package icon according to Microsoft best practices.
+    </PackageReleaseNotes>
 
     <!-- 3. Embed source code and Debug symbols into DLL to support F12 original code viewing -->
     <DebugType>embedded</DebugType>
@@ -30,6 +40,7 @@
 
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
