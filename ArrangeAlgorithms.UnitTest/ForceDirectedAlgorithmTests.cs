@@ -135,5 +135,59 @@ namespace ArrangeAlgorithms.UnitTest
                 }
             }
         }
+
+        [Fact]
+        public void Arrange_Run_ForceDirected_RespectsLineObstacles()
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var blockLine = new GeoLine(-50.0, 10.0, 150.0, 10.0); // Blocks the first upper level
+
+            var label = new Arrange
+            {
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
+                GeoLine = leader,
+                MarkOffsetFromLine = 5.0,
+                BlockLines = new List<GeoLine> { blockLine }
+            };
+
+            Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
+            {
+                Algorithm = ArrangeAlgorithmType.ForceDirected,
+                RowGap = 5.0,
+                PerpendicularLevels = 3,
+                ForceIterations = 30
+            });
+
+            var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
+
+            // Force-directed algorithm must resolve placing layout without intersecting the line obstacle.
+            Assert.False(moved.IntersectsWith(blockLine));
+            Assert.True(label.Placed);
+        }
+
+        [Fact]
+        public void Arrange_Run_ForceDirected_HighIterations_DoesNotCrash()
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = new Arrange
+            {
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
+                GeoLine = leader,
+                MarkOffsetFromLine = 5.0
+            };
+
+            var options = new ArrangeOptions
+            {
+                Algorithm = ArrangeAlgorithmType.ForceDirected,
+                ForceIterations = 500, // Very high iteration simulation
+                RowGap = 5.0,
+                PerpendicularLevels = 3
+            };
+
+            // Checking CPU performance and calculation safety under high loop counts.
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            Assert.True(label.Placed);
+        }
     }
 }

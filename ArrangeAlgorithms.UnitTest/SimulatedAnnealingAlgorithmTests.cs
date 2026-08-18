@@ -142,5 +142,58 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.False(movedB.IntersectsWith(blockPoly));
             Assert.False(movedA.IntersectsWith(movedB));
         }
+
+        [Fact]
+        public void Arrange_Run_SimulatedAnnealing_ZeroTemperature_DoesNotThrow()
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = new Arrange
+            {
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
+                GeoLine = leader,
+                MarkOffsetFromLine = 5.0
+            };
+
+            var options = new ArrangeOptions
+            {
+                Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
+                AnnealingInitialTemperature = 0.0, // Force T = 0
+                RowGap = 5.0,
+                PerpendicularLevels = 3
+            };
+
+            // This should not throw DivideByZeroException when calculating Boltzmann probability (e.g. deltaEnergy / Temp)
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            Assert.True(label.Placed);
+        }
+
+        [Fact]
+        public void Arrange_Run_SimulatedAnnealing_RespectsLineObstacles()
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var blockLine = new GeoLine(-50.0, 10.0, 150.0, 10.0); // Blocks the first upper level
+
+            var label = new Arrange
+            {
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
+                GeoLine = leader,
+                MarkOffsetFromLine = 5.0,
+                BlockLines = new List<GeoLine> { blockLine }
+            };
+
+            Arrange.Run(new List<Arrange> { label }, new ArrangeOptions
+            {
+                Algorithm = ArrangeAlgorithmType.SimulatedAnnealing,
+                RowGap = 5.0,
+                PerpendicularLevels = 3
+            });
+
+            var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
+
+            // It should either go to the bottom row (Y=-10) or upper row 2 (Y=25) to avoid the line obstacle
+            Assert.False(moved.IntersectsWith(blockLine));
+            Assert.True(label.Placed);
+        }
     }
 }

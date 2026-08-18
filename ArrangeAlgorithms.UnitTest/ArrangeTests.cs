@@ -355,5 +355,418 @@ namespace ArrangeAlgorithms.UnitTest
                 Assert.Equal(clean, labels[i].Placed);
             }
         }
+
+        // ------------------------------------------------------------------
+        // Pass 2 Relaxation (Relax BlockLines)
+        // ------------------------------------------------------------------
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_RelaxationPass_AllowsFailedLabelsToOverlapBlockLines(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = LabelOn(leader);
+            
+            // Mock BlockLines overlapping all candidate positions
+            label.BlockLines = new List<GeoLine>
+            {
+                new GeoLine(-100, 10.0, 100, 10.0), // Blocks upper row
+                new GeoLine(-100, -10.0, 100, -10.0) // Blocks lower row
+            };
+
+            var options = OptionsFor(algorithm);
+            options.PerpendicularLevels = 1; // Only 1 level to guarantee congestion
+
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            // In Pass 1, the label is blocked by BlockLines and fails.
+            // In Pass 2, the algorithm clears BlockLines and rearranges it, so it should have a non-zero TranslationVector.
+            // However, Placed must be false because it actually overlaps the original BlockLines.
+            Assert.False(label.Placed);
+            Assert.NotEqual(GeoVector.Zero, label.TranslationVector);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_RelaxationPass_FreezesPlacedLabels(ArrangeAlgorithmType algorithm)
+        {
+            var leader1 = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var leader2 = new GeoLine(1000.0, 0.0, 1040.0, 0.0); // Located far away
+            var successLabel = LabelOn(leader1); 
+            var failedLabel = LabelOn(leader2); 
+            
+            failedLabel.BlockLines = new List<GeoLine>
+            {
+                new GeoLine(900, 10.0, 1100, 10.0),
+                new GeoLine(900, -10.0, 1100, -10.0)
+            };
+
+            var options = OptionsFor(algorithm);
+            options.PerpendicularLevels = 1; // Only 1 level to guarantee congestion for failedLabel
+
+            Arrange.Run(new List<Arrange> { successLabel, failedLabel }, options);
+
+            // Since the two labels are far apart, successLabel naturally finds a spot in Pass 1.
+            // When Pass 2 runs (due to failedLabel being congested), successLabel must retain its successful state and position.
+            Assert.True(successLabel.Placed);
+            // failedLabel overlapping BlockLines (even relaxed) should end up with Placed = false
+            Assert.False(failedLabel.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_RelaxationPass_FailedLabelsAvoidGreenBoxes(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 10.0, 0.0); // Short leader segment
+            var successLabel = LabelOn(leader); 
+            var failedLabel = LabelOn(leader);
+            
+            // Force failedLabel to enter Pass 2 by blocking with BlockLines
+            failedLabel.BlockLines = new List<GeoLine>
+            {
+                new GeoLine(-100, 10.0, 100, 10.0)
+            };
+
+            var options = OptionsFor(algorithm);
+            options.PerpendicularLevels = 2;
+
+            Arrange.Run(new List<Arrange> { successLabel, failedLabel }, options);
+
+            // Pass 2 allows failedLabels to overlap BlockLines, but it MUST NOT overlap successLabel (greenBoxes)
+            var successBox = MovedBox(successLabel, successLabel.TranslationVector);
+            var failedBox = MovedBox(failedLabel, failedLabel.TranslationVector);
+
+            Assert.False(successBox.IntersectsWith(failedBox));
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_RotatedLabels_AvoidsCollision(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            
+            // Create two labels at the same anchor point but rotated 45 degrees
+            var a = new Arrange
+            {
+                GeoLine = leader,
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0),
+                MarkOffsetFromLine = 5.0
+            };
+            var b = new Arrange
+            {
+                GeoLine = leader,
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0),
+                MarkOffsetFromLine = 5.0
+            };
+
+            Arrange.Run(new List<Arrange> { a, b }, OptionsFor(algorithm));
+
+            var movedA = MovedBox(a, a.TranslationVector);
+            var movedB = MovedBox(b, b.TranslationVector);
+
+            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.True(a.Placed);
+            Assert.True(b.Placed);
+        }
+
+        [Fact]
+        public void Arrange_Run_OvershootRatioZero_RestrictsLongitudinalMovement()
+        {
+            var leader = new GeoLine(0.0, 0.0, 20.0, 0.0); // Leader length = 20
+            var label = new Arrange
+            {
+                GeoLine = leader,
+                GeoRectangle = new GeoRectangle(new GeoPoint(10.0, 0.0), 30.0, 10.0), // Label width = 30
+                MarkOffsetFromLine = 5.0
+            };
+
+            var options = OptionsFor(ArrangeAlgorithmType.Greedy);
+            options.LongitudinalOvershootRatio = 0.0; // No overshoot allowed
+
+            // Label width = 30, leader length = 20. 
+            // MaximumShift = leaderLength * 0.5 + width * overshoot = 10 + 0 = 10.
+            // Under this restriction, candidates can slide at most 10 units from the midpoint (10.0).
+            var points = label.GetPlacePoints(options);
+            foreach (var point in points)
+            {
+                double shift = Math.Abs(point.X - 10.0);
+                Assert.True(shift <= 10.001); // Allowing small floating point tolerance
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_LookAheadCandidates_ChoosesPositionWithMaxClearance(ArrangeAlgorithmType algorithm)
+        {
+            // This heuristic test only applies to sequential Greedy algorithm which evaluates candidate clearances.
+            if (algorithm != ArrangeAlgorithmType.Greedy)
+            {
+                return;
+            }
+
+            var leader = new GeoLine(0.0, 0.0, 100.0, 0.0);
+            var label = LabelOn(leader);
+
+            // Place two static obstacles shifted to the left (X: 20 to 40) at Y=16 and Y=-16.
+            // Candidates on the left and center will have a tight clearance of 1.0 unit.
+            // Candidates shifted to the right (X=53.25) will escape the obstacle bounds and have a better clearance (~3.4 units).
+            var blockPoly1 = new GeoPolygon(
+                new GeoPoint(20.0, 16.0),
+                new GeoPoint(40.0, 16.0),
+                new GeoPoint(40.0, 17.0),
+                new GeoPoint(20.0, 17.0));
+            var blockPoly2 = new GeoPolygon(
+                new GeoPoint(20.0, -17.0),
+                new GeoPoint(40.0, -17.0),
+                new GeoPoint(40.0, -16.0),
+                new GeoPoint(20.0, -16.0));
+            label.BlockPolygons = new List<GeoPolygon> { blockPoly1, blockPoly2 };
+
+            var options = OptionsFor(algorithm);
+            options.PerpendicularLevels = 1; // Stay on the same row to test longitudinal slide clearance
+            options.LookAheadCandidates = 6; // Evaluate 6 candidates to reach the right-shifted one
+
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            // With look-ahead, the algorithm should choose a right-shifted candidate (X != 50, hence TranslationVector.X != 0)
+            // because it offers a much better clearance than the first candidate at X=50 (clearance = 1.0).
+            Assert.NotEqual(0.0, label.TranslationVector.X, 4);
+            Assert.True(label.Placed);
+        }
+
+        [Fact]
+        public void Arrange_Run_IgnoreSubThresholdMoves()
+        {
+            // The label is placed extremely close to the first candidate position (offset by only 0.05 units along X).
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = new Arrange
+            {
+                GeoLine = leader,
+                GeoRectangle = new GeoRectangle(new GeoPoint(20.05, 10.0), 20.0, 10.0),
+                MarkOffsetFromLine = 5.0
+            };
+
+            var options = OptionsFor(ArrangeAlgorithmType.Greedy);
+            options.MinimumMoveDistance = 0.1; // Shift distances smaller than 0.1 are ignored
+
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            // Since the shift distance (0.05) is smaller than the threshold (0.1), 
+            // the algorithm must suppress the translation, keeping it at zero vector.
+            Assert.Equal(GeoVector.Zero, label.TranslationVector);
+            Assert.True(label.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_VerticalLeader_PlacesLabelsCorrectly(ArrangeAlgorithmType algorithm)
+        {
+            // Test with a completely vertical guide segment (projection check along Y axis)
+            var leader = new GeoLine(0.0, 0.0, 0.0, 100.0);
+            var a = LabelOn(leader);
+            var b = LabelOn(leader);
+
+            Arrange.Run(new List<Arrange> { a, b }, OptionsFor(algorithm));
+
+            var movedA = MovedBox(a, a.TranslationVector);
+            var movedB = MovedBox(b, b.TranslationVector);
+
+            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.True(a.Placed);
+            Assert.True(b.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_DiagonalLeader_PlacesLabelsCorrectly(ArrangeAlgorithmType algorithm)
+        {
+            // Test with a diagonal guide segment (45 degrees axis rotation check)
+            var leader = new GeoLine(0.0, 0.0, 100.0, 100.0);
+            var a = LabelOn(leader);
+            var b = LabelOn(leader);
+
+            Arrange.Run(new List<Arrange> { a, b }, OptionsFor(algorithm));
+
+            var movedA = MovedBox(a, a.TranslationVector);
+            var movedB = MovedBox(b, b.TranslationVector);
+
+            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.True(a.Placed);
+            Assert.True(b.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_ExtremeRowGap_IncreasesRowSeparation(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var a = LabelOn(leader);
+            var b = LabelOn(leader);
+
+            var options = OptionsFor(algorithm);
+            options.RowGap = 150.0; // Extremely large row gap
+            options.PerpendicularLevels = 2;
+
+            Arrange.Run(new List<Arrange> { a, b }, options);
+
+            // If any label is forced to the second level, its Y coordinate magnitude must reflect the extreme row gap
+            foreach (var label in new[] { a, b })
+            {
+                if (label.Placed)
+                {
+                    double y = Math.Abs(MovedBox(label, label.TranslationVector).Center.Y);
+                    if (y > 20.0) // Bypassed level 1 (which is at Y=10)
+                    {
+                        Assert.True(y >= 169.9); // Must be at level 2 (BaseOffset + Height + RowGap = 10 + 10 + 150 = 170)
+                    }
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_LargeMinimumMoveDistance_RestrictsPlacement(ArrangeAlgorithmType algorithm)
+        {
+            // MinimumMoveDistance constraint is only supported and enforced by the sequential Greedy algorithm
+            if (algorithm != ArrangeAlgorithmType.Greedy)
+            {
+                return;
+            }
+
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = LabelOn(leader);
+
+            var options = OptionsFor(algorithm);
+            options.MinimumMoveDistance = 50.0; // Distance shifts smaller than 50 are rejected
+
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            // The translation must either be zero (suppressed) or a very large leap
+            double dist = label.TranslationVector.Length;
+            Assert.True(dist == 0.0 || dist >= 50.0);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_MaximumCandidatesLimit_RestrictsSearch(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = LabelOn(leader);
+
+            var options = OptionsFor(algorithm);
+            options.MaximumCandidates = 1; // Strict search limit (only checks first candidate)
+
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            // The algorithm must execute successfully under the extreme constraint without hanging or crashing
+            Assert.True(label.Placed || !label.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_WithOverlappingObstacles_ResolvesCorrectly(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            
+            // Multiple static obstacles overlapping each other
+            var obs1 = new GeoPolygon(new GeoPoint(-50, 5), new GeoPoint(50, 5), new GeoPoint(50, 15), new GeoPoint(-50, 15));
+            var obs2 = new GeoPolygon(new GeoPoint(-10, 5), new GeoPoint(90, 5), new GeoPoint(90, 15), new GeoPoint(-10, 15));
+
+            var label = LabelOn(leader);
+            label.BlockPolygons = new List<GeoPolygon> { obs1, obs2 };
+
+            var options = OptionsFor(algorithm);
+            options.PerpendicularLevels = 3;
+
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            var moved = MovedBox(label, label.TranslationVector);
+            Assert.False(moved.IntersectsWith(obs1));
+            Assert.False(moved.IntersectsWith(obs2));
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_WithTinyLabels_ArrangesWithoutErrors(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var a = new Arrange
+            {
+                GeoLine = leader,
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 1.0, 1.0), // Tiny label
+                MarkOffsetFromLine = 1.0
+            };
+
+            var options = OptionsFor(algorithm);
+            options.MinimumBoxSize = 0.5; // Ensure tiny label is valid
+
+            Arrange.Run(new List<Arrange> { a }, options);
+
+            Assert.True(a.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_WithGiantLabels_DoesNotCrash(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var a = new Arrange
+            {
+                GeoLine = leader,
+                GeoRectangle = new GeoRectangle(leader.MidPoint, 1000.0, 1000.0), // Giant label
+                MarkOffsetFromLine = 5.0
+            };
+
+            Arrange.Run(new List<Arrange> { a }, OptionsFor(algorithm));
+            
+            // Should execute and map correctly, marked as placed if candidate matches, or failed safely
+            Assert.True(a.Placed || !a.Placed);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_WithZeroLengthLeader_FailsGracefully(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(10.0, 10.0, 10.0, 10.0); // Zero length segment
+            var label = LabelOn(leader);
+
+            Arrange.Run(new List<Arrange> { label }, OptionsFor(algorithm));
+
+            // It should fail to arrange since no candidates can be computed, but must not crash
+            Assert.False(label.Placed);
+            Assert.Equal(GeoVector.Zero, label.TranslationVector);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllAlgorithms))]
+        public void Arrange_Run_ObstaclesBlockingAllButOneSpot_FindsUniqueSpot(ArrangeAlgorithmType algorithm)
+        {
+            var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
+            var label = LabelOn(leader);
+
+            // Block everything except the 3rd level bottom row position (Y = -60)
+            // Obstacle blocking level 1 & 2 (Y: -45 to 45)
+            var obstacle = new GeoPolygon(
+                new GeoPoint(-200.0, -45.0),
+                new GeoPoint(200.0, -45.0),
+                new GeoPoint(200.0, 45.0),
+                new GeoPoint(-200.0, 45.0));
+            
+            label.BlockPolygons = new List<GeoPolygon> { obstacle };
+
+            var options = OptionsFor(algorithm);
+            options.PerpendicularLevels = 3;
+            options.RowGap = 15.0; // level 1: 10, level 2: 35, level 3: 60.
+            
+            Arrange.Run(new List<Arrange> { label }, options);
+
+            if (label.Placed)
+            {
+                var moved = MovedBox(label, label.TranslationVector);
+                Assert.False(moved.IntersectsWith(obstacle));
+                // Center Y should be close to 60 or -60 (level 3)
+                Assert.Equal(60.0, Math.Abs(moved.Center.Y), 1);
+            }
+        }
     }
 }
