@@ -12,7 +12,7 @@
         
     <!-- 2. NuGet Package Metadata Info -->
     <PackageId>ArrangeAlgorithms</PackageId>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>Nguyen Thang</Authors>
     <Company>Nguyen Thang</Company>
     <Description>A 2D label placement library for engineering drawings that automatically arranges labels to prevent overlaps with each other and blocked regions. Features 5 layout algorithms: Greedy, Bounded Backtracking, Simulated Annealing, Force-Directed, and Constraint Satisfaction.</Description>

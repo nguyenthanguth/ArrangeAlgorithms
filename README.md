@@ -28,7 +28,7 @@ Here is an example of reinforcement marks before and after arrangement:
 
 | Project | Role | Target |
 |---|---|---|
-| `ArrangeAlgorithms` | Core library: geometric types + 5 algorithms | net48 |
+| `ArrangeAlgorithms` | Core library: geometric types + 5 algorithms | netstandard2.0 |
 | `ArrangeAlgorithms.UnitTest` | xUnit test suite | net48 |
 | `ArrangeAlgorithms.CadTest` | AutoCAD 2021 plugin for visual testing | net48 |
 | `ArrangeAlgorithms.TeklaTest` | Tekla Structures test program for rebar mark arrangement | net48 |
@@ -145,6 +145,9 @@ The algorithms only differ in how they **select** from this candidate set.
 | `PlaceFromInsideOut` | true | Prioritize labels close to the area centroid |
 | `LookAheadCandidates` | 3 | Number of free positions considered before selection |
 | `MaxBacktrackSteps` | 1000 | Cap on the number of backtracking steps |
+| `AnnealingInitialTemperature` | 100.0 | Initial temperature for the Simulated Annealing algorithm |
+| `AnnealingCoolingRate` | 0.95 | Cooling rate for the Simulated Annealing algorithm |
+| `ForceIterations` | 100 | Number of force simulation iterations for the Force-Directed algorithm |
 | `Tolerance` | `Tolerance.Global` | Tolerance for geometric comparisons |
 
 Default values are in millimeters, matching conventional structural drawings.
