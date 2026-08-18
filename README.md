@@ -4,6 +4,24 @@
 
 The library is pure geometry and does not depend on AutoCAD. The `ArrangeAlgorithms.CadTest` project is a plugin used for visual testing inside AutoCAD, kept separate.
 
+## Visual Examples
+
+### AutoCAD Integration
+Here are some examples of labels arranged inside AutoCAD to avoid overlaps and blocked regions:
+
+![AutoCAD Arrangement Example 1](ArrangeAlgorithms.CadTest/img/ex-result-cad1.png)
+![AutoCAD Arrangement Example 2](ArrangeAlgorithms.CadTest/img/ex-result-cad2.png)
+
+### Tekla Structures Integration
+Here is an example of reinforcement marks before and after arrangement:
+
+| Before Arrangement | After Arrangement |
+|:---:|:---:|
+| ![Before Arrangement](ArrangeAlgorithms.TeklaTest/img/ex-from.png) | ![After Arrangement](ArrangeAlgorithms.TeklaTest/img/ex-result.png) |
+
+And another view of arranged reinforcement marks avoiding dimension obstacles:
+![Tekla Result Detail](ArrangeAlgorithms.TeklaTest/img/ex-result-2.png)
+
 ## Structure
 
 | Project | Role | Target |
@@ -11,6 +29,7 @@ The library is pure geometry and does not depend on AutoCAD. The `ArrangeAlgorit
 | `ArrangeAlgorithms` | Core library: geometric types + 5 algorithms | net48 |
 | `ArrangeAlgorithms.UnitTest` | xUnit test suite | net48 |
 | `ArrangeAlgorithms.CadTest` | AutoCAD 2021 plugin for visual testing | net48 |
+| `ArrangeAlgorithms.TeklaTest` | Tekla Structures test program for rebar mark arrangement | net48 |
 
 ## Quick Start
 
@@ -159,3 +178,18 @@ dotnet build ArrangeAlgorithms.CadTest/ArrangeAlgorithms.CadTest.csproj
 The output is located at `ArrangeAlgorithms.CadTest/bin/Debug/net48/ArrangeAlgorithms.CadTest.dll`. Load this file into AutoCAD using the `NETLOAD` command, then run one of the following commands: `T1_Greedy`, `T1_BoundedBacktracking`, `T1_SimulatedAnnealing`, `T1_ForceDirected`, `T1_ConstraintSatisfaction`. Select LINE or LWPOLYLINE objects, and the plugin will draw the label box before and after arrangement, along with statistics.
 
 The project references three DLLs: `accoremgd`, `acdbmgd`, `acmgd` via the `AutoCadPath` declared in the `.csproj` file. If those DLLs are located elsewhere on your machine, edit the `AutoCadPath` line.
+
+## Running inside Tekla Structures
+
+`ArrangeAlgorithms.TeklaTest` is a console application that connects to the active Tekla Structures model and drawing to arrange reinforcement marks.
+
+To build and run:
+1. Open Tekla Structures and open a drawing with some reinforcement marks and dimensions selected.
+2. Build the project:
+   ```bash
+   dotnet build ArrangeAlgorithms.TeklaTest/ArrangeAlgorithms.TeklaTest.csproj
+   ```
+3. Run the compiled executable:
+   ```bash
+   ArrangeAlgorithms.TeklaTest/bin/Debug/net48/ArrangeAlgorithms.TeklaTest.exe
+   ```
