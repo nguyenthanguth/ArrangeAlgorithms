@@ -1,8 +1,31 @@
 # ArrangeAlgorithms
 
+[![NuGet Version](https://img.shields.io/nuget/v/ArrangeAlgorithms.svg?style=flat-square)](https://www.nuget.org/packages/ArrangeAlgorithms/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/ArrangeAlgorithms.svg?style=flat-square)](https://www.nuget.org/packages/ArrangeAlgorithms/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
 2D label placement library for engineering drawings: given a set of labels, each associated with a guide segment and surrounding blocked regions, the library calculates translation vectors to prevent labels from overlapping each other and encroaching on the blocked regions.
 
 The library is pure geometry and does not depend on AutoCAD. The `ArrangeAlgorithms.CadTest` project is a plugin used for visual testing inside AutoCAD, kept separate.
+
+## Installation
+
+You can install the package directly from [NuGet.org](https://www.nuget.org/packages/ArrangeAlgorithms):
+
+**Package Manager (.NET CLI):**
+```bash
+dotnet add package ArrangeAlgorithms
+```
+
+**Package Manager Console (Visual Studio):**
+```powershell
+NuGet\Install-Package ArrangeAlgorithms
+```
+
+**PackageReference (in `.csproj`):**
+```xml
+<PackageReference Include="ArrangeAlgorithms" Version="1.0.3" />
+```
 
 ## Visual Examples
 
