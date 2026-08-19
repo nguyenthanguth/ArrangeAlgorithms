@@ -37,7 +37,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
             var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
-            Assert.False(moved1.IntersectsWith(moved2));
+            Assert.False(moved1.CollidesWith(moved2));
             Assert.True(a1.Placed);
             Assert.True(a2.Placed);
         }
@@ -161,7 +161,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             var movedA = new GeoRectangle(a.GeoRectangle.Center + a.TranslationVector, 20.0, 10.0);
             var movedB = new GeoRectangle(b.GeoRectangle.Center + b.TranslationVector, 20.0, 10.0);
-            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.False(movedA.CollidesWith(movedB));
         }
     }
 }

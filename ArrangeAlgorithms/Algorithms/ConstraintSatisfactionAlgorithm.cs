@@ -58,7 +58,7 @@ namespace ArrangeAlgorithms.Algorithms
                 foreach (GeoPoint candidate in arrange.EnumeratePlacePoints(options))
                 {
                     GeoVector trans = centre.GetVectorTo(candidate);
-                    GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(trans), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                    GeoRectangle moved = arrange.GeoRectangle.Translate(trans);
 
                     // Only add to domain if candidate does not collide with static obstacles from the start
                     if (!ArrangeAlgorithms.Arrange.Collides(nearby, moved, options.Tolerance))
@@ -137,11 +137,7 @@ namespace ArrangeAlgorithms.Algorithms
 
                 // FORWARD CHECKING: Filter the domains of other unassigned variables
                 bool forwardCheckOk = true;
-                GeoRectangle currentRect = new GeoRectangle(
-                    currentVar.Arrange.GeoRectangle.Center.Add(val),
-                    currentVar.Arrange.GeoRectangle.Width,
-                    currentVar.Arrange.GeoRectangle.Height,
-                    currentVar.Arrange.GeoRectangle.AngleRad);
+                GeoRectangle currentRect = currentVar.Arrange.GeoRectangle.Translate(val);
 
                 foreach (var otherVar in variables.Where(v => !v.IsAssigned))
                 {
@@ -149,13 +145,9 @@ namespace ArrangeAlgorithms.Algorithms
                     var newDomain = new List<GeoVector>();
                     foreach (GeoVector otherVal in otherVar.Domain)
                     {
-                        GeoRectangle otherRect = new GeoRectangle(
-                            otherVar.Arrange.GeoRectangle.Center.Add(otherVal),
-                            otherVar.Arrange.GeoRectangle.Width,
-                            otherVar.Arrange.GeoRectangle.Height,
-                            otherVar.Arrange.GeoRectangle.AngleRad);
+                        GeoRectangle otherRect = otherVar.Arrange.GeoRectangle.Translate(otherVal);
 
-                        if (!currentRect.IntersectsWith(otherRect, options.Tolerance))
+                        if (!currentRect.CollidesWith(otherRect, options.Tolerance))
                         {
                             newDomain.Add(otherVal);
                         }

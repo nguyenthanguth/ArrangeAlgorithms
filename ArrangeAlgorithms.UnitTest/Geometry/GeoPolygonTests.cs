@@ -22,12 +22,14 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(6.0, poly.GetArea(), 12);
             Assert.Equal(6.0, poly.GetSignedArea(), 12);
             Assert.False(poly.IsClockwise());
+            Assert.Equal(12.0, poly.Length, 9);
 
             // Clockwise triangle (CW)
             var polyCW = new GeoPolygon(p1, p3, p2);
             Assert.Equal(6.0, polyCW.GetArea(), 12);
             Assert.Equal(-6.0, polyCW.GetSignedArea(), 12);
             Assert.True(polyCW.IsClockwise());
+            Assert.Equal(12.0, polyCW.Length, 9);
         }
 
         [Fact]
@@ -69,15 +71,15 @@ namespace ArrangeAlgorithms.UnitTest
 
             // 1. Mutually intersecting
             var rect1 = new GeoRectangle(new GeoPoint(4.0, 4.0), 2.0, 2.0, Math.PI / 4.0); // Center at square vertex, rotated 45 degrees
-            Assert.True(poly.IntersectsWith(rect1));
+            Assert.True(poly.CollidesWith(rect1));
 
             // 2. Containing the rectangle entirely
             var rect2 = new GeoRectangle(new GeoPoint(2.0, 2.0), 1.0, 1.0, 0.1);
-            Assert.True(poly.IntersectsWith(rect2));
+            Assert.True(poly.CollidesWith(rect2));
 
             // 3. Completely separated
             var rect3 = new GeoRectangle(new GeoPoint(8.0, 8.0), 2.0, 2.0, 0.5);
-            Assert.False(poly.IntersectsWith(rect3));
+            Assert.False(poly.CollidesWith(rect3));
         }
 
         [Fact]
@@ -91,16 +93,16 @@ namespace ArrangeAlgorithms.UnitTest
             ); // 4x4 square
 
             // 1. Line segment passing through the square
-            Assert.True(poly.IntersectsWith(new GeoLine(-2.0, 2.0, 6.0, 2.0)));
+            Assert.True(poly.CollidesWith(new GeoLine(-2.0, 2.0, 6.0, 2.0)));
 
             // 2. Line segment completely inside (does not intersect any edges)
-            Assert.True(poly.IntersectsWith(new GeoLine(1.0, 1.0, 3.0, 3.0)));
+            Assert.True(poly.CollidesWith(new GeoLine(1.0, 1.0, 3.0, 3.0)));
 
             // 3. Line segment touching boundary
-            Assert.True(poly.IntersectsWith(new GeoLine(-2.0, 4.0, 2.0, 4.0)));
+            Assert.True(poly.CollidesWith(new GeoLine(-2.0, 4.0, 2.0, 4.0)));
 
             // 4. Completely separated
-            Assert.False(poly.IntersectsWith(new GeoLine(6.0, 6.0, 8.0, 8.0)));
+            Assert.False(poly.CollidesWith(new GeoLine(6.0, 6.0, 8.0, 8.0)));
         }
 
         [Fact]
@@ -120,7 +122,7 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(6.0, 6.0),
                 new GeoPoint(2.0, 6.0)
             );
-            Assert.True(poly.IntersectsWith(overlapping));
+            Assert.True(poly.CollidesWith(overlapping));
 
             // 2. Nested entirely inside: no edges intersect, must be recognized via containment check
             var inner = new GeoPolygon(
@@ -129,10 +131,10 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(3.0, 3.0),
                 new GeoPoint(1.0, 3.0)
             );
-            Assert.True(poly.IntersectsWith(inner));
+            Assert.True(poly.CollidesWith(inner));
 
             // 3. Containment relation must be symmetric in both calling directions
-            Assert.True(inner.IntersectsWith(poly));
+            Assert.True(inner.CollidesWith(poly));
 
             // 4. Completely separated
             var far = new GeoPolygon(
@@ -140,7 +142,7 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(12.0, 10.0),
                 new GeoPoint(12.0, 12.0)
             );
-            Assert.False(poly.IntersectsWith(far));
+            Assert.False(poly.CollidesWith(far));
         }
 
         [Fact]
@@ -294,10 +296,10 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(0.0, 4.0));
 
             // A line segment touching exactly one vertex still counts as an intersection.
-            Assert.True(poly.IntersectsWith(new GeoLine(4.0, 4.0, 8.0, 8.0)));
+            Assert.True(poly.CollidesWith(new GeoLine(4.0, 4.0, 8.0, 8.0)));
 
             // A line segment running just outside the boundary does not.
-            Assert.False(poly.IntersectsWith(new GeoLine(4.5, 0.0, 4.5, 4.0)));
+            Assert.False(poly.CollidesWith(new GeoLine(4.5, 0.0, 4.5, 4.0)));
         }
 
         [Fact]
@@ -319,8 +321,8 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(3.5, 3.5),
                 new GeoPoint(2.5, 3.5));
 
-            Assert.False(lShape.IntersectsWith(inNotch));
-            Assert.False(inNotch.IntersectsWith(lShape));
+            Assert.False(lShape.CollidesWith(inNotch));
+            Assert.False(inNotch.CollidesWith(lShape));
         }
 
         [Fact]
@@ -346,6 +348,55 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(ccw.Contains(new GeoPoint(2.0, 2.0)), cw.Contains(new GeoPoint(2.0, 2.0)));
             Assert.Equal(ccw.Contains(new GeoPoint(9.0, 9.0)), cw.Contains(new GeoPoint(9.0, 9.0)));
         }
+        [Fact]
+        public void Polygon_EqualityOperators_CompareByValue()
+        {
+            var a = new GeoPolygon(new GeoPoint(0, 0), new GeoPoint(1, 0), new GeoPoint(1, 1));
+            var b = new GeoPolygon(new GeoPoint(0, 0), new GeoPoint(1, 0), new GeoPoint(1, 1));
+            var c = new GeoPolygon(new GeoPoint(0, 0), new GeoPoint(2, 0), new GeoPoint(2, 2));
+
+            Assert.True(a == b);
+            Assert.False(a != b);
+            Assert.True(a != c);
+
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+
+            // Null handling matches GeoPolyline.
+            Assert.True((GeoPolygon)null == (GeoPolygon)null);
+            Assert.False(a == null);
+            Assert.False(null == a);
+        }
+
+        [Fact]
+        public void Polygon_Constructor_DropsConsecutiveDuplicateVertices()
+        {
+            // A repeated vertex would otherwise leave a zero-length edge behind.
+            var poly = new GeoPolygon(
+                new GeoPoint(0, 0), new GeoPoint(0, 0),
+                new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(10, 10));
+
+            Assert.Equal(3, poly.VertexCount);
+            Assert.Equal(50.0, poly.GetArea(), 9);
+
+            // Once the duplicates are removed there are not enough distinct vertices left.
+            Assert.Throws<ArgumentException>(() =>
+                new GeoPolygon(new GeoPoint(0, 0), new GeoPoint(0, 0), new GeoPoint(1, 1)));
+        }
+
+        [Fact]
+        public void Polygon_TranslateAndRotate_ProduceMovedCopies()
+        {
+            var poly = new GeoPolygon(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+
+            var moved = poly.Translate(new GeoVector(5, -5));
+            Assert.True(moved[0].IsEqualTo(new GeoPoint(5, -5)));
+            Assert.Equal(poly.GetArea(), moved.GetArea(), 9);
+            Assert.Equal(moved, poly + new GeoVector(5, -5));
+            Assert.Equal(poly, moved - new GeoVector(5, -5));
+
+            var rotated = poly.RotateBy(Math.PI / 2.0, new GeoPoint(0, 0));
+            Assert.True(rotated[1].IsEqualTo(new GeoPoint(0, 10)));
+            Assert.Equal(poly.GetArea(), rotated.GetArea(), 9);
+        }
     }
 }
-

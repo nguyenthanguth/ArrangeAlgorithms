@@ -36,7 +36,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
             var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
-            Assert.False(moved1.IntersectsWith(moved2));
+            Assert.False(moved1.CollidesWith(moved2));
         }
 
         [Fact]
@@ -138,9 +138,9 @@ namespace ArrangeAlgorithms.UnitTest
             var movedB = new GeoRectangle(b.GeoRectangle.Center + b.TranslationVector, 20.0, 10.0);
 
             // The blocked region is collected globally for the list, so both labels must avoid it.
-            Assert.False(movedA.IntersectsWith(blockPoly));
-            Assert.False(movedB.IntersectsWith(blockPoly));
-            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.False(movedA.CollidesWith(blockPoly));
+            Assert.False(movedB.CollidesWith(blockPoly));
+            Assert.False(movedA.CollidesWith(movedB));
         }
 
         [Fact]
@@ -192,7 +192,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
 
             // It should either go to the bottom row (Y=-10) or upper row 2 (Y=25) to avoid the line obstacle
-            Assert.False(moved.IntersectsWith(blockLine));
+            Assert.False(moved.CollidesWith(blockLine));
             Assert.True(label.Placed);
         }
     }

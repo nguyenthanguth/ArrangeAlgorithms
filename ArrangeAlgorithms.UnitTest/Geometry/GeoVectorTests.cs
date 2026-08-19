@@ -84,16 +84,16 @@ namespace ArrangeAlgorithms.UnitTest
         public void Vector_ParallelAndPerpendicularTolerance_WorksCorrectly()
         {
             var v1 = new GeoVector(1.0, 0.0);
-            // A vector very close to perpendicular (deviates by a tiny 1e-10)
-            var vNearlyPerpendicular = new GeoVector(1e-10, 1.0);
+            // A vector very close to perpendicular (deviates by 1e-4 radians)
+            var vNearlyPerpendicular = new GeoVector(1e-4, 1.0);
 
-            Assert.True(v1.IsPerpendicularTo(vNearlyPerpendicular, new Tolerance(1e-9, 1e-9)));
-            Assert.False(v1.IsPerpendicularTo(vNearlyPerpendicular, new Tolerance(1e-11, 1e-11)));
+            Assert.True(v1.IsPerpendicularTo(vNearlyPerpendicular, new Tolerance(1e-9, 1e-9, 1e-3)));
+            Assert.False(v1.IsPerpendicularTo(vNearlyPerpendicular, new Tolerance(1e-9, 1e-9, 1e-5)));
 
-            // A vector very close to parallel
-            var vNearlyParallel = new GeoVector(1.0, 1e-10);
-            Assert.True(v1.IsParallelTo(vNearlyParallel, new Tolerance(1e-9, 1e-9)));
-            Assert.False(v1.IsParallelTo(vNearlyParallel, new Tolerance(1e-11, 1e-11)));
+            // A vector very close to parallel (deviates by 1e-4 radians)
+            var vNearlyParallel = new GeoVector(1.0, 1e-4);
+            Assert.True(v1.IsParallelTo(vNearlyParallel, new Tolerance(1e-9, 1e-9, 1e-3)));
+            Assert.False(v1.IsParallelTo(vNearlyParallel, new Tolerance(1e-9, 1e-9, 1e-5)));
         }
 
         [Fact]

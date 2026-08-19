@@ -276,7 +276,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             Arrange.Run(new List<Arrange> { a, b }, OptionsFor(algorithm));
 
-            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
+            Assert.False(MovedBox(a, a.TranslationVector).CollidesWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -298,7 +298,7 @@ namespace ArrangeAlgorithms.UnitTest
             Arrange.Run(new List<Arrange> { label }, OptionsFor(algorithm));
             var moved = MovedBox(label, label.TranslationVector);
 
-            Assert.False(moved.IntersectsWith(blockPoly));
+            Assert.False(moved.CollidesWith(blockPoly));
             Assert.True(moved.Center.Y < 0.0);
             Assert.True(label.Placed);
         }
@@ -349,7 +349,7 @@ namespace ArrangeAlgorithms.UnitTest
                 bool clean = true;
                 for (int j = 0; j < labels.Count && clean; j++)
                 {
-                    if (i != j && boxes[i].IntersectsWith(boxes[j])) clean = false;
+                    if (i != j && boxes[i].CollidesWith(boxes[j])) clean = false;
                 }
 
                 Assert.Equal(clean, labels[i].Placed);
@@ -436,7 +436,7 @@ namespace ArrangeAlgorithms.UnitTest
             var successBox = MovedBox(successLabel, successLabel.TranslationVector);
             var failedBox = MovedBox(failedLabel, failedLabel.TranslationVector);
 
-            Assert.False(successBox.IntersectsWith(failedBox));
+            Assert.False(successBox.CollidesWith(failedBox));
         }
 
         [Theory]
@@ -464,7 +464,7 @@ namespace ArrangeAlgorithms.UnitTest
             var movedA = MovedBox(a, a.TranslationVector);
             var movedB = MovedBox(b, b.TranslationVector);
 
-            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.False(movedA.CollidesWith(movedB));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -571,7 +571,7 @@ namespace ArrangeAlgorithms.UnitTest
             var movedA = MovedBox(a, a.TranslationVector);
             var movedB = MovedBox(b, b.TranslationVector);
 
-            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.False(movedA.CollidesWith(movedB));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -590,7 +590,7 @@ namespace ArrangeAlgorithms.UnitTest
             var movedA = MovedBox(a, a.TranslationVector);
             var movedB = MovedBox(b, b.TranslationVector);
 
-            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.False(movedA.CollidesWith(movedB));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -681,8 +681,8 @@ namespace ArrangeAlgorithms.UnitTest
             Arrange.Run(new List<Arrange> { label }, options);
 
             var moved = MovedBox(label, label.TranslationVector);
-            Assert.False(moved.IntersectsWith(obs1));
-            Assert.False(moved.IntersectsWith(obs2));
+            Assert.False(moved.CollidesWith(obs1));
+            Assert.False(moved.CollidesWith(obs2));
         }
 
         [Theory]
@@ -763,7 +763,7 @@ namespace ArrangeAlgorithms.UnitTest
             if (label.Placed)
             {
                 var moved = MovedBox(label, label.TranslationVector);
-                Assert.False(moved.IntersectsWith(obstacle));
+                Assert.False(moved.CollidesWith(obstacle));
                 // Center Y should be close to 60 or -60 (level 3)
                 Assert.Equal(60.0, Math.Abs(moved.Center.Y), 1);
             }

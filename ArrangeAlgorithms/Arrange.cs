@@ -156,11 +156,7 @@ namespace ArrangeAlgorithms
             {
                 if (arranges[i] != null && arranges[i].Placed)
                 {
-                    var rect = new GeoRectangle(
-                        arranges[i].GeoRectangle.Center.Add(translations[i]),
-                        arranges[i].GeoRectangle.Width,
-                        arranges[i].GeoRectangle.Height,
-                        arranges[i].GeoRectangle.AngleRad);
+                    var rect = arranges[i].GeoRectangle.Translate(translations[i]);
 
                     greenBoxes.Add(new GeoPolygon(rect.GetVertices()));
                 }
@@ -270,17 +266,17 @@ namespace ArrangeAlgorithms
                 {
                     case ObstacleType.GeoRectangle:
                         // OBB vs OBB: Using SAT (Separating Axis Theorem)
-                        if (moved.IntersectsWith(obstacle.GeoRectangle, tolerance))
+                        if (moved.CollidesWith(obstacle.GeoRectangle, tolerance))
                             return true;
                         break;
                     case ObstacleType.GeoPolygon:
                         // OBB vs Polygon: Check edge intersections and containment
-                        if (moved.IntersectsWith(obstacle.GeoPolygon, tolerance))
+                        if (moved.CollidesWith(obstacle.GeoPolygon, tolerance))
                             return true;
                         break;
                     case ObstacleType.GeoLine:
                         // OBB vs Line Segment: Check edge intersections and endpoints
-                        if (moved.IntersectsWith(obstacle.GeoLine, tolerance))
+                        if (moved.CollidesWith(obstacle.GeoLine, tolerance))
                             return true;
                         break;
                 }
@@ -309,11 +305,7 @@ namespace ArrangeAlgorithms
             {
                 if (arranges[i] == null) continue;
 
-                finalBoxes[i] = new GeoRectangle(
-                    arranges[i].GeoRectangle.Center.Add(translations[i]),
-                    arranges[i].GeoRectangle.Width,
-                    arranges[i].GeoRectangle.Height,
-                    arranges[i].GeoRectangle.AngleRad);
+                finalBoxes[i] = arranges[i].GeoRectangle.Translate(translations[i]);
                 finalBounds[i] = Bounds.Of(finalBoxes[i]);
             }
 
@@ -335,7 +327,7 @@ namespace ArrangeAlgorithms
                 {
                     if (i == j || arranges[j] == null) continue;
                     if (!finalBounds[i].Overlaps(finalBounds[j])) continue;
-                    if (finalBoxes[i].IntersectsWith(finalBoxes[j], options.Tolerance)) clean = false;
+                    if (finalBoxes[i].CollidesWith(finalBoxes[j], options.Tolerance)) clean = false;
                 }
 
                 arranges[i].SetPlaced(clean);

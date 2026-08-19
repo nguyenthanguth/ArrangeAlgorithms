@@ -27,13 +27,13 @@ namespace ArrangeAlgorithms.UnitTest
             var GeoLine = new GeoLine(0.0, 0.0, 10.0, 0.0); // Horizontal on the X-axis
 
             // Point on the line segment
-            Assert.Equal(0.5, GeoLine.GetParameterOf(new GeoPoint(5.0, 0.0)), 12);
-            Assert.Equal(new GeoPoint(5.0, 0.0), GeoLine.GetClosestPointTo(new GeoPoint(5.0, 5.0)));
+            Assert.Equal(0.5, GeoLine.GetParameterAtPoint(new GeoPoint(5.0, 0.0)), 12);
+            Assert.Equal(new GeoPoint(5.0, 0.0), GeoLine.GetClosestPointOnBoundary(new GeoPoint(5.0, 5.0)));
             Assert.Equal(5.0, GeoLine.DistanceTo(new GeoPoint(5.0, 5.0)), 12);
 
             // Point outside the endpoints
-            Assert.Equal(-0.2, GeoLine.GetParameterOf(new GeoPoint(-2.0, 0.0)), 12);
-            Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointTo(new GeoPoint(-2.0, 5.0)));
+            Assert.Equal(-0.2, GeoLine.GetParameterAtPoint(new GeoPoint(-2.0, 0.0)), 12);
+            Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointOnBoundary(new GeoPoint(-2.0, 5.0)));
 
             Assert.True(GeoLine.IsPointOn(new GeoPoint(3.0, 0.0)));
             Assert.False(GeoLine.IsPointOn(new GeoPoint(3.0, 0.1)));
@@ -90,12 +90,12 @@ namespace ArrangeAlgorithms.UnitTest
             var GeoLine = new GeoLine(0.0, 0.0, 10.0, 0.0);
 
             // Projection falls exactly on the start point (parameter t = 0)
-            Assert.Equal(0.0, GeoLine.GetParameterOf(new GeoPoint(0.0, 5.0)), 12);
-            Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointTo(new GeoPoint(0.0, 5.0)));
+            Assert.Equal(0.0, GeoLine.GetParameterAtPoint(new GeoPoint(0.0, 5.0)), 12);
+            Assert.Equal(GeoLine.StartPoint, GeoLine.GetClosestPointOnBoundary(new GeoPoint(0.0, 5.0)));
 
             // Projection falls exactly on the end point (parameter t = 1)
-            Assert.Equal(1.0, GeoLine.GetParameterOf(new GeoPoint(10.0, -5.0)), 12);
-            Assert.Equal(GeoLine.EndPoint, GeoLine.GetClosestPointTo(new GeoPoint(10.0, -5.0)));
+            Assert.Equal(1.0, GeoLine.GetParameterAtPoint(new GeoPoint(10.0, -5.0)), 12);
+            Assert.Equal(GeoLine.EndPoint, GeoLine.GetClosestPointOnBoundary(new GeoPoint(10.0, -5.0)));
         }
 
         [Fact]
@@ -129,8 +129,8 @@ namespace ArrangeAlgorithms.UnitTest
             // A degenerate segment has no direction so parameter is undefined; must return 0 instead of dividing by 0.
             var degenerate = new GeoLine(3.0, 3.0, 3.0, 3.0);
 
-            Assert.Equal(0.0, degenerate.GetParameterOf(new GeoPoint(10.0, 10.0)));
-            Assert.Equal(degenerate.StartPoint, degenerate.GetClosestPointTo(new GeoPoint(10.0, 10.0)));
+            Assert.Equal(0.0, degenerate.GetParameterAtPoint(new GeoPoint(10.0, 10.0)));
+            Assert.Equal(degenerate.StartPoint, degenerate.GetClosestPointOnBoundary(new GeoPoint(10.0, 10.0)));
         }
 
         [Fact]
@@ -159,11 +159,11 @@ namespace ArrangeAlgorithms.UnitTest
             var crossing = new GeoLine(0.0, 10.0, 10.0, 0.0);
             var parallel = new GeoLine(0.0, 2.0, 10.0, 12.0);
 
-            Assert.Equal(line.TryIntersectWith(crossing, out _), line.IntersectsWith(crossing));
-            Assert.Equal(line.TryIntersectWith(parallel, out _), line.IntersectsWith(parallel));
+            Assert.Equal(line.TryIntersectWith(crossing, out _), line.CollidesWith(crossing));
+            Assert.Equal(line.TryIntersectWith(parallel, out _), line.CollidesWith(parallel));
 
-            Assert.True(line.IntersectsWith(crossing));
-            Assert.False(line.IntersectsWith(parallel));
+            Assert.True(line.CollidesWith(crossing));
+            Assert.False(line.CollidesWith(parallel));
         }
 
         [Fact]
@@ -171,7 +171,7 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var line = new GeoLine(0.0, 0.0, 10.0, 10.0);
 
-            Assert.Throws<ArgumentNullException>(() => line.IntersectsWith((GeoPolygon)null));
+            Assert.Throws<ArgumentNullException>(() => line.CollidesWith((GeoPolygon)null));
         }
 
         [Fact]
@@ -192,9 +192,9 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var l1 = new GeoLine(0.0, 0.0, 10.0, 0.0);
 
-            Assert.True(l1.IntersectsWith(new GeoLine(5.0, -5.0, 5.0, 5.0)));   // Intersects
-            Assert.False(l1.IntersectsWith(new GeoLine(0.0, 5.0, 10.0, 5.0)));  // Parallel
-            Assert.False(l1.IntersectsWith(new GeoLine(20.0, -5.0, 20.0, 5.0))); // Intersects extension, not segment
+            Assert.True(l1.CollidesWith(new GeoLine(5.0, -5.0, 5.0, 5.0)));   // Intersects
+            Assert.False(l1.CollidesWith(new GeoLine(0.0, 5.0, 10.0, 5.0)));  // Parallel
+            Assert.False(l1.CollidesWith(new GeoLine(20.0, -5.0, 20.0, 5.0))); // Intersects extension, not segment
         }
 
         [Fact]
@@ -211,15 +211,15 @@ namespace ArrangeAlgorithms.UnitTest
             var crossing = new GeoLine(-5.0, 0.0, 5.0, 0.0);
             var outside = new GeoLine(10.0, 10.0, 12.0, 12.0);
 
-            Assert.True(crossing.IntersectsWith(rect));
-            Assert.False(outside.IntersectsWith(rect));
+            Assert.True(crossing.CollidesWith(rect));
+            Assert.False(outside.CollidesWith(rect));
 
-            Assert.True(crossing.IntersectsWith(poly));
-            Assert.False(outside.IntersectsWith(poly));
+            Assert.True(crossing.CollidesWith(poly));
+            Assert.False(outside.CollidesWith(poly));
 
             // Calling in reverse direction must give the same result
-            Assert.True(rect.IntersectsWith(crossing));
-            Assert.True(poly.IntersectsWith(crossing));
+            Assert.True(rect.CollidesWith(crossing));
+            Assert.True(poly.CollidesWith(crossing));
         }
     }
 }

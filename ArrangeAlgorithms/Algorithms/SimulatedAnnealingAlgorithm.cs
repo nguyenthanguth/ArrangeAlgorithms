@@ -143,11 +143,7 @@ namespace ArrangeAlgorithms.Algorithms
             {
                 if (arranges[i] == null) continue;
 
-                movedRects[i] = new GeoRectangle(
-                    arranges[i].GeoRectangle.Center.Add(translations[i]),
-                    arranges[i].GeoRectangle.Width,
-                    arranges[i].GeoRectangle.Height,
-                    arranges[i].GeoRectangle.AngleRad);
+                movedRects[i] = arranges[i].GeoRectangle.Translate(translations[i]);
 
                 movedBoxes[i] = Bounds.Of(movedRects[i]);
             }
@@ -172,7 +168,7 @@ namespace ArrangeAlgorithms.Algorithms
 
                     if (box.Overlaps(movedBoxes[j]))
                     {
-                        if (rect.IntersectsWith(movedRects[j], options.Tolerance))
+                        if (rect.CollidesWith(movedRects[j], options.Tolerance))
                         {
                             energy += 10000.0;
                         }

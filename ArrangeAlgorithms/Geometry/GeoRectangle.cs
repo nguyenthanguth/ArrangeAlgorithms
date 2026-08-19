@@ -1,4 +1,7 @@
 using System;
+using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Enums;
+using ArrangeAlgorithms.Datatype;
 
 namespace ArrangeAlgorithms.Geometry
 {
@@ -28,9 +31,15 @@ namespace ArrangeAlgorithms.Geometry
         public double AngleRad { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the rectangle is rotated (non-zero rotation angle).
+        /// Gets a value indicating whether the rectangle is rotated, that is whether its rotation angle
+        /// differs from zero by more than the angular tolerance once full turns are removed.
         /// </summary>
-        public bool IsRotated => Math.Abs(AngleRad) > Tolerance.Global.EqualVector;
+        public bool IsRotated => Math.Abs(Angle.FromRadians(AngleRad).NormalizeSigned().Radians) > Tolerance.Global.EqualAngleRad;
+
+        /// <summary>
+        /// Gets the perimeter (total boundary length) of the rectangle.
+        /// </summary>
+        public double Length => 2.0 * (Width + Height);
 
         /// <summary>
         /// Initializes a new GeoRectangle instance from center, width, height, and rotation angle.
@@ -39,8 +48,19 @@ namespace ArrangeAlgorithms.Geometry
         /// <param name="width">Rectangle width.</param>
         /// <param name="height">Rectangle height.</param>
         /// <param name="angleRad">Rotation angle in radians.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when width or height is negative.</exception>
         public GeoRectangle(GeoPoint center, double width, double height, double angleRad = 0.0)
         {
+            if (width < 0.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(width), "Width cannot be negative.");
+            }
+
+            if (height < 0.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(height), "Height cannot be negative.");
+            }
+
             Center = center;
             Width = width;
             Height = height;
@@ -58,6 +78,63 @@ namespace ArrangeAlgorithms.Geometry
             : this(new GeoPoint(x + width * 0.5, y + height * 0.5), width, height, 0.0)
         {
         }
+
+        /// <summary>
+        /// Creates a copy of this rectangle.
+        /// </summary>
+        /// <remarks>
+        /// Rectangle is a readonly struct, so plain assignment already produces an independent copy and
+        /// this method is not needed to avoid sharing. It exists so that every geometry type offers the
+        /// same way to ask for a copy.
+        /// </remarks>
+        /// <returns>A new rectangle with the same center, size, and rotation.</returns>
+        public GeoRectangle Clone() => new GeoRectangle(Center, Width, Height, AngleRad);
+
+        /// <summary>
+        /// Gets the point at a normalized parameter along this rectangle perimeter, where 0 is the LowerLeft corner and 1 is the end.
+        /// Values outside [0, 1] wrap around, so 1.25 is the same position as 0.25.
+        /// </summary>
+        public GeoPoint GetPointAtParameter(double parameter) => Parametrization.GetPointAtParameter(this, parameter);
+
+        /// <summary>
+        /// Gets the normalized parameter of the point on this rectangle perimeter closest to the supplied point.
+        /// </summary>
+        public double GetParameterAtPoint(GeoPoint point) => Parametrization.GetParameterAtPoint(this, point);
+
+        /// <summary>
+        /// Gets the point at an arc length measured from the LowerLeft corner of this rectangle perimeter.
+        /// </summary>
+        public GeoPoint GetPointAtDistance(double distance) => Parametrization.GetPointAtDistance(this, distance);
+
+        /// <summary>
+        /// Gets the arc length from the LowerLeft corner of this rectangle perimeter to the point on it closest to the supplied point.
+        /// </summary>
+        public double GetDistanceAtPoint(GeoPoint point) => Parametrization.GetDistanceAtPoint(this, point);
+
+        /// <summary>
+        /// Gets the arc length from the LowerLeft corner of this rectangle perimeter to a normalized parameter.
+        /// </summary>
+        public double GetDistanceAtParameter(double parameter) => Parametrization.GetDistanceAtParameter(this, parameter);
+
+        /// <summary>
+        /// Gets the normalized parameter at an arc length measured from the LowerLeft corner of this rectangle perimeter.
+        /// </summary>
+        public double GetParameterAtDistance(double distance) => Parametrization.GetParameterAtDistance(this, distance);
+
+        /// <summary>
+        /// Translates the rectangle by a displacement vector.
+        /// </summary>
+        /// <param name="vector">The displacement vector.</param>
+        /// <returns>A new translated GeoRectangle keeping the same size and rotation.</returns>
+        public GeoRectangle Translate(GeoVector vector) => new GeoRectangle(Center.Add(vector), Width, Height, AngleRad);
+
+        /// <summary>
+        /// Rotates the rectangle around a center point by an angle in radians (counter-clockwise).
+        /// </summary>
+        /// <param name="angleRad">Rotation angle in radians.</param>
+        /// <param name="center">Center of rotation.</param>
+        /// <returns>A new rotated GeoRectangle.</returns>
+        public GeoRectangle RotateBy(double angleRad, GeoPoint center) => new GeoRectangle(Center.RotateBy(angleRad, center), Width, Height, AngleRad + angleRad);
 
         /// <summary>
         /// Gets the bottom-left corner coordinates.
@@ -151,227 +228,205 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
-        /// Checks whether the rectangle contains a point.
+        /// Gets the closest point on the boundary of this rectangle to a target point, including for points
+        /// inside the rectangle.
         /// </summary>
-        public bool Contains(GeoPoint GeoPoint)
-        {
-            double dx = GeoPoint.X - Center.X;
-            double dy = GeoPoint.Y - Center.Y;
-
-            double cos = Math.Cos(AngleRad);
-            double sin = Math.Sin(AngleRad);
-
-            // Project point onto the local coordinate system around Center
-            double localX = dx * cos + dy * sin;
-            double localY = -dx * sin + dy * cos;
-
-            double halfW = Width * 0.5;
-            double halfH = Height * 0.5;
-
-            return localX >= -halfW && localX <= halfW &&
-                   localY >= -halfH && localY <= halfH;
-        }
+        public GeoPoint GetClosestPointOnBoundary(GeoPoint point) => Projection.ProjectToRectangle(this, point);
 
         /// <summary>
-        /// Checks whether this rectangle intersects with another rectangle using default tolerance.
+        /// Calculates the shortest Euclidean distance from this rectangle to a point.
         /// </summary>
-        public bool IntersectsWith(GeoRectangle other)
-        {
-            return IntersectsWith(other, Tolerance.Global);
-        }
-
-        /// <summary>
-        /// Checks whether this rectangle intersects with another rectangle using the Separating Axis Theorem (SAT).
-        /// Clearance smaller than the tolerance is still considered a collision.
-        /// </summary>
-        public bool IntersectsWith(GeoRectangle other, Tolerance tolerance)
-        {
-            GeoPoint[] r1 = GetVertices();
-            GeoPoint[] r2 = other.GetVertices();
-
-            // Axes to check (perpendicular to the edges of both rectangles)
-            GeoVector[] axes = new GeoVector[4];
-            axes[0] = new GeoVector(r1[1].X - r1[0].X, r1[1].Y - r1[0].Y).Normalize(); // X-axis of R1
-            axes[1] = new GeoVector(r1[3].X - r1[0].X, r1[3].Y - r1[0].Y).Normalize(); // Y-axis of R1
-            axes[2] = new GeoVector(r2[1].X - r2[0].X, r2[1].Y - r2[0].Y).Normalize(); // X-axis of R2
-            axes[3] = new GeoVector(r2[3].X - r2[0].X, r2[3].Y - r2[0].Y).Normalize(); // Y-axis of R2
-
-            foreach (var axis in axes)
-            {
-                if (axis.X == 0 && axis.Y == 0) continue;
-
-                // Project R1 onto axis
-                double min1 = double.MaxValue;
-                double max1 = double.MinValue;
-                foreach (var p in r1)
-                {
-                    double proj = p.X * axis.X + p.Y * axis.Y;
-                    if (proj < min1) min1 = proj;
-                    if (proj > max1) max1 = proj;
-                }
-
-                // Project R2 onto axis
-                double min2 = double.MaxValue;
-                double max2 = double.MinValue;
-                foreach (var p in r2)
-                {
-                    double proj = p.X * axis.X + p.Y * axis.Y;
-                    if (proj < min2) min2 = proj;
-                    if (proj > max2) max2 = proj;
-                }
-
-                // Check separation on this axis. The two shapes are only truly disjoint when the clearance
-                // between projections exceeds tolerance; anything narrower is considered contact.
-                if (min2 - max1 > tolerance.EqualPoint || min1 - max2 > tolerance.EqualPoint)
-                {
-                    return false; // Separating axis found, the two shapes do not intersect
-                }
-            }
-
-            return true; // No separating axis found, the two shapes intersect
-        }
-
-        /// <summary>
-        /// Checks whether this rectangle intersects with a line segment using default tolerance.
-        /// </summary>
-        public bool IntersectsWith(GeoLine geoLine)
-        {
-            return IntersectsWith(geoLine, Tolerance.Global);
-        }
-
-        /// <summary>
-        /// Checks whether this rectangle intersects with a line segment.
-        /// </summary>
-        public bool IntersectsWith(GeoLine geoLine, Tolerance tolerance)
-        {
-            // If the line segment intersects with any edge of the rectangle
-            foreach (var edge in GetEdges())
-            {
-                if (geoLine.TryIntersectWith(edge, out _, tolerance))
-                {
-                    return true;
-                }
-            }
-
-            // Or if the line segment lies entirely inside the rectangle.
-            // Just check the start point: if the segment does not intersect any edge
-            // and one endpoint is inside, then the entire segment is inside.
-            if (Contains(geoLine.StartPoint))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Checks whether this rectangle intersects with a polygon using default tolerance.
-        /// </summary>
-        public bool IntersectsWith(GeoPolygon poly)
-        {
-            return IntersectsWith(poly, Tolerance.Global);
-        }
-
-        /// <summary>
-        /// Checks whether this rectangle intersects with a polygon.
-        /// </summary>
-        public bool IntersectsWith(GeoPolygon poly, Tolerance tolerance)
-        {
-            if (poly == null) throw new ArgumentNullException(nameof(poly));
-
-            return poly.IntersectsWith(this, tolerance);
-        }
+        public double DistanceTo(GeoPoint point) => Distance.DistanceTo(this, point);
 
         /// <summary>
         /// Calculates the shortest boundary distance from this rectangle to a polygon.
         /// </summary>
-        public double DistanceTo(GeoPolygon poly)
-        {
-            if (poly == null) throw new ArgumentNullException(nameof(poly));
-
-            double minDistance = double.MaxValue;
-            GeoPoint[] rectVertices = GetVertices();
-            GeoLine[] rectEdges = GetEdges();
-
-            foreach (var rv in rectVertices)
-            {
-                for (int i = 0; i < poly.EdgeCount; i++)
-                {
-                    double d = poly.GetEdgeAt(i).DistanceTo(rv);
-                    if (d < minDistance) minDistance = d;
-                }
-            }
-
-            for (int i = 0; i < poly.VertexCount; i++)
-            {
-                var pv = poly[i];
-                foreach (var re in rectEdges)
-                {
-                    double d = re.DistanceTo(pv);
-                    if (d < minDistance) minDistance = d;
-                }
-            }
-
-            return minDistance;
-        }
+        public double DistanceTo(GeoPolygon poly) => Distance.DistanceTo(this, poly);
 
         /// <summary>
         /// Calculates the shortest boundary distance from this rectangle to a line segment.
         /// </summary>
-        public double DistanceTo(GeoLine GeoLine)
-        {
-            double minDistance = double.MaxValue;
-            GeoPoint[] rectVertices = GetVertices();
-            GeoLine[] rectEdges = GetEdges();
+        public double DistanceTo(GeoLine GeoLine) => Distance.DistanceTo(this, GeoLine);
 
-            foreach (var rv in rectVertices)
-            {
-                double d = GeoLine.DistanceTo(rv);
-                if (d < minDistance) minDistance = d;
-            }
+        /// <summary>
+        /// Calculates the shortest boundary distance from this rectangle to a circle.
+        /// </summary>
+        public double DistanceTo(GeoCircle circle) => Distance.DistanceTo(circle, this);
 
-            foreach (var re in rectEdges)
-            {
-                double d1 = re.DistanceTo(GeoLine.StartPoint);
-                double d2 = re.DistanceTo(GeoLine.EndPoint);
-                if (d1 < minDistance) minDistance = d1;
-                if (d2 < minDistance) minDistance = d2;
-            }
-
-            return minDistance;
-        }
+        /// <summary>
+        /// Calculates the shortest distance from this rectangle to a polyline.
+        /// </summary>
+        public double DistanceTo(GeoPolyline polyline) => Distance.DistanceTo(polyline, this);
 
         /// <summary>
         /// Calculates the shortest boundary distance from this rectangle to another rectangle.
         /// </summary>
-        public double DistanceTo(GeoRectangle other)
-        {
-            double minDistance = double.MaxValue;
-            GeoPoint[] r1Vertices = GetVertices();
-            GeoPoint[] r2Vertices = other.GetVertices();
-            GeoLine[] r1Edges = GetEdges();
-            GeoLine[] r2Edges = other.GetEdges();
+        public double DistanceTo(GeoRectangle other) => Distance.DistanceTo(this, other);
 
-            foreach (var r1v in r1Vertices)
-            {
-                foreach (var r2e in r2Edges)
-                {
-                    double d = r2e.DistanceTo(r1v);
-                    if (d < minDistance) minDistance = d;
-                }
-            }
+        /// <summary>
+        /// Checks whether the rectangle contains a point.
+        /// </summary>
+        public bool Contains(GeoPoint GeoPoint) => Containment.Contains(this, GeoPoint);
 
-            foreach (var r2v in r2Vertices)
-            {
-                foreach (var r1e in r1Edges)
-                {
-                    double d = r1e.DistanceTo(r2v);
-                    if (d < minDistance) minDistance = d;
-                }
-            }
+        /// <summary>
+        /// Checks whether the rectangle entirely contains a line segment using default tolerance.
+        /// </summary>
+        public bool Contains(GeoLine line) => Containment.Contains(this, line, Tolerance.Global);
 
-            return minDistance;
-        }
+        /// <summary>
+        /// Checks whether the rectangle entirely contains a line segment within tolerance.
+        /// </summary>
+        public bool Contains(GeoLine line, Tolerance tolerance) => Containment.Contains(this, line, tolerance);
+
+        /// <summary>
+        /// Checks whether the rectangle entirely contains a polyline using default tolerance.
+        /// </summary>
+        public bool Contains(GeoPolyline polyline) => Containment.Contains(this, polyline, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether the rectangle entirely contains a polyline within tolerance.
+        /// </summary>
+        public bool Contains(GeoPolyline polyline, Tolerance tolerance) => Containment.Contains(this, polyline, tolerance);
+
+        /// <summary>
+        /// Classifies the location of a point relative to this rectangle (Inside, OutSide, or OnSide) using default tolerance.
+        /// </summary>
+        public PointLocation Locate(GeoPoint point) => Containment.Locate(this, point, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of a point relative to this rectangle (Inside, OutSide, or OnSide) within tolerance.
+        /// </summary>
+        public PointLocation Locate(GeoPoint point, Tolerance tolerance) => Containment.Locate(this, point, tolerance);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with another rectangle using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoRectangle other) => Collision.CollidesWith(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with another rectangle within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoRectangle other, Tolerance tolerance) => Collision.CollidesWith(this, other, tolerance);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a line segment using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoLine geoLine) => Collision.CollidesWith(this, geoLine, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a line segment within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoLine geoLine, Tolerance tolerance) => Collision.CollidesWith(this, geoLine, tolerance);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a polygon using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolygon poly) => Collision.CollidesWith(this, poly, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a polygon within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolygon poly, Tolerance tolerance) => Collision.CollidesWith(this, poly, tolerance);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a circle using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoCircle circle) => Collision.CollidesWith(circle, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a circle within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoCircle circle, Tolerance tolerance) => Collision.CollidesWith(circle, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a polyline using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolyline polyline) => Collision.CollidesWith(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this rectangle collides with a polyline within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolyline polyline, Tolerance tolerance) => Collision.CollidesWith(polyline, this, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a line segment using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoLine line) => Intersection.GetIntersections(this, line, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a line segment within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoLine line, Tolerance tolerance) => Intersection.GetIntersections(this, line, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with another rectangle using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoRectangle other) => Intersection.GetIntersections(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with another rectangle within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoRectangle other, Tolerance tolerance) => Intersection.GetIntersections(this, other, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a polygon using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolygon poly) => Intersection.GetIntersections(poly, this, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a polygon within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolygon poly, Tolerance tolerance) => Intersection.GetIntersections(poly, this, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a circle using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoCircle circle) => Intersection.GetIntersections(this, circle, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a circle within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoCircle circle, Tolerance tolerance) => Intersection.GetIntersections(this, circle, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a polyline using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolyline polyline) => Intersection.GetIntersections(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a polyline within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolyline polyline, Tolerance tolerance) => Intersection.GetIntersections(polyline, this, tolerance);
+
+        /// <summary>
+        /// Checks whether a line segment is parallel to this rectangle's axes using default tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoLine line) => Parallel.IsParallel(this, line, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether a line segment is parallel to this rectangle's axes within angular tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoLine line, Tolerance tolerance) => Parallel.IsParallel(this, line, tolerance);
+
+        /// <summary>
+        /// Checks whether another rectangle is parallel in orientation to this rectangle using default tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoRectangle other) => Parallel.IsParallel(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether another rectangle is parallel in orientation to this rectangle within angular tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoRectangle other, Tolerance tolerance) => Parallel.IsParallel(this, other, tolerance);
+
+        /// <summary>
+        /// Translates a rectangle by a vector.
+        /// </summary>
+        public static GeoRectangle operator +(GeoRectangle rect, GeoVector vector) => rect.Translate(vector);
+
+        /// <summary>
+        /// Translates a rectangle backwards by a vector.
+        /// </summary>
+        public static GeoRectangle operator -(GeoRectangle rect, GeoVector vector) => rect.Translate(-vector);
 
         /// <summary>
         /// Indicates whether the current rectangle is equal to another rectangle.
@@ -391,10 +446,7 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
-        public override bool Equals(object obj)
-        {
-            return obj is GeoRectangle other && Equals(other);
-        }
+        public override bool Equals(object obj) => obj is GeoRectangle other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
@@ -432,9 +484,6 @@ namespace ArrangeAlgorithms.Geometry
         /// Returns the string representation of the rectangle.
         /// </summary>
         /// <returns>A string representation detailing center, width, height, and angle.</returns>
-        public override string ToString()
-        {
-            return $"GeoRectangle[Center:{Center}, Width:{Width:0.000}, Height:{Height:0.000}, AngleRad:{AngleRad:0.000}]";
-        }
+        public override string ToString() => $"GeoRectangle[Center:{Center}, Width:{Width:0.000}, Height:{Height:0.000}, AngleRad:{AngleRad:0.000}]";
     }
 }

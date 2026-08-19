@@ -17,6 +17,14 @@ namespace ArrangeAlgorithms.TeklaTest
         {
             // Run the main test routine for arranging rebar marks
             RebarTest();
+
+            //Tekla.Structures.Geometry3d.Intersection
+            //Tekla.Structures.Geometry3d.Distance
+            //Tekla.Structures.Geometry3d.Parallel.LineToLine
+            //Tekla.Structures.Geometry3d.Projection
+
+            AABB aabb = new AABB();
+            // aabb.Collide
         }
 
         /// <summary>

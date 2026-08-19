@@ -160,7 +160,7 @@ namespace ArrangeAlgorithms.Algorithms
                 foreach (GeoPoint candidate in arrange.EnumeratePlacePoints(options))
                 {
                     GeoVector translation = centre.GetVectorTo(candidate);
-                    GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                    GeoRectangle moved = arrange.GeoRectangle.Translate(translation);
 
                     // Only accept if the candidate does not collide with static obstacles and previously placed labels
                     if (!ArrangeAlgorithms.Arrange.Collides(nearby, moved, options.Tolerance))
@@ -186,7 +186,7 @@ namespace ArrangeAlgorithms.Algorithms
                 translations[i] = bestTranslation;
 
                 // Add the selected position as a static obstacle for subsequent labels
-                GeoRectangle finalRect = new GeoRectangle(arrange.GeoRectangle.Center.Add(bestTranslation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                GeoRectangle finalRect = arrange.GeoRectangle.Translate(bestTranslation);
                 finalOccupied.Add(new Obstacle(finalRect));
             }
 
@@ -201,7 +201,7 @@ namespace ArrangeAlgorithms.Algorithms
             switch (obstacle.Type)
             {
                 case ObstacleType.GeoLine:
-                    return obstacle.GeoLine.GetClosestPointTo(from);
+                    return obstacle.GeoLine.GetClosestPointOnBoundary(from);
                 case ObstacleType.GeoRectangle:
                     return GetClosestPointOnEdges(obstacle.GeoRectangle.GetEdges(), from);
                 default:
@@ -219,7 +219,7 @@ namespace ArrangeAlgorithms.Algorithms
 
             foreach (GeoLine edge in edges)
             {
-                GeoPoint candidate = edge.GetClosestPointTo(from);
+                GeoPoint candidate = edge.GetClosestPointOnBoundary(from);
                 double distance = candidate.DistanceTo(from);
                 if (distance < bestDistance)
                 {

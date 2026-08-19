@@ -16,6 +16,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(6.0, rect1.Height);
             Assert.Equal(0.0, rect1.AngleRad);
             Assert.False(rect1.IsRotated);
+            Assert.Equal(20.0, rect1.Length);
 
             Assert.Equal(new GeoPoint(0.0, 0.0), rect1.LowerLeft);
             Assert.Equal(new GeoPoint(4.0, 0.0), rect1.LowerRight);
@@ -26,6 +27,7 @@ namespace ArrangeAlgorithms.UnitTest
             var center = new GeoPoint(0.0, 0.0);
             var rect2 = new GeoRectangle(center, 4.0, 2.0, Math.PI / 2.0); // Width 4 along local X-axis (Y-axis), height 2 along local Y-axis (-X)
             Assert.True(rect2.IsRotated);
+            Assert.Equal(12.0, rect2.Length);
 
             // Rotate 90 degrees counter-clockwise transforms local coordinates from (x, y) to (-y, x).
             // Local LowerLeft is (-halfW, -halfH) = (-2, -1) -> (1.0, -2.0)
@@ -64,23 +66,23 @@ namespace ArrangeAlgorithms.UnitTest
 
             // 1. Two AABBs completely disjoint
             var rect2 = new GeoRectangle(new GeoPoint(5.0, 0.0), 2.0, 2.0, 0.0);
-            Assert.False(rect1.IntersectsWith(rect2));
+            Assert.False(rect1.CollidesWith(rect2));
 
             // 2. Hai AABB giao nhau
             var rect3 = new GeoRectangle(new GeoPoint(3.0, 0.0), 3.0, 2.0, 0.0);
-            Assert.True(rect1.IntersectsWith(rect3));
+            Assert.True(rect1.CollidesWith(rect3));
 
             // 3. Two AABBs nested
             var rect4 = new GeoRectangle(center1, 1.0, 1.0, 0.0);
-            Assert.True(rect1.IntersectsWith(rect4));
+            Assert.True(rect1.CollidesWith(rect4));
 
             // 4. Two rotated OBBs intersecting
             var rect5 = new GeoRectangle(new GeoPoint(2.5, 1.5), 2.0, 2.0, Math.PI / 4.0); // Rotate 45 degrees
-            Assert.True(rect1.IntersectsWith(rect5));
+            Assert.True(rect1.CollidesWith(rect5));
 
             // 5. Two rotated OBBs disjoint
             var rect6 = new GeoRectangle(new GeoPoint(4.0, 3.0), 2.0, 2.0, Math.PI / 4.0);
-            Assert.False(rect1.IntersectsWith(rect6));
+            Assert.False(rect1.CollidesWith(rect6));
         }
 
         [Fact]
@@ -103,11 +105,11 @@ namespace ArrangeAlgorithms.UnitTest
 
             // External contact touching edge
             var rect2 = new GeoRectangle(4.0, 0.0, 4.0, 4.0); // X: [4, 8], Y: [0, 4]
-            Assert.True(rect1.IntersectsWith(rect2));
+            Assert.True(rect1.CollidesWith(rect2));
 
             // External contact touching corner
             var rect3 = new GeoRectangle(4.0, 4.0, 4.0, 4.0); // X: [4, 8], Y: [4, 8]
-            Assert.True(rect1.IntersectsWith(rect3));
+            Assert.True(rect1.CollidesWith(rect3));
         }
 
         [Fact]
@@ -117,7 +119,7 @@ namespace ArrangeAlgorithms.UnitTest
             var rectThin = new GeoRectangle(new GeoPoint(0.0, 0.0), 10.0, 0.0001, Math.PI / 4.0);
             var rectTarget = new GeoRectangle(new GeoPoint(1.0, 1.0), 2.0, 2.0, 0.0);
 
-            Assert.True(rectThin.IntersectsWith(rectTarget));
+            Assert.True(rectThin.CollidesWith(rectTarget));
         }
 
         [Fact]
@@ -125,9 +127,9 @@ namespace ArrangeAlgorithms.UnitTest
         {
             var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 4.0); // X: [-2, 2], Y: [-2, 2]
 
-            Assert.True(rect.IntersectsWith(new GeoLine(-5.0, 0.0, 5.0, 0.0)));   // Passes through
-            Assert.True(rect.IntersectsWith(new GeoLine(-1.0, -1.0, 1.0, 1.0)));  // Completely inside
-            Assert.False(rect.IntersectsWith(new GeoLine(-5.0, 5.0, 5.0, 5.0)));  // Passes above, no contact
+            Assert.True(rect.CollidesWith(new GeoLine(-5.0, 0.0, 5.0, 0.0)));   // Passes through
+            Assert.True(rect.CollidesWith(new GeoLine(-1.0, -1.0, 1.0, 1.0)));  // Completely inside
+            Assert.False(rect.CollidesWith(new GeoLine(-5.0, 5.0, 5.0, 5.0)));  // Passes above, no contact
         }
 
         [Fact]
@@ -147,12 +149,12 @@ namespace ArrangeAlgorithms.UnitTest
                 new GeoPoint(12.0, 12.0)
             );
 
-            Assert.True(rect.IntersectsWith(overlapping));
-            Assert.False(rect.IntersectsWith(far));
+            Assert.True(rect.CollidesWith(overlapping));
+            Assert.False(rect.CollidesWith(far));
 
             // Calling in reverse direction must give the same result
-            Assert.True(overlapping.IntersectsWith(rect));
-            Assert.False(far.IntersectsWith(rect));
+            Assert.True(overlapping.CollidesWith(rect));
+            Assert.False(far.CollidesWith(rect));
         }
 
         [Fact]
@@ -204,7 +206,64 @@ namespace ArrangeAlgorithms.UnitTest
         {
             Assert.False(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.0).IsRotated);
             Assert.False(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 1e-9).IsRotated);
-            Assert.True(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.01).IsRotated);
+            Assert.True(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.05).IsRotated);
+            Assert.True(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, Math.PI / 4.0).IsRotated);
+        }
+
+        [Fact]
+        public void Rectangle_IsRotated_UsesAngularToleranceAndIgnoresFullTurns()
+        {
+            // The threshold is EqualAngleRad (1 degree by default), so anything the library would already
+            // call parallel to the world axes must not report itself as rotated.
+            var belowThreshold = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.5 * Math.PI / 180.0);
+            Assert.False(belowThreshold.IsRotated);
+            Assert.True(belowThreshold.IsParallelTo(new GeoLine(new GeoPoint(0.0, 0.0), new GeoPoint(1.0, 0.0))));
+
+            var aboveThreshold = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 2.0 * Math.PI / 180.0);
+            Assert.True(aboveThreshold.IsRotated);
+
+            // Full turns are not a rotation.
+            Assert.False(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 2.0 * Math.PI).IsRotated);
+            Assert.False(new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, -4.0 * Math.PI).IsRotated);
+        }
+
+        [Fact]
+        public void Rectangle_Constructor_RejectsNegativeExtents()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new GeoRectangle(new GeoPoint(0.0, 0.0), -4.0, 2.0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, -2.0));
+
+            // Zero extents stay legal: a degenerate box is still a usable input.
+            var flat = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 0.0);
+            Assert.Equal(0.0, flat.Height);
+        }
+
+        [Fact]
+        public void Rectangle_Translate_KeepsSizeAndRotation()
+        {
+            var rect = new GeoRectangle(new GeoPoint(1.0, 2.0), 4.0, 2.0, Math.PI / 6.0);
+            var moved = rect.Translate(new GeoVector(10.0, -5.0));
+
+            Assert.True(moved.Center.IsEqualTo(new GeoPoint(11.0, -3.0)));
+            Assert.Equal(rect.Width, moved.Width);
+            Assert.Equal(rect.Height, moved.Height);
+            Assert.Equal(rect.AngleRad, moved.AngleRad);
+
+            // Operators mirror the method, and the reverse translation restores the original.
+            Assert.Equal(moved, rect + new GeoVector(10.0, -5.0));
+            Assert.Equal(rect, moved - new GeoVector(10.0, -5.0));
+        }
+
+        [Fact]
+        public void Rectangle_RotateBy_MovesCenterAndAccumulatesAngle()
+        {
+            var rect = new GeoRectangle(new GeoPoint(10.0, 0.0), 4.0, 2.0);
+            var rotated = rect.RotateBy(Math.PI / 2.0, new GeoPoint(0.0, 0.0));
+
+            Assert.True(rotated.Center.IsEqualTo(new GeoPoint(0.0, 10.0)));
+            Assert.Equal(Math.PI / 2.0, rotated.AngleRad, 9);
+            Assert.Equal(rect.Width, rotated.Width);
+            Assert.Equal(rect.Height, rotated.Height);
         }
 
         [Fact]
@@ -238,7 +297,7 @@ namespace ArrangeAlgorithms.UnitTest
             var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0);
 
             Assert.Throws<ArgumentNullException>(() => rect.DistanceTo((GeoPolygon)null));
-            Assert.Throws<ArgumentNullException>(() => rect.IntersectsWith((GeoPolygon)null));
+            Assert.Throws<ArgumentNullException>(() => rect.CollidesWith((GeoPolygon)null));
         }
 
         [Fact]
@@ -248,11 +307,11 @@ namespace ArrangeAlgorithms.UnitTest
 
             // Gap narrower than tolerance is treated as touching.
             var almostTouching = new GeoRectangle(new GeoPoint(4.0 + 1e-6, 0.0), 4.0, 2.0);
-            Assert.True(left.IntersectsWith(almostTouching));
+            Assert.True(left.CollidesWith(almostTouching));
 
             // Gap wider than tolerance is completely disjoint.
             var clearlyApart = new GeoRectangle(new GeoPoint(4.1, 0.0), 4.0, 2.0);
-            Assert.False(left.IntersectsWith(clearlyApart));
+            Assert.False(left.CollidesWith(clearlyApart));
         }
 
         [Fact]

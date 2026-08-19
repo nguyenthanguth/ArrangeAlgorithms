@@ -1,4 +1,6 @@
 using System;
+using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Enums;
 
 namespace ArrangeAlgorithms.Geometry
 {
@@ -48,54 +50,165 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
+        /// Creates a copy of this point.
+        /// </summary>
+        /// <remarks>
+        /// Point is a readonly struct, so plain assignment already produces an independent copy and
+        /// this method is not needed to avoid sharing. It exists so that every geometry type offers the
+        /// same way to ask for a copy.
+        /// </remarks>
+        /// <returns>A new point with the same coordinates.</returns>
+        public GeoPoint Clone() => new GeoPoint(X, Y);
+
+        /// <summary>
         /// Adds a GeoVector to the point for translation.
         /// </summary>
-        public GeoPoint Add(GeoVector geoVector)
-        {
-            return new GeoPoint(X + geoVector.X, Y + geoVector.Y);
-        }
+        public GeoPoint Add(GeoVector geoVector) => new GeoPoint(X + geoVector.X, Y + geoVector.Y);
 
         /// <summary>
         /// Subtracts a GeoVector from the point.
         /// </summary>
-        public GeoPoint Subtract(GeoVector geoVector)
-        {
-            return new GeoPoint(X - geoVector.X, Y - geoVector.Y);
-        }
+        public GeoPoint Subtract(GeoVector geoVector) => new GeoPoint(X - geoVector.X, Y - geoVector.Y);
 
         /// <summary>
         /// Gets the GeoVector pointing from this point to another point.
         /// </summary>
-        public GeoVector GetVectorTo(GeoPoint other)
-        {
-            return new GeoVector(other.X - X, other.Y - Y);
-        }
+        public GeoVector GetVectorTo(GeoPoint other) => new GeoVector(other.X - X, other.Y - Y);
 
         /// <summary>
         /// Calculates the Euclidean distance to another point.
         /// </summary>
-        public double DistanceTo(GeoPoint other)
-        {
-            return Math.Sqrt(GetDistanceSquaredTo(other));
-        }
+        public double DistanceTo(GeoPoint other) => Distance.DistanceTo(this, other);
 
         /// <summary>
         /// Calculates the squared Euclidean distance to another point.
         /// </summary>
-        public double GetDistanceSquaredTo(GeoPoint other)
-        {
-            double dx = other.X - X;
-            double dy = other.Y - Y;
-            return dx * dx + dy * dy;
-        }
+        public double GetDistanceSquaredTo(GeoPoint other) => Distance.GetDistanceSquaredTo(this, other);
+
+        /// <summary>
+        /// Calculates the Euclidean distance to a line segment.
+        /// </summary>
+        public double DistanceTo(GeoLine line) => Distance.DistanceTo(line, this);
+
+        /// <summary>
+        /// Calculates the Euclidean distance to a circle boundary.
+        /// </summary>
+        public double DistanceTo(GeoCircle circle) => Distance.DistanceTo(circle, this);
+
+        /// <summary>
+        /// Calculates the Euclidean distance to a rectangle.
+        /// </summary>
+        public double DistanceTo(GeoRectangle rect) => Distance.DistanceTo(rect, this);
+
+        /// <summary>
+        /// Calculates the Euclidean distance to a polygon boundary.
+        /// </summary>
+        public double DistanceTo(GeoPolygon poly) => Distance.DistanceTo(poly, this);
+
+        /// <summary>
+        /// Calculates the Euclidean distance to a polyline.
+        /// </summary>
+        public double DistanceTo(GeoPolyline polyline) => Distance.DistanceTo(polyline, this);
+
+        /// <summary>
+        /// Gets the closest point on a line segment to this point, clamped to its endpoints.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoLine line) => Projection.ProjectToLine(line, this);
+
+        /// <summary>
+        /// Gets the closest point on the circumference of a circle to this point.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoCircle circle) => Projection.ProjectToCircle(circle, this);
+
+        /// <summary>
+        /// Gets the closest point on the boundary of a rectangle to this point.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoRectangle rect) => Projection.ProjectToRectangle(rect, this);
+
+        /// <summary>
+        /// Gets the closest point on the boundary of a polygon to this point.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoPolygon poly) => Projection.ProjectToPolygon(poly, this);
+
+        /// <summary>
+        /// Gets the closest point on the path of a polyline to this point.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoPolyline polyline) => Projection.ProjectToPolyline(polyline, this);
+
+        /// <summary>
+        /// Checks whether this point lies on the polyline using default tolerance.
+        /// </summary>
+        public bool IsPointOn(GeoPolyline polyline) => Containment.IsPointOn(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this point lies on the polyline within tolerance.
+        /// </summary>
+        public bool IsPointOn(GeoPolyline polyline, Tolerance tolerance) => Containment.IsPointOn(polyline, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this point lies on the circle circumference using default tolerance.
+        /// </summary>
+        public bool IsPointOn(GeoCircle circle) => Containment.IsPointOn(circle, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this point lies on the circle circumference within tolerance.
+        /// </summary>
+        public bool IsPointOn(GeoCircle circle, Tolerance tolerance) => Containment.IsPointOn(circle, this, tolerance);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a circle (Inside, OutSide, or OnSide) using default tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoCircle circle) => Containment.Locate(circle, this, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a circle (Inside, OutSide, or OnSide) within tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoCircle circle, Tolerance tolerance) => Containment.Locate(circle, this, tolerance);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a rectangle (Inside, OutSide, or OnSide) using default tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoRectangle rect) => Containment.Locate(rect, this, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a rectangle (Inside, OutSide, or OnSide) within tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoRectangle rect, Tolerance tolerance) => Containment.Locate(rect, this, tolerance);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a polygon (Inside, OutSide, or OnSide) using default tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoPolygon poly) => Containment.Locate(poly, this, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a polygon (Inside, OutSide, or OnSide) within tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoPolygon poly, Tolerance tolerance) => Containment.Locate(poly, this, tolerance);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a polyline (Inside, OutSide, or OnSide) using default tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoPolyline polyline) => Containment.Locate(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a polyline (Inside, OutSide, or OnSide) within tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoPolyline polyline, Tolerance tolerance) => Containment.Locate(polyline, this, tolerance);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a line segment (OnSide or OutSide) using default tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoLine line) => Containment.Locate(line, this, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of this point relative to a line segment (OnSide or OutSide) within tolerance.
+        /// </summary>
+        public PointLocation LocateIn(GeoLine line, Tolerance tolerance) => Containment.Locate(line, this, tolerance);
 
         /// <summary>
         /// Gets the midpoint between this point and another point.
         /// </summary>
-        public GeoPoint GetMiddlePoint(GeoPoint other)
-        {
-            return new GeoPoint((X + other.X) * 0.5, (Y + other.Y) * 0.5);
-        }
+        public GeoPoint GetMiddlePoint(GeoPoint other) => new GeoPoint((X + other.X) * 0.5, (Y + other.Y) * 0.5);
 
         /// <summary>
         /// Rotates the point around a center with a specified rotation angle in radians (counter-clockwise).
@@ -125,10 +238,7 @@ namespace ArrangeAlgorithms.Geometry
         /// <summary>
         /// Compares whether this point is coincident with another point within the allowed tolerance.
         /// </summary>
-        public bool IsEqualTo(GeoPoint other, Tolerance tolerance)
-        {
-            return GetDistanceSquaredTo(other) <= tolerance.EqualPoint * tolerance.EqualPoint;
-        }
+        public bool IsEqualTo(GeoPoint other, Tolerance tolerance) => GetDistanceSquaredTo(other) <= tolerance.EqualPoint * tolerance.EqualPoint;
 
         /// <summary>
         /// Compares whether this point is coincident with another point using default tolerance.
@@ -164,20 +274,14 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         /// <param name="other">A point to compare with this point.</param>
         /// <returns>true if the current point is equal to the other parameter; otherwise, false.</returns>
-        public bool Equals(GeoPoint other)
-        {
-            return X.Equals(other.X) && Y.Equals(other.Y);
-        }
+        public bool Equals(GeoPoint other) => X.Equals(other.X) && Y.Equals(other.Y);
 
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
-        public override bool Equals(object obj)
-        {
-            return obj is GeoPoint other && Equals(other);
-        }
+        public override bool Equals(object obj) => obj is GeoPoint other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.

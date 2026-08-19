@@ -1,4 +1,5 @@
 using System;
+using ArrangeAlgorithms.Operations;
 
 namespace ArrangeAlgorithms.Geometry
 {
@@ -42,6 +43,17 @@ namespace ArrangeAlgorithms.Geometry
             X = x;
             Y = y;
         }
+
+        /// <summary>
+        /// Creates a copy of this vector.
+        /// </summary>
+        /// <remarks>
+        /// Vector is a readonly struct, so plain assignment already produces an independent copy and
+        /// this method is not needed to avoid sharing. It exists so that every geometry type offers the
+        /// same way to ask for a copy.
+        /// </remarks>
+        /// <returns>A new vector with the same components.</returns>
+        public GeoVector Clone() => new GeoVector(X, Y);
 
         /// <summary>
         /// Gets the length of the vector.
@@ -92,50 +104,32 @@ namespace ArrangeAlgorithms.Geometry
         /// <summary>
         /// Adds this vector to another vector.
         /// </summary>
-        public GeoVector Add(GeoVector other)
-        {
-            return new GeoVector(X + other.X, Y + other.Y);
-        }
+        public GeoVector Add(GeoVector other) => new GeoVector(X + other.X, Y + other.Y);
 
         /// <summary>
         /// Subtracts another vector from this vector.
         /// </summary>
-        public GeoVector Subtract(GeoVector other)
-        {
-            return new GeoVector(X - other.X, Y - other.Y);
-        }
+        public GeoVector Subtract(GeoVector other) => new GeoVector(X - other.X, Y - other.Y);
 
         /// <summary>
         /// Multiplies vector components by a scalar.
         /// </summary>
-        public GeoVector Multiply(double scalar)
-        {
-            return new GeoVector(X * scalar, Y * scalar);
-        }
+        public GeoVector Multiply(double scalar) => new GeoVector(X * scalar, Y * scalar);
 
         /// <summary>
         /// Calculates the dot product with another vector.
         /// </summary>
-        public double DotProduct(GeoVector other)
-        {
-            return X * other.X + Y * other.Y;
-        }
+        public double DotProduct(GeoVector other) => X * other.X + Y * other.Y;
 
         /// <summary>
         /// Calculates the 2D cross product with another vector (returns the Z component).
         /// </summary>
-        public double CrossProduct(GeoVector other)
-        {
-            return X * other.Y - Y * other.X;
-        }
+        public double CrossProduct(GeoVector other) => X * other.Y - Y * other.X;
 
         /// <summary>
         /// Gets the perpendicular vector by rotating 90 degrees counter-clockwise.
         /// </summary>
-        public GeoVector GetPerpendicularVector()
-        {
-            return new GeoVector(-Y, X);
-        }
+        public GeoVector GetPerpendicularVector() => new GeoVector(-Y, X);
 
         /// <summary>
         /// Rotates the vector by an angle in radians (counter-clockwise).
@@ -180,26 +174,17 @@ namespace ArrangeAlgorithms.Geometry
         /// <summary>
         /// Checks whether the vector has zero length using default tolerance.
         /// </summary>
-        public bool IsZeroLength()
-        {
-            return IsZeroLength(Tolerance.Global);
-        }
+        public bool IsZeroLength() => IsZeroLength(Tolerance.Global);
 
         /// <summary>
         /// Checks whether the vector has zero length within tolerance.
         /// </summary>
-        public bool IsZeroLength(Tolerance tolerance)
-        {
-            return LengthSquared <= tolerance.EqualVector * tolerance.EqualVector;
-        }
+        public bool IsZeroLength(Tolerance tolerance) => LengthSquared <= tolerance.EqualVector * tolerance.EqualVector;
 
         /// <summary>
         /// Compares whether this vector equals another vector using default tolerance.
         /// </summary>
-        public bool IsEqualTo(GeoVector other)
-        {
-            return IsEqualTo(other, Tolerance.Global);
-        }
+        public bool IsEqualTo(GeoVector other) => IsEqualTo(other, Tolerance.Global);
 
         /// <summary>
         /// Compares whether this vector equals another vector within tolerance.
@@ -214,42 +199,47 @@ namespace ArrangeAlgorithms.Geometry
         /// <summary>
         /// Checks whether this vector is parallel to another vector using default tolerance.
         /// </summary>
-        public bool IsParallelTo(GeoVector other)
-        {
-            return IsParallelTo(other, Tolerance.Global);
-        }
+        public bool IsParallelTo(GeoVector other) => Parallel.IsParallel(this, other, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether this vector is parallel to another vector.
+        /// Checks whether this vector is parallel to another vector within angular tolerance.
         /// </summary>
-        public bool IsParallelTo(GeoVector other, Tolerance tolerance)
-        {
-            if (!TryGetNormal(out GeoVector a, tolerance) || !other.TryGetNormal(out GeoVector b, tolerance))
-            {
-                return false;
-            }
-            return Math.Abs(a.CrossProduct(b)) <= tolerance.EqualVector;
-        }
+        public bool IsParallelTo(GeoVector other, Tolerance tolerance) => Parallel.IsParallel(this, other, tolerance);
 
         /// <summary>
         /// Checks whether this vector is perpendicular to another vector using default tolerance.
         /// </summary>
-        public bool IsPerpendicularTo(GeoVector other)
-        {
-            return IsPerpendicularTo(other, Tolerance.Global);
-        }
+        public bool IsPerpendicularTo(GeoVector other) => Parallel.IsPerpendicular(this, other, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether this vector is perpendicular to another vector.
+        /// Checks whether this vector is perpendicular to another vector within angular tolerance.
         /// </summary>
-        public bool IsPerpendicularTo(GeoVector other, Tolerance tolerance)
-        {
-            if (!TryGetNormal(out GeoVector a, tolerance) || !other.TryGetNormal(out GeoVector b, tolerance))
-            {
-                return false;
-            }
-            return Math.Abs(a.DotProduct(b)) <= tolerance.EqualVector;
-        }
+        public bool IsPerpendicularTo(GeoVector other, Tolerance tolerance) => Parallel.IsPerpendicular(this, other, tolerance);
+
+        /// <summary>
+        /// Checks whether this vector is parallel to a line segment using default tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoLine line) => Parallel.IsParallel(line, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this vector is parallel to a line segment within angular tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoLine line, Tolerance tolerance) => Parallel.IsParallel(line, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this vector is perpendicular to a line segment using default tolerance.
+        /// </summary>
+        public bool IsPerpendicularTo(GeoLine line) => Parallel.IsPerpendicular(line, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this vector is perpendicular to a line segment within angular tolerance.
+        /// </summary>
+        public bool IsPerpendicularTo(GeoLine line, Tolerance tolerance) => Parallel.IsPerpendicular(line, this, tolerance);
+
+        /// <summary>
+        /// Projects this vector onto another axis vector.
+        /// </summary>
+        public GeoVector ProjectOnto(GeoVector axis) => Projection.Project(this, axis);
 
         /// <summary>
         /// Adds two vectors.
@@ -303,20 +293,14 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         /// <param name="other">A vector to compare with this vector.</param>
         /// <returns>true if the current vector is equal to the other parameter; otherwise, false.</returns>
-        public bool Equals(GeoVector other)
-        {
-            return X.Equals(other.X) && Y.Equals(other.Y);
-        }
+        public bool Equals(GeoVector other) => X.Equals(other.X) && Y.Equals(other.Y);
 
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
-        public override bool Equals(object obj)
-        {
-            return obj is GeoVector other && Equals(other);
-        }
+        public override bool Equals(object obj) => obj is GeoVector other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.

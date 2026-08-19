@@ -63,7 +63,7 @@ namespace ArrangeAlgorithms.Algorithms
                     hasCandidate = true;
                 }
 
-                GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                GeoRectangle moved = arrange.GeoRectangle.Translate(translation);
 
                 // Detailed collision check
                 if (ArrangeAlgorithms.Arrange.Collides(nearby, moved, options.Tolerance))
@@ -122,7 +122,7 @@ namespace ArrangeAlgorithms.Algorithms
         /// </summary>
         private static void AddBox(Arrange arrange, List<Obstacle> occupied, GeoVector translation)
         {
-            var moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+            var moved = arrange.GeoRectangle.Translate(translation);
             occupied.Add(new Obstacle(moved));
         }
     }

@@ -127,7 +127,7 @@ namespace ArrangeAlgorithms.Algorithms
                 examined++;
 
                 var translation = centre.GetVectorTo(candidate);
-                var moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                var moved = arrange.GeoRectangle.Translate(translation);
 
                 // If this position does not overlap any obstacles, consider it a free position
                 if (!ArrangeAlgorithms.Arrange.Collides(staticObstacles, moved, options.Tolerance))

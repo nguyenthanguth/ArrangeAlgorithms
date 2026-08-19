@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Enums;
 
 namespace ArrangeAlgorithms.Geometry
 {
@@ -27,6 +29,22 @@ namespace ArrangeAlgorithms.Geometry
         public int EdgeCount => _vertices.Length;
 
         /// <summary>
+        /// Gets the total perimeter length of the polygon.
+        /// </summary>
+        public double Length
+        {
+            get
+            {
+                double total = 0.0;
+                for (int i = 0; i < EdgeCount; i++)
+                {
+                    total += GetEdgeAt(i).Length;
+                }
+                return total;
+            }
+        }
+
+        /// <summary>
         /// Initializes a new polygon from a list of vertices. Duplicate vertex at the end to close the loop will be automatically removed.
         /// </summary>
         /// <param name="vertices">List of vertices.</param>
@@ -34,9 +52,20 @@ namespace ArrangeAlgorithms.Geometry
         {
             if (vertices == null) throw new ArgumentNullException(nameof(vertices));
 
-            List<GeoPoint> list = vertices.ToList();
-            // Remove duplicate last vertex if it equals the first vertex
-            while (list.Count > 1 && list[list.Count - 1].Equals(list[0]))
+            // Drop consecutive duplicates within tolerance so no zero-length edge survives. GeoPolyline
+            // filters the same way; comparing exactly would let (0,0),(0,0),(1,1) through as a valid
+            // polygon despite the promise of distinct vertices below.
+            List<GeoPoint> list = new List<GeoPoint>();
+            foreach (var vertex in vertices)
+            {
+                if (list.Count == 0 || !list[list.Count - 1].IsEqualTo(vertex))
+                {
+                    list.Add(vertex);
+                }
+            }
+
+            // Remove duplicate last vertex if it closes the loop back onto the first vertex
+            while (list.Count > 1 && list[list.Count - 1].IsEqualTo(list[0]))
             {
                 list.RemoveAt(list.Count - 1);
             }
@@ -54,6 +83,22 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         public GeoPolygon(params GeoPoint[] vertices) : this((IEnumerable<GeoPoint>)vertices)
         {
+        }
+
+        /// <summary>
+        /// Initializes a polygon from vertices that have already been filtered and validated.
+        /// </summary>
+        /// <param name="validatedVertices">Source array, already free of consecutive duplicates.</param>
+        /// <param name="count">Number of leading entries to copy.</param>
+        /// <remarks>
+        /// Clone uses this instead of the public constructor. The public one re-filters vertices against
+        /// Tolerance.Global, so a clone taken after that global was widened could silently come back with
+        /// fewer vertices than the original, or fail validation outright.
+        /// </remarks>
+        private GeoPolygon(GeoPoint[] validatedVertices, int count)
+        {
+            _vertices = new GeoPoint[count];
+            Array.Copy(validatedVertices, _vertices, count);
         }
 
         /// <summary>
@@ -157,146 +202,249 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
+        /// Creates a copy of this polygon holding its own vertex array.
+        /// </summary>
+        /// <returns>A new GeoPolygon independent of this one.</returns>
+        public GeoPolygon Clone() => new GeoPolygon(_vertices, _vertices.Length);
+
+        /// <summary>
+        /// Gets the point at a normalized parameter along this polygon perimeter, where 0 is the first vertex and 1 is the end.
+        /// Values outside [0, 1] wrap around, so 1.25 is the same position as 0.25.
+        /// </summary>
+        public GeoPoint GetPointAtParameter(double parameter) => Parametrization.GetPointAtParameter(this, parameter);
+
+        /// <summary>
+        /// Gets the normalized parameter of the point on this polygon perimeter closest to the supplied point.
+        /// </summary>
+        public double GetParameterAtPoint(GeoPoint point) => Parametrization.GetParameterAtPoint(this, point);
+
+        /// <summary>
+        /// Gets the point at an arc length measured from the first vertex of this polygon perimeter.
+        /// </summary>
+        public GeoPoint GetPointAtDistance(double distance) => Parametrization.GetPointAtDistance(this, distance);
+
+        /// <summary>
+        /// Gets the arc length from the first vertex of this polygon perimeter to the point on it closest to the supplied point.
+        /// </summary>
+        public double GetDistanceAtPoint(GeoPoint point) => Parametrization.GetDistanceAtPoint(this, point);
+
+        /// <summary>
+        /// Gets the arc length from the first vertex of this polygon perimeter to a normalized parameter.
+        /// </summary>
+        public double GetDistanceAtParameter(double parameter) => Parametrization.GetDistanceAtParameter(this, parameter);
+
+        /// <summary>
+        /// Gets the normalized parameter at an arc length measured from the first vertex of this polygon perimeter.
+        /// </summary>
+        public double GetParameterAtDistance(double distance) => Parametrization.GetParameterAtDistance(this, distance);
+
+        /// <summary>
+        /// Translates the polygon by a displacement vector.
+        /// </summary>
+        /// <param name="vector">The displacement vector.</param>
+        /// <returns>A new translated GeoPolygon.</returns>
+        public GeoPolygon Translate(GeoVector vector)
+        {
+            GeoPoint[] moved = new GeoPoint[_vertices.Length];
+            for (int i = 0; i < _vertices.Length; i++)
+            {
+                moved[i] = _vertices[i].Add(vector);
+            }
+            return new GeoPolygon(moved);
+        }
+
+        /// <summary>
+        /// Rotates the polygon around a center point by an angle in radians (counter-clockwise).
+        /// </summary>
+        /// <param name="angleRad">Rotation angle in radians.</param>
+        /// <param name="center">Center of rotation.</param>
+        /// <returns>A new rotated GeoPolygon.</returns>
+        public GeoPolygon RotateBy(double angleRad, GeoPoint center)
+        {
+            GeoPoint[] rotated = new GeoPoint[_vertices.Length];
+            for (int i = 0; i < _vertices.Length; i++)
+            {
+                rotated[i] = _vertices[i].RotateBy(angleRad, center);
+            }
+            return new GeoPolygon(rotated);
+        }
+
+        /// <summary>
+        /// Calculates the shortest boundary distance from this polygon to a circle.
+        /// </summary>
+        public double DistanceTo(GeoCircle circle) => Distance.DistanceTo(circle, this);
+
+        /// <summary>
+        /// Calculates the shortest boundary distance from this polygon to a polyline.
+        /// </summary>
+        public double DistanceTo(GeoPolyline polyline) => Distance.DistanceTo(polyline, this);
+
+        /// <summary>
+        /// Calculates the shortest boundary distance from this polygon to another polygon.
+        /// </summary>
+        public double DistanceTo(GeoPolygon other) => Distance.DistanceTo(this, other);
+
+        /// <summary>
+        /// Calculates the shortest boundary distance from this polygon to a rectangle.
+        /// </summary>
+        public double DistanceTo(GeoRectangle rect) => Distance.DistanceTo(rect, this);
+
+        /// <summary>
+        /// Calculates the shortest boundary distance from this polygon to a line segment.
+        /// </summary>
+        public double DistanceTo(GeoLine line) => Distance.DistanceTo(this, line);
+
+        /// <summary>
+        /// Calculates the shortest distance from this polygon boundary to a point.
+        /// </summary>
+        public double DistanceTo(GeoPoint point) => Distance.DistanceTo(this, point);
+
+        /// <summary>
+        /// Gets the closest point on the boundary of this polygon to a target point, including for points
+        /// inside the polygon.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoPoint point) => Projection.ProjectToPolygon(this, point);
+
+        /// <summary>
         /// Checks whether the polygon contains a point using default tolerance (accepts points on the boundary).
         /// </summary>
-        public bool Contains(GeoPoint GeoPoint)
-        {
-            return Contains(GeoPoint, Tolerance.Global);
-        }
+        public bool Contains(GeoPoint GeoPoint) => Contains(GeoPoint, Tolerance.Global);
 
         /// <summary>
         /// Checks whether the polygon contains a point (accepts points on the boundary).
         /// Uses the Ray Casting algorithm (shoots a horizontal ray and counts intersections).
         /// </summary>
-        public bool Contains(GeoPoint GeoPoint, Tolerance tolerance)
-        {
-            // Check if point is on the polygon boundary first
-            for (int i = 0; i < EdgeCount; i++)
-            {
-                if (GetEdgeAt(i).IsPointOn(GeoPoint, tolerance))
-                {
-                    return true;
-                }
-            }
-
-            bool inside = false;
-            int n = _vertices.Length;
-            for (int i = 0, j = n - 1; i < n; j = i++)
-            {
-                GeoPoint p1 = _vertices[i];
-                GeoPoint p2 = _vertices[j];
-
-                if (((p1.Y > GeoPoint.Y) != (p2.Y > GeoPoint.Y)) &&
-                    (GeoPoint.X < (p2.X - p1.X) * (GeoPoint.Y - p1.Y) / (p2.Y - p1.Y) + p1.X))
-                {
-                    inside = !inside;
-                }
-            }
-
-            return inside;
-        }
+        public bool Contains(GeoPoint GeoPoint, Tolerance tolerance) => Containment.Contains(this, GeoPoint, tolerance);
 
         /// <summary>
-        /// Checks whether the polygon intersects with a rotated rectangle (GeoRectangle OBB) using default tolerance.
+        /// Classifies the location of a point relative to this polygon (Inside, OutSide, or OnSide) using default tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoRectangle rect)
-        {
-            return IntersectsWith(rect, Tolerance.Global);
-        }
+        public PointLocation Locate(GeoPoint point) => Containment.Locate(this, point, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether the polygon intersects with a rotated rectangle (GeoRectangle OBB).
+        /// Classifies the location of a point relative to this polygon (Inside, OutSide, or OnSide) within tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoRectangle rect, Tolerance tolerance)
-        {
-            // 1. Check if any polygon edge intersects with any rectangle edge
-            GeoLine[] rectEdges = rect.GetEdges();
-
-            foreach (var polyEdge in GetEdges())
-            {
-                foreach (var rectEdge in rectEdges)
-                {
-                    if (polyEdge.TryIntersectWith(rectEdge, out _, tolerance))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 2. Check if the polygon lies entirely inside the rectangle
-            if (rect.Contains(_vertices[0]))
-            {
-                return true;
-            }
-
-            // 3. Check if the rectangle lies entirely inside the polygon
-            if (Contains(rect.Center, tolerance))
-            {
-                return true;
-            }
-
-            return false;
-        }
+        public PointLocation Locate(GeoPoint point, Tolerance tolerance) => Containment.Locate(this, point, tolerance);
 
         /// <summary>
-        /// Checks whether the polygon intersects with a line segment using default tolerance.
+        /// Checks whether the polygon entirely contains a polyline using default tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoLine geoLine)
-        {
-            return IntersectsWith(geoLine, Tolerance.Global);
-        }
+        public bool Contains(GeoPolyline polyline) => Containment.Contains(this, polyline, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether the polygon intersects with a line segment.
+        /// Checks whether the polygon entirely contains a polyline within tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoLine geoLine, Tolerance tolerance)
-        {
-            // 1. Check if the line segment intersects with any polygon edge
-            foreach (var polyEdge in GetEdges())
-            {
-                if (geoLine.TryIntersectWith(polyEdge, out _, tolerance))
-                {
-                    return true;
-                }
-            }
-
-            // 2. Or the line segment lies entirely inside the polygon.
-            // Just check the start point: if the segment does not intersect any edge
-            // and one endpoint is inside, then the entire segment is inside.
-            return Contains(geoLine.StartPoint, tolerance);
-        }
+        public bool Contains(GeoPolyline polyline, Tolerance tolerance) => Containment.Contains(this, polyline, tolerance);
 
         /// <summary>
-        /// Checks whether the polygon intersects with another polygon using default tolerance.
+        /// Checks whether the polygon collides with a rotated rectangle using default tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoPolygon other)
-        {
-            return IntersectsWith(other, Tolerance.Global);
-        }
+        public bool CollidesWith(GeoRectangle rect) => Collision.CollidesWith(rect, this, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether the polygon intersects with another polygon.
+        /// Checks whether the polygon collides with a rotated rectangle within tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoPolygon other, Tolerance tolerance)
-        {
-            if (other == null) throw new ArgumentNullException(nameof(other));
+        public bool CollidesWith(GeoRectangle rect, Tolerance tolerance) => Collision.CollidesWith(rect, this, tolerance);
 
-            // 1. Check if edges of the two polygons intersect
-            foreach (var edge in GetEdges())
-            {
-                foreach (var otherEdge in other.GetEdges())
-                {
-                    if (edge.TryIntersectWith(otherEdge, out _, tolerance))
-                    {
-                        return true;
-                    }
-                }
-            }
+        /// <summary>
+        /// Checks whether the polygon collides with a line segment using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoLine geoLine) => Collision.CollidesWith(this, geoLine, Tolerance.Global);
 
-            // 2. No edges intersect: either the two polygons are disjoint, or one polygon lies
-            // entirely inside the other. Checking a single vertex on each side is sufficient to distinguish the two cases.
-            return Contains(other._vertices[0], tolerance) || other.Contains(_vertices[0], tolerance);
-        }
+        /// <summary>
+        /// Checks whether the polygon collides with a line segment within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoLine geoLine, Tolerance tolerance) => Collision.CollidesWith(this, geoLine, tolerance);
+
+        /// <summary>
+        /// Checks whether the polygon collides with another polygon using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolygon other) => Collision.CollidesWith(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether the polygon collides with another polygon within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolygon other, Tolerance tolerance) => Collision.CollidesWith(this, other, tolerance);
+
+        /// <summary>
+        /// Checks whether the polygon collides with a circle using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoCircle circle) => Collision.CollidesWith(circle, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether the polygon collides with a circle within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoCircle circle, Tolerance tolerance) => Collision.CollidesWith(circle, this, tolerance);
+
+        /// <summary>
+        /// Checks whether the polygon collides with a polyline using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolyline polyline) => Collision.CollidesWith(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether the polygon collides with a polyline within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolyline polyline, Tolerance tolerance) => Collision.CollidesWith(polyline, this, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a line segment using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoLine line) => Intersection.GetIntersections(this, line, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a line segment within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoLine line, Tolerance tolerance) => Intersection.GetIntersections(this, line, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with another polygon using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolygon other) => Intersection.GetIntersections(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with another polygon within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolygon other, Tolerance tolerance) => Intersection.GetIntersections(this, other, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a rectangle using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoRectangle rect) => Intersection.GetIntersections(this, rect, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a rectangle within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoRectangle rect, Tolerance tolerance) => Intersection.GetIntersections(this, rect, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a circle using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoCircle circle) => Intersection.GetIntersections(this, circle, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a circle within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoCircle circle, Tolerance tolerance) => Intersection.GetIntersections(this, circle, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a polyline using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolyline polyline) => Intersection.GetIntersections(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a polyline within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolyline polyline, Tolerance tolerance) => Intersection.GetIntersections(polyline, this, tolerance);
+
+        /// <summary>
+        /// Translates a polygon by a vector.
+        /// </summary>
+        public static GeoPolygon operator +(GeoPolygon poly, GeoVector vector) => poly.Translate(vector);
+
+        /// <summary>
+        /// Translates a polygon backwards by a vector.
+        /// </summary>
+        public static GeoPolygon operator -(GeoPolygon poly, GeoVector vector) => poly.Translate(-vector);
 
         /// <summary>
         /// Indicates whether the current polygon is equal to another polygon by comparing vertex arrays in order.
@@ -321,10 +469,7 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
-        public override bool Equals(object obj)
-        {
-            return obj is GeoPolygon other && Equals(other);
-        }
+        public override bool Equals(object obj) => obj is GeoPolygon other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
@@ -342,6 +487,22 @@ namespace ArrangeAlgorithms.Geometry
                 return hash;
             }
         }
+
+        /// <summary>
+        /// Compares two GeoPolygon instances for equality.
+        /// </summary>
+        /// <param name="left">The first polygon.</param>
+        /// <param name="right">The second polygon.</param>
+        /// <returns>true if they are equal; otherwise, false.</returns>
+        public static bool operator ==(GeoPolygon left, GeoPolygon right) => Equals(left, right);
+
+        /// <summary>
+        /// Compares two GeoPolygon instances for inequality.
+        /// </summary>
+        /// <param name="left">The first polygon.</param>
+        /// <param name="right">The second polygon.</param>
+        /// <returns>true if they are not equal; otherwise, false.</returns>
+        public static bool operator !=(GeoPolygon left, GeoPolygon right) => !Equals(left, right);
 
         /// <summary>
         /// Returns the string representation of the polygon.

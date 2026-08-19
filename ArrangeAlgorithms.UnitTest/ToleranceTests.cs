@@ -70,10 +70,10 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Tolerance_ToString_UsesInvariantCulture()
         {
-            var tolerance = new Tolerance(0.5, 0.25);
+            var tolerance = new Tolerance(0.5, 0.25, 0.017);
 
             // Must always use a decimal point, independent of the runner machine's locale.
-            Assert.Equal("(EqualPoint: 0.5, EqualVector: 0.25)", tolerance.ToString());
+            Assert.Equal("(EqualPoint: 0.5, EqualVector: 0.25, EqualAngleRad: 0.017)", tolerance.ToString());
         }
     }
 }

@@ -85,7 +85,7 @@ namespace ArrangeAlgorithms.Algorithms
             foreach (GeoPoint candidate in arrange.EnumeratePlacePoints(options))
             {
                 GeoVector translation = centre.GetVectorTo(candidate);
-                GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                GeoRectangle moved = arrange.GeoRectangle.Translate(translation);
 
                 if (!ArrangeAlgorithms.Arrange.Collides(nearby, moved, options.Tolerance))
                 {
@@ -115,7 +115,7 @@ namespace ArrangeAlgorithms.Algorithms
                 translations[index] = item.translation;
 
                 // Add the newly placed label box as a temporary obstacle for subsequent recursion levels
-                GeoRectangle moved = new GeoRectangle(arrange.GeoRectangle.Center.Add(item.translation), arrange.GeoRectangle.Width, arrange.GeoRectangle.Height, arrange.GeoRectangle.AngleRad);
+                GeoRectangle moved = arrange.GeoRectangle.Translate(item.translation);
                 var obs = new Obstacle(moved);
                 occupied.Add(obs);
 

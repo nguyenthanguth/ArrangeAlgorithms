@@ -69,7 +69,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
             var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
-            Assert.False(moved1.IntersectsWith(moved2));
+            Assert.False(moved1.CollidesWith(moved2));
             Assert.True(a1.Placed);
             Assert.True(a2.Placed);
         }
@@ -109,7 +109,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved = new GeoRectangle(arrange.GeoRectangle.Center + arrange.TranslationVector, arrange.GeoRectangle.Width, arrange.GeoRectangle.Height);
 
             Assert.True(moved.Center.Y < 0.0);
-            Assert.False(blockPoly.IntersectsWith(moved));
+            Assert.False(blockPoly.CollidesWith(moved));
             Assert.True(arrange.Placed);
         }
 
@@ -219,7 +219,7 @@ namespace ArrangeAlgorithms.UnitTest
             Arrange.Run(labels, GreedyOptions());
 
             // The two real labels must still be arranged normally.
-            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
+            Assert.False(MovedBox(a, a.TranslationVector).CollidesWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -238,7 +238,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved = MovedBox(arrange, arrange.TranslationVector);
 
             Assert.True(moved.Center.Y < 0.0);
-            Assert.False(moved.IntersectsWith(blockLine));
+            Assert.False(moved.CollidesWith(blockLine));
             Assert.True(arrange.Placed);
         }
 
@@ -254,7 +254,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             Arrange.Run(new List<Arrange> { a, b }, GreedyOptions());
 
-            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
+            Assert.False(MovedBox(a, a.TranslationVector).CollidesWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
 
@@ -326,7 +326,7 @@ namespace ArrangeAlgorithms.UnitTest
 
             Arrange.Run(new List<Arrange> { a, b }, options);
 
-            Assert.False(MovedBox(a, a.TranslationVector).IntersectsWith(MovedBox(b, b.TranslationVector)));
+            Assert.False(MovedBox(a, a.TranslationVector).CollidesWith(MovedBox(b, b.TranslationVector)));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }

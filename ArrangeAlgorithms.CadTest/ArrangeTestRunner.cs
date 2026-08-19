@@ -239,7 +239,7 @@ namespace ArrangeAlgorithms.CadTest
                 createdEntities.Add(leader);
 
                 // Draw connection line from BoxTo (new label center) to the closest point on GeoLine
-                GeoPoint closestOnLine = arrange.GeoLine.GetClosestPointTo(movedRect.Center);
+                GeoPoint closestOnLine = arrange.GeoLine.GetClosestPointOnBoundary(movedRect.Center);
                 var connection = new Line(
                     new Point3d(movedRect.Center.X, movedRect.Center.Y, 0.0),
                     new Point3d(closestOnLine.X, closestOnLine.Y, 0.0))

@@ -36,7 +36,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved1 = new GeoRectangle(a1.GeoRectangle.Center + a1.TranslationVector, a1.GeoRectangle.Width, a1.GeoRectangle.Height);
             var moved2 = new GeoRectangle(a2.GeoRectangle.Center + a2.TranslationVector, a2.GeoRectangle.Width, a2.GeoRectangle.Height);
 
-            Assert.False(moved1.IntersectsWith(moved2));
+            Assert.False(moved1.CollidesWith(moved2));
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
 
             Assert.True(moved.Center.Y < 0.0);
-            Assert.False(moved.IntersectsWith(blockPoly));
+            Assert.False(moved.CollidesWith(blockPoly));
             Assert.True(label.Placed);
         }
 
@@ -93,7 +93,7 @@ namespace ArrangeAlgorithms.UnitTest
             var movedA = new GeoRectangle(a.GeoRectangle.Center + a.TranslationVector, 20.0, 10.0);
             var movedB = new GeoRectangle(b.GeoRectangle.Center + b.TranslationVector, 20.0, 10.0);
 
-            Assert.False(movedA.IntersectsWith(movedB));
+            Assert.False(movedA.CollidesWith(movedB));
             Assert.True(a.Placed);
             Assert.True(b.Placed);
         }
@@ -131,7 +131,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 for (int j = i + 1; j < boxes.Count; j++)
                 {
-                    Assert.False(boxes[i].IntersectsWith(boxes[j]));
+                    Assert.False(boxes[i].CollidesWith(boxes[j]));
                 }
             }
         }
@@ -161,7 +161,7 @@ namespace ArrangeAlgorithms.UnitTest
             var moved = new GeoRectangle(label.GeoRectangle.Center + label.TranslationVector, 20.0, 10.0);
 
             // Force-directed algorithm must resolve placing layout without intersecting the line obstacle.
-            Assert.False(moved.IntersectsWith(blockLine));
+            Assert.False(moved.CollidesWith(blockLine));
             Assert.True(label.Placed);
         }
 

@@ -1,4 +1,6 @@
 using System;
+using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Enums;
 
 namespace ArrangeAlgorithms.Geometry
 {
@@ -37,6 +39,17 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
+        /// Creates a copy of this line segment.
+        /// </summary>
+        /// <remarks>
+        /// Line segment is a readonly struct, so plain assignment already produces an independent copy and
+        /// this method is not needed to avoid sharing. It exists so that every geometry type offers the
+        /// same way to ask for a copy.
+        /// </remarks>
+        /// <returns>A new line segment with the same endpoints.</returns>
+        public GeoLine Clone() => new GeoLine(StartPoint, EndPoint);
+
+        /// <summary>
         /// Gets the GeoVector pointing from start point to end point.
         /// </summary>
         public GeoVector Direction => StartPoint.GetVectorTo(EndPoint);
@@ -59,163 +72,270 @@ namespace ArrangeAlgorithms.Geometry
         /// <summary>
         /// Gets the point on the line segment at parameter t (t=0 is the start point, t=1 is the end point).
         /// </summary>
-        public GeoPoint GetPointAtParameter(double parameter)
-        {
-            return StartPoint.Add(Direction.Multiply(parameter));
-        }
+        public GeoPoint GetPointAtParameter(double parameter) => Parametrization.GetPointAtParameter(this, parameter);
 
         /// <summary>
-        /// Projects a point onto the line and gets the parameter value along the segment.
+        /// Gets the normalized parameter of the point on this line segment closest to the supplied point.
+        /// The point need not lie on the segment, so the result may fall outside [0, 1].
         /// </summary>
-        public double GetParameterOf(GeoPoint GeoPoint)
-        {
-            GeoVector dir = Direction;
-            double lenSq = dir.LengthSquared;
-            if (lenSq <= Tolerance.Global.EqualPoint * Tolerance.Global.EqualPoint) return 0.0;
-            return StartPoint.GetVectorTo(GeoPoint).DotProduct(dir) / lenSq;
-        }
+        public double GetParameterAtPoint(GeoPoint point) => Parametrization.GetParameterAtPoint(this, point);
 
         /// <summary>
-        /// Gets the closest point on the line segment to a given point.
+        /// Gets the point at an arc length measured from the start point of this line segment.
         /// </summary>
-        public GeoPoint GetClosestPointTo(GeoPoint GeoPoint)
-        {
-            double t = GetParameterOf(GeoPoint);
-            if (t <= 0.0) return StartPoint;
-            if (t >= 1.0) return EndPoint;
-            return GetPointAtParameter(t);
-        }
+        public GeoPoint GetPointAtDistance(double distance) => Parametrization.GetPointAtDistance(this, distance);
+
+        /// <summary>
+        /// Gets the arc length from the start point of this line segment to the point on it closest to the
+        /// supplied point.
+        /// </summary>
+        public double GetDistanceAtPoint(GeoPoint point) => Parametrization.GetDistanceAtPoint(this, point);
+
+        /// <summary>
+        /// Gets the arc length from the start point of this line segment to a normalized parameter.
+        /// </summary>
+        public double GetDistanceAtParameter(double parameter) => Parametrization.GetDistanceAtParameter(this, parameter);
+
+        /// <summary>
+        /// Gets the normalized parameter at an arc length measured from the start point of this line segment.
+        /// </summary>
+        public double GetParameterAtDistance(double distance) => Parametrization.GetParameterAtDistance(this, distance);
+
+        /// <summary>
+        /// Gets the closest point on this line segment to a target point, clamped to the endpoints.
+        /// </summary>
+        public GeoPoint GetClosestPointOnBoundary(GeoPoint point) => Projection.ProjectToLine(this, point);
 
         /// <summary>
         /// Calculates the distance from a point to the closest point on this line segment.
         /// </summary>
-        public double DistanceTo(GeoPoint GeoPoint)
-        {
-            return GeoPoint.DistanceTo(GetClosestPointTo(GeoPoint));
-        }
+        public double DistanceTo(GeoPoint point) => Distance.DistanceTo(this, point);
+
+        /// <summary>
+        /// Calculates the shortest distance from this line segment to another line segment using default tolerance.
+        /// </summary>
+        public double DistanceTo(GeoLine other) => Distance.DistanceTo(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Calculates the shortest distance from this line segment to another line segment within tolerance.
+        /// </summary>
+        public double DistanceTo(GeoLine other, Tolerance tolerance) => Distance.DistanceTo(this, other, tolerance);
+
+        /// <summary>
+        /// Calculates the shortest distance from this line segment to a rectangle.
+        /// </summary>
+        public double DistanceTo(GeoRectangle rect) => Distance.DistanceTo(rect, this);
+
+        /// <summary>
+        /// Calculates the shortest distance from this line segment to a polygon.
+        /// </summary>
+        public double DistanceTo(GeoPolygon poly) => Distance.DistanceTo(poly, this);
+
+        /// <summary>
+        /// Calculates the shortest distance from this line segment to a circle.
+        /// </summary>
+        public double DistanceTo(GeoCircle circle) => Distance.DistanceTo(circle, this);
+
+        /// <summary>
+        /// Calculates the shortest distance from this line segment to a polyline.
+        /// </summary>
+        public double DistanceTo(GeoPolyline polyline) => Distance.DistanceTo(polyline, this);
 
         /// <summary>
         /// Checks whether a point lies on the line segment using default tolerance.
         /// </summary>
-        public bool IsPointOn(GeoPoint GeoPoint)
-        {
-            return IsPointOn(GeoPoint, Tolerance.Global);
-        }
+        public bool IsPointOn(GeoPoint GeoPoint) => IsPointOn(GeoPoint, Tolerance.Global);
 
         /// <summary>
         /// Checks whether a point lies on the line segment within tolerance.
         /// </summary>
-        public bool IsPointOn(GeoPoint GeoPoint, Tolerance tolerance)
-        {
-            return DistanceTo(GeoPoint) <= tolerance.EqualPoint;
-        }
+        public bool IsPointOn(GeoPoint GeoPoint, Tolerance tolerance) => Containment.IsPointOn(this, GeoPoint, tolerance);
+
+        /// <summary>
+        /// Classifies the location of a point relative to this line segment (OnSide or OutSide) using default tolerance.
+        /// </summary>
+        public PointLocation Locate(GeoPoint point) => Containment.Locate(this, point, Tolerance.Global);
+
+        /// <summary>
+        /// Classifies the location of a point relative to this line segment (OnSide or OutSide) within tolerance.
+        /// </summary>
+        public PointLocation Locate(GeoPoint point, Tolerance tolerance) => Containment.Locate(this, point, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with another line segment using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoLine other) => Collision.CollidesWith(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with another line segment within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoLine other, Tolerance tolerance) => Collision.CollidesWith(this, other, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a rectangle using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoRectangle rect) => Collision.CollidesWith(rect, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a rectangle within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoRectangle rect, Tolerance tolerance) => Collision.CollidesWith(rect, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a polygon using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolygon poly) => Collision.CollidesWith(poly, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a polygon within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolygon poly, Tolerance tolerance) => Collision.CollidesWith(poly, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a circle using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoCircle circle) => Collision.CollidesWith(circle, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a circle within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoCircle circle, Tolerance tolerance) => Collision.CollidesWith(circle, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a polyline using default tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolyline polyline) => Collision.CollidesWith(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment collides / intersects with a polyline within tolerance.
+        /// </summary>
+        public bool CollidesWith(GeoPolyline polyline, Tolerance tolerance) => Collision.CollidesWith(polyline, this, tolerance);
 
         /// <summary>
         /// Tries to calculate the intersection with another line segment using default tolerance.
         /// </summary>
-        public bool TryIntersectWith(GeoLine other, out GeoPoint intersection)
-        {
-            return TryIntersectWith(other, out intersection, Tolerance.Global);
-        }
+        public bool TryIntersectWith(GeoLine other, out GeoPoint intersection) => TryIntersectWith(other, out intersection, Tolerance.Global);
 
         /// <summary>
         /// Tries to calculate the intersection with another line segment within tolerance.
         /// </summary>
-        public bool TryIntersectWith(GeoLine other, out GeoPoint intersection, Tolerance tolerance)
-        {
-            intersection = new GeoPoint(0, 0);
-            GeoVector r = Direction;
-            GeoVector s = other.Direction;
-            double rCrossS = r.CrossProduct(s);
-
-            if (Math.Abs(rCrossS) <= tolerance.EqualPoint)
-            {
-                return false; // Parallel or collinear
-            }
-
-            GeoVector qMinusP = StartPoint.GetVectorTo(other.StartPoint);
-            double t = qMinusP.CrossProduct(s) / rCrossS;
-            double u = qMinusP.CrossProduct(r) / rCrossS;
-
-            if (t >= -tolerance.EqualPoint && t <= 1.0 + tolerance.EqualPoint &&
-                u >= -tolerance.EqualPoint && u <= 1.0 + tolerance.EqualPoint)
-            {
-                intersection = GetPointAtParameter(t);
-                return true;
-            }
-
-            return false;
-        }
+        public bool TryIntersectWith(GeoLine other, out GeoPoint intersection, Tolerance tolerance) => Intersection.TryIntersectWith(this, other, out intersection, tolerance);
 
         /// <summary>
-        /// Checks whether this line segment intersects with another line segment using default tolerance.
+        /// Gets the intersection point with another line segment using default tolerance.
+        /// Returns null if lines do not intersect.
         /// </summary>
-        public bool IntersectsWith(GeoLine other)
-        {
-            return IntersectsWith(other, Tolerance.Global);
-        }
+        public GeoPoint? GetIntersection(GeoLine other) => Intersection.GetIntersection(this, other, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether this line segment intersects with another line segment.
+        /// Gets the intersection point with another line segment within tolerance.
+        /// Returns null if lines do not intersect.
         /// </summary>
-        public bool IntersectsWith(GeoLine other, Tolerance tolerance)
-        {
-            return TryIntersectWith(other, out _, tolerance);
-        }
+        public GeoPoint? GetIntersection(GeoLine other, Tolerance tolerance) => Intersection.GetIntersection(this, other, tolerance);
 
         /// <summary>
-        /// Checks whether this line segment intersects with a rotated rectangle (GeoRectangle OBB) using default tolerance.
+        /// Gets all intersection points with a rectangle using default tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoRectangle rect)
-        {
-            return IntersectsWith(rect, Tolerance.Global);
-        }
+        public GeoPoint[] GetIntersections(GeoRectangle rect) => Intersection.GetIntersections(rect, this, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether this line segment intersects with a rotated rectangle (GeoRectangle OBB).
+        /// Gets all intersection points with a rectangle within tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoRectangle rect, Tolerance tolerance)
-        {
-            return rect.IntersectsWith(this, tolerance);
-        }
+        public GeoPoint[] GetIntersections(GeoRectangle rect, Tolerance tolerance) => Intersection.GetIntersections(rect, this, tolerance);
 
         /// <summary>
-        /// Checks whether this line segment intersects with a polygon using default tolerance.
+        /// Gets all intersection points with a polygon using default tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoPolygon poly)
-        {
-            return IntersectsWith(poly, Tolerance.Global);
-        }
+        public GeoPoint[] GetIntersections(GeoPolygon poly) => Intersection.GetIntersections(poly, this, Tolerance.Global);
 
         /// <summary>
-        /// Checks whether this line segment intersects with a polygon.
+        /// Gets all intersection points with a polygon within tolerance.
         /// </summary>
-        public bool IntersectsWith(GeoPolygon poly, Tolerance tolerance)
-        {
-            if (poly == null) throw new ArgumentNullException(nameof(poly));
+        public GeoPoint[] GetIntersections(GeoPolygon poly, Tolerance tolerance) => Intersection.GetIntersections(poly, this, tolerance);
 
-            return poly.IntersectsWith(this, tolerance);
-        }
+        /// <summary>
+        /// Gets all intersection points with a circle using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoCircle circle) => Intersection.GetIntersections(circle, this, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a circle within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoCircle circle, Tolerance tolerance) => Intersection.GetIntersections(circle, this, tolerance);
+
+        /// <summary>
+        /// Gets all intersection points with a polyline using default tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolyline polyline) => Intersection.GetIntersections(polyline, this, Tolerance.Global);
+
+        /// <summary>
+        /// Gets all intersection points with a polyline within tolerance.
+        /// </summary>
+        public GeoPoint[] GetIntersections(GeoPolyline polyline, Tolerance tolerance) => Intersection.GetIntersections(polyline, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment is parallel to another line segment using default tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoLine other) => Parallel.IsParallel(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment is parallel to another line segment within angular tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoLine other, Tolerance tolerance) => Parallel.IsParallel(this, other, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment is parallel to a vector using default tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoVector vector) => Parallel.IsParallel(this, vector, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment is parallel to a vector within angular tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoVector vector, Tolerance tolerance) => Parallel.IsParallel(this, vector, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment is parallel to any edge of a rotated rectangle using default tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoRectangle rect) => Parallel.IsParallel(rect, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment is parallel to any edge of a rotated rectangle within angular tolerance.
+        /// </summary>
+        public bool IsParallelTo(GeoRectangle rect, Tolerance tolerance) => Parallel.IsParallel(rect, this, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment is perpendicular to another line segment using default tolerance.
+        /// </summary>
+        public bool IsPerpendicularTo(GeoLine other) => Parallel.IsPerpendicular(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment is perpendicular to another line segment within angular tolerance.
+        /// </summary>
+        public bool IsPerpendicularTo(GeoLine other, Tolerance tolerance) => Parallel.IsPerpendicular(this, other, tolerance);
+
+        /// <summary>
+        /// Checks whether this line segment is perpendicular to a vector using default tolerance.
+        /// </summary>
+        public bool IsPerpendicularTo(GeoVector vector) => Parallel.IsPerpendicular(this, vector, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this line segment is perpendicular to a vector within angular tolerance.
+        /// </summary>
+        public bool IsPerpendicularTo(GeoVector vector, Tolerance tolerance) => Parallel.IsPerpendicular(this, vector, tolerance);
 
         /// <summary>
         /// Indicates whether the current line segment is equal to another line segment.
         /// </summary>
         /// <param name="other">A line segment to compare with this line segment.</param>
         /// <returns>true if the current line segment is equal to the other parameter; otherwise, false.</returns>
-        public bool Equals(GeoLine other)
-        {
-            return StartPoint.Equals(other.StartPoint) && EndPoint.Equals(other.EndPoint);
-        }
+        public bool Equals(GeoLine other) => StartPoint.Equals(other.StartPoint) && EndPoint.Equals(other.EndPoint);
 
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
         /// </summary>
         /// <param name="obj">The object to compare with the current instance.</param>
         /// <returns>true if obj and this instance are the same type and represent the same value; otherwise, false.</returns>
-        public override bool Equals(object obj)
-        {
-            return obj is GeoLine other && Equals(other);
-        }
+        public override bool Equals(object obj) => obj is GeoLine other && Equals(other);
 
         /// <summary>
         /// Returns the hash code for this instance.
