@@ -1,6 +1,6 @@
 using System;
 using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest.Operations

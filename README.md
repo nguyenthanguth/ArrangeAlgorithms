@@ -24,7 +24,7 @@ NuGet\Install-Package ArrangeAlgorithms
 
 **PackageReference (in `.csproj`):**
 ```xml
-<PackageReference Include="ArrangeAlgorithms" Version="1.0.3" />
+<PackageReference Include="ArrangeAlgorithms" Version="2.0.0" />
 ```
 
 ## Visual Examples
@@ -181,14 +181,85 @@ Default values are in millimeters, matching conventional structural drawings.
 
 ## Geometric Types
 
-`GeoPoint`, `GeoVector`, `GeoLine`, `GeoRectangle` (rotated rectangle — OBB), `GeoPolygon`. The three geometric shapes have fully symmetric `IntersectsWith` methods, with each pair having an overload that accepts an explicit `Tolerance`:
+`GeoPoint`, `GeoVector`, `GeoLine`, `GeoCircle`, `GeoRectangle` (rotated rectangle — OBB), `GeoPolygon`, `GeoPolyline`.
+
+### Regions and curves
+
+The shapes split into two families, and the distinction decides what you can ask of them:
+
+| Family | Types | Encloses an area |
+|---|---|---|
+| Region | `GeoCircle`, `GeoRectangle`, `GeoPolygon` | yes |
+| Curve | `GeoLine`, `GeoPolyline` | no |
+
+A `GeoPolyline` is always an open chain — it has no `IsClosed` flag and never joins its last vertex back to its first. Geometry meant to enclose something is a `GeoPolygon`, and `polyline.ToPolygon()` converts between them.
+
+That rule is what decides the answers below. A chain of vertices tracing a square still holds only the points on its path:
 
 ```csharp
-rect.IntersectsWith(line);         line.IntersectsWith(rect);
-rect.IntersectsWith(poly);         poly.IntersectsWith(rect);
-line.IntersectsWith(poly);         poly.IntersectsWith(line);
-rect.IntersectsWith(otherRect);    poly.IntersectsWith(otherPoly);    line.IntersectsWith(otherLine);
+var traced = new GeoPolyline(
+    new GeoPoint(0, 0), new GeoPoint(10, 0),
+    new GeoPoint(10, 10), new GeoPoint(0, 10), new GeoPoint(0, 0));
+
+traced.Locate(new GeoPoint(5, 5));            // OutSide  — a curve has no interior
+traced.DistanceTo(new GeoPoint(5, 5));        // 5.0      — measured to the path
+traced.ToPolygon().Locate(new GeoPoint(5, 5)); // Inside  — now it is a region
+traced.ToPolygon().DistanceTo(new GeoPoint(5, 5)); // 0.0
 ```
+
+Only regions offer `Contains`; every shape offers `Locate`, and curves report `OnSide` or `OutSide`.
+
+### Collision and intersection
+
+`CollidesWith` answers whether two shapes overlap, `GetIntersections` returns the crossing points. Every pair is available from both directions, and each has an overload taking an explicit `Tolerance`:
+
+```csharp
+rect.CollidesWith(line);        line.CollidesWith(rect);
+rect.CollidesWith(poly);        poly.CollidesWith(rect);
+circle.CollidesWith(polyline);  polyline.CollidesWith(circle);
+rect.CollidesWith(otherRect);   poly.CollidesWith(otherPoly);   line.CollidesWith(otherLine);
+
+GeoPoint[] points = poly.GetIntersections(line);
+```
+
+### Splitting
+
+`Splition` cuts a `GeoLine` or a `GeoPolyline` at a point, at an arc length, or where a cutting line crosses it. Pieces come back in order along the subject, so the first piece always holds its start point and the last holds its end point:
+
+```csharp
+Splition.TrySplitBy(line, point, out GeoLine first, out GeoLine second);
+Splition.TrySplitAtDistance(polyline, 12.5, out GeoPolyline head, out GeoPolyline tail);
+
+GeoLine[] pieces = Splition.SplitAtDistances(line, new[] { 2.0, 5.0, 8.0 });
+GeoPolyline[] parts = Splition.SplitBy(polyline, cutter);
+```
+
+Splitting against a `GeoPolygon` sorts the result by which side of the boundary each part falls on:
+
+```csharp
+Splition.TrySplitBy(line,     polygon, out GeoLine[] inside, out GeoLine[] outside);
+Splition.TrySplitBy(polyline, polygon, out GeoLine[] inside, out GeoLine[] outside);
+```
+
+Both return `GeoLine[]`, so a polyline arrives as its individual segments and nothing records which of them belonged to the same run — use `SplitBy(polyline, cutter)` when that grouping matters. `false` means the boundary was never crossed, not that the call failed: one array then holds the whole subject and the other is empty. A part running along the boundary counts as inside, and a path that merely touches the boundary and turns back is not a crossing.
+
+Every split is also reachable from the shape being cut, which is usually how it reads better:
+
+```csharp
+line.TrySplitBy(point, out GeoLine first, out GeoLine second);
+line.TrySplitAtDistance(4.0, out first, out second);
+line.TrySplitBy(polygon, out GeoLine[] inside, out GeoLine[] outside);
+GeoLine[] pieces = line.SplitAtDistances(new[] { 2.0, 5.0, 8.0 });
+
+polyline.TrySplitBy(cutter, out GeoPolyline head, out GeoPolyline tail);
+GeoPolyline[] parts = polyline.SplitBy(cutter);
+```
+
+The instance methods live on the shape being cut, not on the cutter: `polygon.Split(line)` would leave it unclear which of the two comes back in pieces.
+
+Cut positions outside the subject, or landing on one of its endpoints, are not splits and are skipped. Positions closer together than the tolerance merge into one, and a position within a tolerance of an existing vertex snaps onto it, so no piece and no edge is ever shorter than the tolerance.
+
+### Tolerance
 
 `Tolerance.Global` is the tolerance applied to overloads that do not pass a custom tolerance. It has a static setter, intentionally designed to mimic `Autodesk.AutoCAD.Geometry.Tolerance.Global`; changing it affects the entire application, so it should only be set once at startup.
 

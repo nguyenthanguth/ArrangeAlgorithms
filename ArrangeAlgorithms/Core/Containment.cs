@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Enums;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static methods for spatial containment, inclusion, and boundary point tests.
@@ -233,31 +233,9 @@ namespace ArrangeAlgorithms.Operations
             return inside;
         }
 
-        /// <summary>
-        /// Checks whether a polyline contains a point using default tolerance.
-        /// </summary>
-        /// <param name="polyline">The polyline.</param>
-        /// <param name="point">The target point.</param>
-        /// <returns>true if the polyline contains the point; otherwise, false.</returns>
-        public static bool Contains(GeoPolyline polyline, GeoPoint point)
-        {
-            return Contains(polyline, point, Tolerance.Global);
-        }
-
-        /// <summary>
-        /// Checks whether a polyline contains a point within tolerance. A closed polyline encloses a region,
-        /// so points inside it are contained; an open polyline is a curve and only contains points lying on it.
-        /// </summary>
-        /// <param name="polyline">The polyline.</param>
-        /// <param name="point">The target point.</param>
-        /// <param name="tolerance">The tolerance.</param>
-        /// <returns>true if the polyline contains the point; otherwise, false.</returns>
-        public static bool Contains(GeoPolyline polyline, GeoPoint point, Tolerance tolerance)
-        {
-            if (polyline == null) throw new ArgumentNullException(nameof(polyline));
-
-            return Locate(polyline, point, tolerance) != PointLocation.OutSide;
-        }
+        // A polyline has no interior, so there is no Contains overload taking one as the container:
+        // it would only ever mean "the point lies on the path", which is what IsPointOn already says.
+        // Asking about an enclosed area means converting to a GeoPolygon first.
 
         #endregion
 
@@ -408,7 +386,7 @@ namespace ArrangeAlgorithms.Operations
 
         /// <summary>
         /// Classifies the spatial location of a point relative to a polyline using default tolerance.
-        /// If the polyline is closed, tests for interior inclusion; otherwise checks if the point is on the polyline.
+        /// A polyline has no interior, so the result is either OnSide or OutSide.
         /// </summary>
         /// <param name="polyline">The polyline.</param>
         /// <param name="point">The target point.</param>
@@ -420,7 +398,8 @@ namespace ArrangeAlgorithms.Operations
 
         /// <summary>
         /// Classifies the spatial location of a point relative to a polyline within tolerance.
-        /// If the polyline is closed, tests for interior inclusion; otherwise checks if the point is on the polyline.
+        /// A polyline has no interior, so the result is either OnSide or OutSide; convert it with
+        /// <see cref="Geometry.GeoPolyline.ToPolygon"/> to classify against an enclosed area.
         /// </summary>
         /// <param name="polyline">The polyline.</param>
         /// <param name="point">The target point.</param>
@@ -430,17 +409,9 @@ namespace ArrangeAlgorithms.Operations
         {
             if (polyline == null) throw new ArgumentNullException(nameof(polyline));
 
-            if (IsPointOn(polyline, point, tolerance))
-            {
-                return PointLocation.OnSide;
-            }
-
-            if (polyline.IsClosed && polyline.VertexCount >= 3)
-            {
-                return Locate(polyline.ToPolygon(), point, tolerance);
-            }
-
-            return PointLocation.OutSide;
+            return IsPointOn(polyline, point, tolerance)
+                ? PointLocation.OnSide
+                : PointLocation.OutSide;
         }
 
         /// <summary>

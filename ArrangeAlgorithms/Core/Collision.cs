@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ArrangeAlgorithms.Geometry;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static calculation methods for checking spatial collisions and geometric overlaps.
@@ -132,8 +132,8 @@ namespace ArrangeAlgorithms.Operations
                 }
             }
 
-            // The circle may sit entirely inside a closed polyline without touching any edge.
-            return Containment.Contains(polyline, circle.Center, tolerance);
+            // A last check for a centre sitting exactly on the chain.
+            return Containment.IsPointOn(polyline, circle.Center, tolerance);
         }
 
         #endregion
@@ -355,10 +355,9 @@ namespace ArrangeAlgorithms.Operations
                 }
             }
 
-            // A closed polyline encloses a region, so a segment lying entirely inside it collides even
-            // though it crosses no edge. An open polyline encloses nothing and Contains reduces to
-            // "lies on the path", which the edge loop above has already ruled out.
-            return Containment.Contains(polyline, line.StartPoint, tolerance);
+            // A segment lying exactly along one of the edges is reported as parallel by the intersection
+            // test above, never as a crossing, so this is what catches the overlap.
+            return Containment.IsPointOn(polyline, line.StartPoint, tolerance);
         }
 
         /// <summary>
@@ -384,8 +383,9 @@ namespace ArrangeAlgorithms.Operations
                 }
             }
 
-            // The rectangle may sit entirely inside a closed polyline without touching any edge.
-            return Containment.Contains(polyline, rect.Center, tolerance);
+            // Catches a centre sitting exactly on the chain; a chain inside the rectangle is already
+            // found by the edge loop, which contain-checks each segment against the rectangle.
+            return Containment.IsPointOn(polyline, rect.Center, tolerance);
         }
 
         /// <summary>
@@ -412,8 +412,9 @@ namespace ArrangeAlgorithms.Operations
                 }
             }
 
-            // The polygon may sit entirely inside a closed polyline without touching any edge.
-            return Containment.Contains(polyline, poly.Vertices[0], tolerance);
+            // Catches a vertex sitting exactly on the chain; a chain inside the polygon is already
+            // found by the edge loop, which contain-checks each segment against the polygon.
+            return Containment.IsPointOn(polyline, poly.Vertices[0], tolerance);
         }
 
         /// <summary>
@@ -445,10 +446,10 @@ namespace ArrangeAlgorithms.Operations
                 }
             }
 
-            // No edges cross, but one closed polyline may still fully enclose the other, which is the
-            // same situation CollidesWith(poly1, poly2) reports as a collision.
-            return Containment.Contains(pl1, pl2[0], tolerance) ||
-                   Containment.Contains(pl2, pl1[0], tolerance);
+            // Neither chain encloses anything, but one may run exactly along an edge of the other,
+            // which the intersection test above reports as parallel rather than as a crossing.
+            return Containment.IsPointOn(pl1, pl2[0], tolerance) ||
+                   Containment.IsPointOn(pl2, pl1[0], tolerance);
         }
 
         #endregion

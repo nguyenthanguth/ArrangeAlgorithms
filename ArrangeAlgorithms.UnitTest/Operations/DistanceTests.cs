@@ -1,6 +1,6 @@
 using System;
 using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest.Operations
@@ -277,13 +277,24 @@ namespace ArrangeAlgorithms.UnitTest.Operations
                 new GeoPoint(10, 10), new GeoPoint(0, 10));
             var rect = new GeoRectangle(new GeoPoint(5, 5), 10, 10);
             var circle = new GeoCircle(new GeoPoint(5, 5), 10);
-            var closedPolyline = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
 
             // A polygon used to report the distance to its boundary instead, unlike every other closed shape.
             Assert.Equal(0.0, Distance.DistanceTo(poly, interior), 9);
             Assert.Equal(0.0, Distance.DistanceTo(rect, interior), 9);
             Assert.Equal(0.0, Distance.DistanceTo(circle, interior), 9);
-            Assert.Equal(0.0, Distance.DistanceTo(closedPolyline, interior), 9);
+        }
+
+        [Fact]
+        public void DistanceToPolyline_MeasuresThePathEvenWhenItSurroundsThePoint()
+        {
+            // A polyline is a curve, so a point in the middle of a shape it traces is at its distance
+            // from the path, not at zero. Only the polygon form encloses.
+            var traced = new GeoPolyline(
+                new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10), new GeoPoint(0, 0));
+            var interior = new GeoPoint(5, 5);
+
+            Assert.Equal(5.0, Distance.DistanceTo(traced, interior), 9);
+            Assert.Equal(0.0, Distance.DistanceTo(traced.ToPolygon(), interior), 9);
         }
 
         [Fact]

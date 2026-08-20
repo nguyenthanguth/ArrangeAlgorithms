@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ArrangeAlgorithms.Geometry;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static calculation methods for geometric intersections and finding exact intersection points.

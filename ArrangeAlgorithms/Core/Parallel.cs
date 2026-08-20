@@ -1,7 +1,7 @@
 using System;
 using ArrangeAlgorithms.Geometry;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static calculation methods for checking parallelism and perpendicularity between geometric entities.

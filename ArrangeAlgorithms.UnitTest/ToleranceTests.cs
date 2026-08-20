@@ -17,7 +17,7 @@ namespace ArrangeAlgorithms.UnitTest
         [Fact]
         public void Tolerance_ZeroThresholds_AreAllowed()
         {
-            // Zero tolerance means exact comparison — valid, not an error.
+            // Zero tolerance means exact comparison ??valid, not an error.
             var tolerance = new Tolerance(0.0, 0.0);
 
             Assert.Equal(0.0, tolerance.EqualPoint);

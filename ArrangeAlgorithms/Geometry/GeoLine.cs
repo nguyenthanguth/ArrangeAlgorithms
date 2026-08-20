@@ -1,5 +1,6 @@
 using System;
-using ArrangeAlgorithms.Operations;
+using System.Collections.Generic;
+using ArrangeAlgorithms.Core;
 using ArrangeAlgorithms.Enums;
 
 namespace ArrangeAlgorithms.Geometry
@@ -272,6 +273,209 @@ namespace ArrangeAlgorithms.Geometry
         /// Gets all intersection points with a polyline within tolerance.
         /// </summary>
         public GeoPoint[] GetIntersections(GeoPolyline polyline, Tolerance tolerance) => Intersection.GetIntersections(polyline, this, tolerance);
+
+        /// <summary>
+        /// Splits this segment at a point lying on it, using the default tolerance.
+        /// </summary>
+        /// <param name="point">The point to split at, which must lie on this segment.</param>
+        /// <param name="first">The piece holding the start point.</param>
+        /// <param name="second">The piece holding the end point.</param>
+        /// <returns>true if the segment was split; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPoint point, out GeoLine first, out GeoLine second)
+            => Splition.TrySplitBy(this, point, out first, out second, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment at a point lying on it, within tolerance.
+        /// </summary>
+        /// <param name="point">The point to split at, which must lie on this segment.</param>
+        /// <param name="first">The piece holding the start point.</param>
+        /// <param name="second">The piece holding the end point.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if the segment was split; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPoint point, out GeoLine first, out GeoLine second, Tolerance tolerance)
+            => Splition.TrySplitBy(this, point, out first, out second, tolerance);
+
+        /// <summary>
+        /// Splits this segment where a cutting line segment crosses it, using the default tolerance.
+        /// </summary>
+        /// <param name="cutter">The cutting line segment.</param>
+        /// <param name="first">The piece holding the start point.</param>
+        /// <param name="second">The piece holding the end point.</param>
+        /// <returns>true if the segment was split; otherwise, false.</returns>
+        public bool TrySplitBy(GeoLine cutter, out GeoLine first, out GeoLine second)
+            => Splition.TrySplitBy(this, cutter, out first, out second, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment where a cutting line segment crosses it, within tolerance.
+        /// </summary>
+        /// <param name="cutter">The cutting line segment.</param>
+        /// <param name="first">The piece holding the start point.</param>
+        /// <param name="second">The piece holding the end point.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if the segment was split; otherwise, false.</returns>
+        public bool TrySplitBy(GeoLine cutter, out GeoLine first, out GeoLine second, Tolerance tolerance)
+            => Splition.TrySplitBy(this, cutter, out first, out second, tolerance);
+
+        /// <summary>
+        /// Splits this segment against a polygon, sorting the parts by which side of its boundary they
+        /// fall on, using the default tolerance.
+        /// </summary>
+        /// <param name="cutter">The polygon to split against.</param>
+        /// <param name="inside">The parts lying inside the polygon, in order along this segment.</param>
+        /// <param name="outside">The parts lying outside the polygon, in order along this segment.</param>
+        /// <returns>true if the polygon boundary crosses this segment; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolygon cutter, out GeoLine[] inside, out GeoLine[] outside)
+            => Splition.TrySplitBy(this, cutter, out inside, out outside, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment against a polygon, sorting the parts by which side of its boundary they
+        /// fall on, within tolerance.
+        /// </summary>
+        /// <param name="cutter">The polygon to split against.</param>
+        /// <param name="inside">The parts lying inside the polygon, in order along this segment.</param>
+        /// <param name="outside">The parts lying outside the polygon, in order along this segment.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if the polygon boundary crosses this segment; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolygon cutter, out GeoLine[] inside, out GeoLine[] outside, Tolerance tolerance)
+            => Splition.TrySplitBy(this, cutter, out inside, out outside, tolerance);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of cutting line segments crosses it, using the default tolerance.
+        /// </summary>
+        /// <param name="cutters">The cutting line segments.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <returns>true if this segment was split by at least one cutter; otherwise, false.</returns>
+        public bool TrySplitBy(GeoLine[] cutters, out GeoLine[] pieces)
+            => Splition.TrySplitBy(this, cutters, out pieces, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of cutting line segments crosses it, within tolerance.
+        /// </summary>
+        /// <param name="cutters">The cutting line segments.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if this segment was split by at least one cutter; otherwise, false.</returns>
+        public bool TrySplitBy(GeoLine[] cutters, out GeoLine[] pieces, Tolerance tolerance)
+            => Splition.TrySplitBy(this, cutters, out pieces, tolerance);
+
+        /// <summary>
+        /// Splits this segment everywhere a cutting polyline crosses it, using the default tolerance.
+        /// </summary>
+        /// <param name="cutter">The cutting polyline.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <returns>true if this segment was split by the polyline; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolyline cutter, out GeoLine[] pieces)
+            => Splition.TrySplitBy(this, cutter, out pieces, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment everywhere a cutting polyline crosses it, within tolerance.
+        /// </summary>
+        /// <param name="cutter">The cutting polyline.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if this segment was split by the polyline; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolyline cutter, out GeoLine[] pieces, Tolerance tolerance)
+            => Splition.TrySplitBy(this, cutter, out pieces, tolerance);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of points lies on it, using the default tolerance.
+        /// </summary>
+        /// <param name="points">The points to split at.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <returns>true if this segment was split; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPoint[] points, out GeoLine[] pieces)
+            => Splition.TrySplitBy(this, points, out pieces, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of points lies on it, within tolerance.
+        /// </summary>
+        /// <param name="points">The points to split at.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if this segment was split; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPoint[] points, out GeoLine[] pieces, Tolerance tolerance)
+            => Splition.TrySplitBy(this, points, out pieces, tolerance);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of polygon boundaries crosses it, separating the parts that fall
+        /// inside the polygons from those that fall outside, using the default tolerance.
+        /// </summary>
+        /// <param name="cutters">The polygons to split against.</param>
+        /// <param name="inside">The parts lying inside the polygons, in order along this segment.</param>
+        /// <param name="outside">The parts lying outside the polygons, in order along this segment.</param>
+        /// <returns>true if at least one polygon boundary crosses this segment; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolygon[] cutters, out GeoLine[] inside, out GeoLine[] outside)
+            => Splition.TrySplitBy(this, cutters, out inside, out outside, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of polygon boundaries crosses it, separating the parts that fall
+        /// inside the polygons from those that fall outside, within tolerance.
+        /// </summary>
+        /// <param name="cutters">The polygons to split against.</param>
+        /// <param name="inside">The parts lying inside the polygons, in order along this segment.</param>
+        /// <param name="outside">The parts lying outside the polygons, in order along this segment.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if at least one polygon boundary crosses this segment; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolygon[] cutters, out GeoLine[] inside, out GeoLine[] outside, Tolerance tolerance)
+            => Splition.TrySplitBy(this, cutters, out inside, out outside, tolerance);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of polylines crosses it, using the default tolerance.
+        /// </summary>
+        /// <param name="cutters">The cutting polylines.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <returns>true if at least one polyline crosses this segment; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolyline[] cutters, out GeoLine[] pieces)
+            => Splition.TrySplitBy(this, cutters, out pieces, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment everywhere a list of polylines crosses it, within tolerance.
+        /// </summary>
+        /// <param name="cutters">The cutting polylines.</param>
+        /// <param name="pieces">The resulting pieces in order along this segment.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if at least one polyline crosses this segment; otherwise, false.</returns>
+        public bool TrySplitBy(GeoPolyline[] cutters, out GeoLine[] pieces, Tolerance tolerance)
+            => Splition.TrySplitBy(this, cutters, out pieces, tolerance);
+
+        /// <summary>
+        /// Splits this segment at an arc length measured from its start point, using the default tolerance.
+        /// </summary>
+        /// <param name="distance">Arc length from the start point.</param>
+        /// <param name="first">The piece holding the start point.</param>
+        /// <param name="second">The piece holding the end point.</param>
+        /// <returns>true if the segment was split; otherwise, false.</returns>
+        public bool TrySplitAtDistance(double distance, out GeoLine first, out GeoLine second)
+            => Splition.TrySplitAtDistance(this, distance, out first, out second, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment at an arc length measured from its start point, within tolerance.
+        /// </summary>
+        /// <param name="distance">Arc length from the start point.</param>
+        /// <param name="first">The piece holding the start point.</param>
+        /// <param name="second">The piece holding the end point.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>true if the segment was split; otherwise, false.</returns>
+        public bool TrySplitAtDistance(double distance, out GeoLine first, out GeoLine second, Tolerance tolerance)
+            => Splition.TrySplitAtDistance(this, distance, out first, out second, tolerance);
+
+        /// <summary>
+        /// Splits this segment at several arc lengths measured from its start point, using the default
+        /// tolerance.
+        /// </summary>
+        /// <param name="distances">Arc lengths from the start point, in any order.</param>
+        /// <returns>The pieces in order along this segment.</returns>
+        public GeoLine[] SplitAtDistances(IEnumerable<double> distances)
+            => Splition.SplitAtDistances(this, distances, Tolerance.Global);
+
+        /// <summary>
+        /// Splits this segment at several arc lengths measured from its start point, within tolerance.
+        /// </summary>
+        /// <param name="distances">Arc lengths from the start point, in any order.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>The pieces in order along this segment.</returns>
+        public GeoLine[] SplitAtDistances(IEnumerable<double> distances, Tolerance tolerance)
+            => Splition.SplitAtDistances(this, distances, tolerance);
 
         /// <summary>
         /// Checks whether this line segment is parallel to another line segment using default tolerance.

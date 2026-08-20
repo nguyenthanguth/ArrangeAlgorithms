@@ -102,7 +102,7 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
         [Fact]
         public void Clone_Polyline_ProducesAnEqualButSeparateInstance()
         {
-            var original = new GeoPolyline(true,
+            var original = new GeoPolyline(
                 new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
             var clone = original.Clone();
 
@@ -116,17 +116,12 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
         }
 
         [Fact]
-        public void Clone_Polyline_KeepsTheClosedFlag()
+        public void Clone_Polyline_KeepsItsEdges()
         {
-            var closed = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
-            var open = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+            var path = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
 
-            Assert.True(closed.Clone().IsClosed);
-            Assert.False(open.Clone().IsClosed);
-
-            // The flag drives EdgeCount, so it has to survive the copy.
-            Assert.Equal(closed.EdgeCount, closed.Clone().EdgeCount);
-            Assert.Equal(open.EdgeCount, open.Clone().EdgeCount);
+            Assert.Equal(path.EdgeCount, path.Clone().EdgeCount);
+            Assert.Equal(path.Length, path.Clone().Length, 9);
         }
 
         [Fact]
@@ -186,7 +181,7 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
             var circle = new GeoCircle(new GeoPoint(5, 5), 4);
             var rect = new GeoRectangle(new GeoPoint(5, 5), 8, 6, 0.4);
             var poly = new GeoPolygon(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
-            var polyline = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
 
             Assert.Equal(probe.DistanceTo(line), probe.DistanceTo(line.Clone()), 9);
             Assert.Equal(probe.DistanceTo(circle), probe.DistanceTo(circle.Clone()), 9);

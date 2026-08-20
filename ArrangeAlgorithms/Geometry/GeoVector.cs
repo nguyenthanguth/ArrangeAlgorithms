@@ -1,5 +1,5 @@
 using System;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 
 namespace ArrangeAlgorithms.Geometry
 {

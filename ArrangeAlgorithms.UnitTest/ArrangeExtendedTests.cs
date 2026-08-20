@@ -215,7 +215,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_NestedPolygonObstacles_AvoidsAllLayers(ArrangeAlgorithmType algorithm)
         {
-            // Two nested polygon obstacles — the label must escape both layers
+            // Two nested polygon obstacles ??the label must escape both layers
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var innerBox = new GeoPolygon(
                 new GeoPoint(-30, 5), new GeoPoint(70, 5), new GeoPoint(70, 20), new GeoPoint(-30, 20));
@@ -345,7 +345,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_LabelsOnParallelLeaders_NoOverlap(ArrangeAlgorithmType algorithm)
         {
-            // Two labels on closely spaced parallel leaders — they should not collide
+            // Two labels on closely spaced parallel leaders ??they should not collide
             var leader1 = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var leader2 = new GeoLine(0.0, 12.0, 40.0, 12.0); // Only 12 units apart
             var a = LabelOn(leader1);
@@ -387,7 +387,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_LabelsOnConvergingLeaders_NoOverlap(ArrangeAlgorithmType algorithm)
         {
-            // Two leaders converging towards the same point — labels must still separate
+            // Two leaders converging towards the same point ??labels must still separate
             var leader1 = new GeoLine(0.0, 0.0, 50.0, 50.0);
             var leader2 = new GeoLine(100.0, 0.0, 50.0, 50.0);
             var a = LabelOn(leader1);
@@ -412,7 +412,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_RelaxationPass_MultipleFailedLabelsGetBestEffortPositions(ArrangeAlgorithmType algorithm)
         {
-            // 2 labels blocked by separate BlockLines — both must enter Pass 2 and receive non-zero translations
+            // 2 labels blocked by separate BlockLines ??both must enter Pass 2 and receive non-zero translations
             var leader1 = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var leader2 = new GeoLine(200.0, 0.0, 240.0, 0.0);
             var failedA = LabelOn(leader1);
@@ -654,7 +654,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_EightLabelsOnSpreadLeaders_MajorityPlaced(ArrangeAlgorithmType algorithm)
         {
-            // 8 labels on 4 leaders (2 each) — most should be placed successfully
+            // 8 labels on 4 leaders (2 each) ??most should be placed successfully
             var labels = new List<Arrange>();
             for (int i = 0; i < 4; i++)
             {
@@ -676,7 +676,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_TenLabelsOnSingleLongLeader_NoPairwiseOverlap(ArrangeAlgorithmType algorithm)
         {
-            // 10 labels sharing a very long leader — placed labels must not overlap each other
+            // 10 labels sharing a very long leader ??placed labels must not overlap each other
             var leader = new GeoLine(0.0, 0.0, 500.0, 0.0);
             var labels = new List<Arrange>();
             for (int i = 0; i < 10; i++)
@@ -728,7 +728,7 @@ namespace ArrangeAlgorithms.UnitTest
         [MemberData(nameof(AllAlgorithms))]
         public void Arrange_Run_IndependentLabels_PlacedResultDoesNotDependOnOrder(ArrangeAlgorithmType algorithm)
         {
-            // Two labels on distant leaders — swapping input order should not affect individual placement results
+            // Two labels on distant leaders ??swapping input order should not affect individual placement results
             var leader1 = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var leader2 = new GeoLine(500.0, 0.0, 540.0, 0.0);
 

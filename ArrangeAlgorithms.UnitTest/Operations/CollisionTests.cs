@@ -1,6 +1,6 @@
 using System;
 using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest.Operations
@@ -358,26 +358,41 @@ namespace ArrangeAlgorithms.UnitTest.Operations
 
         #endregion
 
-        #region Closed Polyline Region Regression
+        #region Polyline Is A Curve, Not A Region
 
         [Fact]
-        public void PolylinePolyline_NestedClosedLoops_Collide()
+        public void PolylinePolyline_NestedLoops_DoNotCollideButTheirPolygonsDo()
         {
-            var outer = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(100, 0), new GeoPoint(100, 100), new GeoPoint(0, 100));
-            var inner = new GeoPolyline(true, new GeoPoint(40, 40), new GeoPoint(60, 40), new GeoPoint(60, 60), new GeoPoint(40, 60));
+            var outer = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(100, 0), new GeoPoint(100, 100), new GeoPoint(0, 100), new GeoPoint(0, 0));
+            var inner = new GeoPolyline(new GeoPoint(40, 40), new GeoPoint(60, 40), new GeoPoint(60, 60), new GeoPoint(40, 60), new GeoPoint(40, 40));
 
-            // No edges cross, but one loop encloses the other. The polygon form of the same geometry has
-            // always reported a collision, so the polyline form has to agree.
-            Assert.True(Collision.CollidesWith(outer, inner));
+            // No edges cross, and a polyline encloses nothing, so the two curves never meet. Asking about
+            // the enclosed area is what GeoPolygon is for, and there the containment does count.
+            Assert.False(Collision.CollidesWith(outer, inner));
             Assert.True(Collision.CollidesWith(outer.ToPolygon(), inner.ToPolygon()));
-            Assert.Equal(0.0, Distance.DistanceTo(outer, inner), 9);
+            Assert.True(Distance.DistanceTo(outer, inner) > 0.0);
+        }
+
+        [Fact]
+        public void Polyline_CollinearOverlap_StillCollides()
+        {
+            // Two segments lying on top of each other are reported as parallel by the intersection test,
+            // never as a crossing, so an edge loop alone would miss this.
+            var path = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+
+            var alongAnEdge = new GeoLine(new GeoPoint(2, 0), new GeoPoint(8, 0));
+            Assert.False(Intersection.TryIntersectWith(path.GetEdgeAt(0), alongAnEdge, out _));
+            Assert.True(Collision.CollidesWith(path, alongAnEdge));
+
+            var other = new GeoPolyline(new GeoPoint(2, 0), new GeoPoint(8, 0));
+            Assert.True(Collision.CollidesWith(path, other));
         }
 
         [Fact]
         public void PolylinePolyline_DisjointLoops_DoNotCollide()
         {
-            var left = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
-            var right = new GeoPolyline(true, new GeoPoint(50, 0), new GeoPoint(60, 0), new GeoPoint(60, 10), new GeoPoint(50, 10));
+            var left = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10), new GeoPoint(0, 0));
+            var right = new GeoPolyline(new GeoPoint(50, 0), new GeoPoint(60, 0), new GeoPoint(60, 10), new GeoPoint(50, 10), new GeoPoint(50, 0));
 
             Assert.False(Collision.CollidesWith(left, right));
         }
@@ -393,16 +408,27 @@ namespace ArrangeAlgorithms.UnitTest.Operations
         }
 
         [Fact]
-        public void ClosedPolyline_EnclosedShapes_Collide()
+        public void TracedLoop_EnclosesNothing_UntilItBecomesAPolygon()
         {
-            var loop = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(100, 0), new GeoPoint(100, 100), new GeoPoint(0, 100));
+            var loop = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(100, 0), new GeoPoint(100, 100), new GeoPoint(0, 100), new GeoPoint(0, 0));
+            var polygon = loop.ToPolygon();
 
-            Assert.True(Collision.CollidesWith(loop, new GeoRectangle(new GeoPoint(50, 50), 4, 4)));
-            Assert.True(Collision.CollidesWith(new GeoCircle(new GeoPoint(50, 50), 2), loop));
-            Assert.True(Collision.CollidesWith(loop, new GeoLine(new GeoPoint(40, 50), new GeoPoint(60, 50))));
+            var box = new GeoRectangle(new GeoPoint(50, 50), 4, 4);
+            var circle = new GeoCircle(new GeoPoint(50, 50), 2);
+            var line = new GeoLine(new GeoPoint(40, 50), new GeoPoint(60, 50));
+            var inner = new GeoPolygon(new GeoPoint(40, 40), new GeoPoint(60, 40), new GeoPoint(60, 60));
 
-            var insidePolygon = new GeoPolygon(new GeoPoint(40, 40), new GeoPoint(60, 40), new GeoPoint(60, 60));
-            Assert.True(Collision.CollidesWith(loop, insidePolygon));
+            // Nothing here touches the path itself, so nothing collides with the curve.
+            Assert.False(Collision.CollidesWith(loop, box));
+            Assert.False(Collision.CollidesWith(circle, loop));
+            Assert.False(Collision.CollidesWith(loop, line));
+            Assert.False(Collision.CollidesWith(loop, inner));
+
+            // The same geometry as a region swallows all four.
+            Assert.True(Collision.CollidesWith(box, polygon));
+            Assert.True(Collision.CollidesWith(circle, polygon));
+            Assert.True(Collision.CollidesWith(polygon, line));
+            Assert.True(Collision.CollidesWith(polygon, inner));
         }
 
         #endregion

@@ -92,5 +92,27 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
             Assert.Equal(6.0, pt.DistanceTo(circle), 4);
             Assert.Equal(7.0, pt.DistanceTo(rect), 4);
         }
+
+        [Fact]
+        public void IsPointOn_ReachesEveryShapeThatHasABoundaryTest()
+        {
+            var point = new GeoPoint(5, 0);
+
+            var line = new GeoLine(new GeoPoint(0, 0), new GeoPoint(10, 0));
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+            var circle = new GeoCircle(new GeoPoint(0, 0), 5);
+
+            // Both directions of the facade route to the same Containment call.
+            Assert.True(point.IsPointOn(line));
+            Assert.Equal(line.IsPointOn(point), point.IsPointOn(line));
+            Assert.True(point.IsPointOn(polyline));
+            Assert.True(point.IsPointOn(circle));
+
+            var off = new GeoPoint(5, 3);
+            Assert.False(off.IsPointOn(line));
+            Assert.False(off.IsPointOn(line, new Tolerance(1E-4, 1E-4)));
+            Assert.True(off.IsPointOn(line, new Tolerance(5.0, 5.0)));
+        }
+
     }
 }

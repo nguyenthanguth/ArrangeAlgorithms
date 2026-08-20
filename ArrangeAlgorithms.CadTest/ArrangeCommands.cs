@@ -1,4 +1,9 @@
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
+using ArrangeAlgorithms.Geometry;
+using ArrangeAlgorithms.Core;
 
 namespace ArrangeAlgorithms.CadTest
 {
@@ -35,6 +40,24 @@ namespace ArrangeAlgorithms.CadTest
         public static void RunArrangeTestCSP()
         {
             new ArrangeTestRunner().RunArrangeTest(ArrangeAlgorithmType.ConstraintSatisfaction, "Constraint Satisfaction");
+        }
+
+        [CommandMethod("T1_Split")]
+        public static void RunSplitTest()
+        {
+            new SplitTestRunner().RunSplitTest();
+        }
+
+        [CommandMethod("T1_ClosestPoint")]
+        public static void RunClosestPointTest()
+        {
+            new ClosestPointTestRunner().RunClosestPointTest();
+        }
+
+        [CommandMethod("T1_SplitAutoTest")]
+        public static void RunSplitAutoTest()
+        {
+            SplitAutoTestRunner.RunSplitAutoTest();
         }
     }
 }

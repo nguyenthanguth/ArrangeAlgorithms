@@ -1,7 +1,7 @@
 using System;
 using ArrangeAlgorithms.Geometry;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static methods for locating positions along a curve, either by a normalized parameter or by
@@ -18,10 +18,10 @@ namespace ArrangeAlgorithms.Operations
     /// and a circle runs counter-clockwise.
     /// </para>
     /// <para>
-    /// Values outside the natural range follow the shape of the curve. A closed curve wraps around, so a
-    /// parameter of 1.25 is the same position as 0.25. An open polyline clamps, because it has no natural
-    /// extension. A line segment extrapolates along the infinite line that carries it, which is the
-    /// behaviour <c>GeoLine.GetPointAtParameter</c> has always had.
+    /// Values outside the natural range follow the shape of the curve. A closed curve — a polygon, a
+    /// rectangle, a circle — wraps around, so a parameter of 1.25 is the same position as 0.25. A polyline
+    /// clamps, because it is an open chain with no natural extension. A line segment extrapolates along the
+    /// infinite line that carries it, which is the behaviour <c>GeoLine.GetPointAtParameter</c> has always had.
     /// </para>
     /// </summary>
     public static class Parametrization
@@ -266,15 +266,15 @@ namespace ArrangeAlgorithms.Operations
         }
 
         /// <summary>
-        /// Gets the point at a normalized parameter along a polyline, starting at its first vertex. A closed
-        /// polyline wraps; an open one clamps to its endpoints.
+        /// Gets the point at a normalized parameter along a polyline, starting at its first vertex,
+        /// clamped to its endpoints.
         /// </summary>
         public static GeoPoint GetPointAtParameter(GeoPolyline polyline, double parameter)
         {
             if (polyline == null) throw new ArgumentNullException(nameof(polyline));
 
             double length = polyline.Length;
-            double bounded = polyline.IsClosed ? Wrap(parameter) : Clamp(parameter);
+            double bounded = Clamp(parameter);
             return PointAtDistance(Edges(polyline), length, bounded * length);
         }
 
@@ -310,15 +310,14 @@ namespace ArrangeAlgorithms.Operations
         }
 
         /// <summary>
-        /// Gets the point at an arc length measured along a polyline. A closed polyline wraps; an open one
-        /// clamps to its endpoints.
+        /// Gets the point at an arc length measured along a polyline, clamped to its endpoints.
         /// </summary>
         public static GeoPoint GetPointAtDistance(GeoPolyline polyline, double distance)
         {
             if (polyline == null) throw new ArgumentNullException(nameof(polyline));
 
             double length = polyline.Length;
-            double bounded = polyline.IsClosed ? WrapDistance(distance, length) : Math.Max(0.0, Math.Min(length, distance));
+            double bounded = Math.Max(0.0, Math.Min(length, distance));
             return PointAtDistance(Edges(polyline), length, bounded);
         }
 

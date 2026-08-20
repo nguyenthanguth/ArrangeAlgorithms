@@ -1,6 +1,6 @@
 using System;
 using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest.Operations
@@ -15,8 +15,10 @@ namespace ArrangeAlgorithms.UnitTest.Operations
         private static GeoPolyline OpenPath() => new GeoPolyline(
             new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
 
-        private static GeoPolyline ClosedPath() => new GeoPolyline(true,
-            new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
+        // The same square traced as an open chain: the path returns to its start but never closes,
+        // so its length is the full perimeter while it stays a curve.
+        private static GeoPolyline TracedSquare() => new GeoPolyline(
+            new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10), new GeoPoint(0, 0));
 
         private static GeoLine Segment() => new GeoLine(new GeoPoint(0, 0), new GeoPoint(10, 0));
 
@@ -195,13 +197,20 @@ namespace ArrangeAlgorithms.UnitTest.Operations
         }
 
         [Fact]
-        public void Polyline_Closed_WrapsAround()
+        public void Polyline_ClampsInsteadOfWrapping()
         {
-            var loop = ClosedPath();   // 10 by 10 square, length 40
+            var path = TracedSquare();   // 10 by 10 square traced open, length 40
 
-            Assert.Equal(40.0, loop.Length, 9);
-            Assert.True(loop.GetPointAtParameter(1.25).IsEqualTo(loop.GetPointAtParameter(0.25)));
-            Assert.True(loop.GetPointAtDistance(45.0).IsEqualTo(loop.GetPointAtDistance(5.0)));
+            Assert.Equal(40.0, path.Length, 9);
+
+            // A polyline is an open chain with no natural extension, so running past either end stops
+            // at the endpoint. Wrapping is a closed-curve behaviour and lives on GeoPolygon.
+            Assert.True(path.GetPointAtParameter(1.25).IsEqualTo(path.GetPointAtParameter(1.0)));
+            Assert.True(path.GetPointAtParameter(-0.25).IsEqualTo(path.GetPointAtParameter(0.0)));
+            Assert.True(path.GetPointAtDistance(45.0).IsEqualTo(path.GetPointAtDistance(40.0)));
+
+            GeoPolygon square = path.ToPolygon();
+            Assert.True(square.GetPointAtParameter(1.25).IsEqualTo(square.GetPointAtParameter(0.25)));
         }
 
         [Fact]
@@ -228,7 +237,7 @@ namespace ArrangeAlgorithms.UnitTest.Operations
             var circle = Circle();
             var rect = Rect();
             var poly = Square();
-            var loop = ClosedPath();
+            var loop = TracedSquare();
             var path = OpenPath();
 
             Assert.Equal(parameter, line.GetParameterAtPoint(line.GetPointAtParameter(parameter)), 9);
@@ -281,7 +290,7 @@ namespace ArrangeAlgorithms.UnitTest.Operations
         public void ResultOfPointAtParameter_LiesOnTheCurve()
         {
             var poly = Square();
-            var loop = ClosedPath();
+            var loop = TracedSquare();
             var rect = Rect();
             var circle = Circle();
 

@@ -1,7 +1,7 @@
 using System;
 using ArrangeAlgorithms.Geometry;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static calculation methods for geometric distances, squared distances, and closest point projections.
@@ -356,14 +356,8 @@ namespace ArrangeAlgorithms.Operations
         {
             if (polyline == null) throw new ArgumentNullException(nameof(polyline));
 
-            // A closed polyline encloses a region, the same way Containment.Locate already treats it, so a
-            // point inside is at distance zero. An open polyline is a curve and only its path counts.
-            // Projection reports the path point in both cases.
-            if (polyline.IsClosed && Containment.Contains(polyline, point))
-            {
-                return 0.0;
-            }
-
+            // A polyline is a curve, not a region, so only its path counts: a point sitting in the mouth
+            // of a horseshoe is at its distance from the path, never at zero.
             return DistanceTo(point, Projection.ProjectToPolyline(polyline, point));
         }
 

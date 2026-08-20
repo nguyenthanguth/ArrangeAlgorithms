@@ -1,5 +1,5 @@
 using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using ArrangeAlgorithms.Enums;
 using Xunit;
 
@@ -315,23 +315,32 @@ namespace ArrangeAlgorithms.UnitTest.Operations
         #region Polyline Contains Point
 
         [Fact]
-        public void ContainsPoint_Polyline_DependsOnWhetherItIsClosed()
+        public void Polyline_HoldsOnlyThePointsOnItsPath()
         {
-            var closed = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
+            // A chain of vertices tracing a square is still a curve, not the square it draws. There is no
+            // Contains overload for a polyline at all, because it would only ever restate IsPointOn.
+            var traced = new GeoPolyline(
+                new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10), new GeoPoint(0, 0));
             var open = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
 
             var inside = new GeoPoint(5, 5);
             var onPath = new GeoPoint(5, 0);
             var outside = new GeoPoint(50, 50);
 
-            Assert.True(Containment.Contains(closed, inside));
-            Assert.True(Containment.Contains(closed, onPath));
-            Assert.False(Containment.Contains(closed, outside));
+            Assert.False(Containment.IsPointOn(traced, inside));
+            Assert.True(Containment.IsPointOn(traced, onPath));
+            Assert.False(Containment.IsPointOn(traced, outside));
 
-            // An open polyline encloses nothing, so only points on the path count.
-            Assert.False(Containment.Contains(open, inside));
-            Assert.True(Containment.Contains(open, onPath));
-            Assert.False(Containment.Contains(open, outside));
+            Assert.False(Containment.IsPointOn(open, inside));
+            Assert.True(Containment.IsPointOn(open, onPath));
+            Assert.False(Containment.IsPointOn(open, outside));
+
+            Assert.Equal(PointLocation.OutSide, Containment.Locate(traced, inside));
+            Assert.Equal(PointLocation.OnSide, Containment.Locate(traced, onPath));
+
+            // Converting to a polygon is what brings the enclosed area into play.
+            Assert.True(Containment.Contains(traced.ToPolygon(), inside));
+            Assert.Equal(PointLocation.Inside, Containment.Locate(traced.ToPolygon(), inside));
         }
 
         #endregion

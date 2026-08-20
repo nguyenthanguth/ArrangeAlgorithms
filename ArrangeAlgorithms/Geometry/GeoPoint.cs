@@ -1,5 +1,5 @@
 using System;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using ArrangeAlgorithms.Enums;
 
 namespace ArrangeAlgorithms.Geometry
@@ -134,6 +134,16 @@ namespace ArrangeAlgorithms.Geometry
         /// Gets the closest point on the path of a polyline to this point.
         /// </summary>
         public GeoPoint GetClosestPointOnBoundary(GeoPolyline polyline) => Projection.ProjectToPolyline(polyline, this);
+
+        /// <summary>
+        /// Checks whether this point lies on the line segment using default tolerance.
+        /// </summary>
+        public bool IsPointOn(GeoLine line) => Containment.IsPointOn(line, this, Tolerance.Global);
+
+        /// <summary>
+        /// Checks whether this point lies on the line segment within tolerance.
+        /// </summary>
+        public bool IsPointOn(GeoLine line, Tolerance tolerance) => Containment.IsPointOn(line, this, tolerance);
 
         /// <summary>
         /// Checks whether this point lies on the polyline using default tolerance.

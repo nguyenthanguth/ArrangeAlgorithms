@@ -334,7 +334,7 @@ namespace ArrangeAlgorithms.UnitTest
         {
             // The Placed flag must describe the FINAL layout. Three labels sharing a short guide segment with one
             // perpendicular level only have room for two, so the count of successful labels must match the count of
-            // labels that actually do not overlap anyone — including labels overlapped by others falling back.
+            // labels that actually do not overlap anyone ??including labels overlapped by others falling back.
             var leader = new GeoLine(0.0, 0.0, 10.0, 0.0);
             var labels = new List<Arrange> { LabelOn(leader), LabelOn(leader), LabelOn(leader) };
 

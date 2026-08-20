@@ -1,6 +1,6 @@
 using System;
 using ArrangeAlgorithms.Geometry;
-using ArrangeAlgorithms.Operations;
+using ArrangeAlgorithms.Core;
 using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest.Operations
@@ -272,7 +272,7 @@ namespace ArrangeAlgorithms.UnitTest.Operations
             var poly = new GeoPolygon(
                 new GeoPoint(0, 0), new GeoPoint(10, 0),
                 new GeoPoint(10, 10), new GeoPoint(0, 10));
-            var polyline = new GeoPolyline(true, new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
 
             // Both classes report a point on the boundary, so they agree everywhere. Probes mix interior,
             // exterior, and on-boundary positions.

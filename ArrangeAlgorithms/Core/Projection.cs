@@ -1,7 +1,7 @@
 using System;
 using ArrangeAlgorithms.Geometry;
 
-namespace ArrangeAlgorithms.Operations
+namespace ArrangeAlgorithms.Core
 {
     /// <summary>
     /// Provides static calculation methods for geometric projections of points and vectors onto lines,
@@ -203,7 +203,7 @@ namespace ArrangeAlgorithms.Operations
 
         /// <summary>
         /// Projects a point orthogonally onto a polyline within tolerance (finds the closest point across
-        /// all segments). The result always lies on the path, including for points inside a closed polyline.
+        /// all segments). The result always lies on the path.
         /// </summary>
         /// <param name="polyline">The polyline.</param>
         /// <param name="point">The target point.</param>
