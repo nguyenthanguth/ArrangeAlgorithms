@@ -47,8 +47,9 @@ namespace ArrangeAlgorithms
         public GeoVector TranslationVector { get; internal set; } = GeoVector.Zero;
 
         /// <summary>
-        /// Sets the success or failure status of the label placement.
+        /// Sets the placement success status of the label.
         /// </summary>
+        /// <param name="value">The success status to set.</param>
         internal void SetPlaced(bool value)
         {
             Placed = value;
@@ -201,7 +202,7 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Collects all static obstacles (block polygons and block lines) from the list of labels.
+        /// Collects and deduplicates static obstacles from the given list of labels.
         /// <para>
         /// Duplicate obstacles are deduplicated to retain only a single instance. A common library usage pattern
         /// is to assign the same set of blocked regions to every label — e.g., each label avoids all other path segments —
@@ -209,6 +210,8 @@ namespace ArrangeAlgorithms
         /// geometries remains small. Deduplication here benefits all algorithms.
         /// </para>
         /// </summary>
+        /// <param name="arranges">The list of labels containing obstacles.</param>
+        /// <returns>A list of deduplicated obstacles.</returns>
         internal static List<Obstacle> CollectStaticObstacles(List<Arrange> arranges)
         {
             var occupied = new List<Obstacle>();
@@ -247,8 +250,12 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Checks whether the label rectangle after translation overlaps any obstacles.
+        /// Checks whether a translated rectangle collides with any of the static obstacles.
         /// </summary>
+        /// <param name="obstacles">The list of static obstacles.</param>
+        /// <param name="moved">The translated rectangle to check.</param>
+        /// <param name="tolerance">The geometric tolerance.</param>
+        /// <returns>True if a collision is detected; otherwise, false.</returns>
         internal static bool Collides(List<Obstacle> obstacles, GeoRectangle moved, Tolerance tolerance)
         {
             var movedBox = Bounds.Of(moved);
@@ -286,7 +293,7 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Re-verifies results on the final layout and updates the <see cref="Placed"/> flag for each label.
+        /// Re-evaluates final placement results on the final layout and marks Placed flags accordingly.
         /// <para>
         /// Each algorithm only knows the state at the time it places a label, so the flag set by them means
         /// "this spot was empty when my turn came". A label placed later, when stuck, might fallback to a position
@@ -295,6 +302,9 @@ namespace ArrangeAlgorithms
         /// after all labels have settled.
         /// </para>
         /// </summary>
+        /// <param name="arranges">The list of labels.</param>
+        /// <param name="translations">The calculated translation vectors.</param>
+        /// <param name="options">The arrangement options.</param>
         internal static void MarkPlacementResults(List<Arrange> arranges, IList<GeoVector> translations, ArrangeOptions options)
         {
             var staticObstacles = CollectStaticObstacles(arranges);
@@ -352,11 +362,13 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Iterator for potential candidate points for the label center.
+        /// Enumerates candidate translation center points for the label layout.
         /// The point expansion process starts from the path segment midpoint (Anchor):
         /// - Perpendicular offset to create different label rows.
         /// - Longitudinal shift along the parallel path direction.
         /// </summary>
+        /// <param name="options">The arrangement options.</param>
+        /// <returns>An enumerable of candidate points.</returns>
         internal IEnumerable<GeoPoint> EnumeratePlacePoints(ArrangeOptions options)
         {
             if (!TryGetLayout(options, out Layout layout))
@@ -405,8 +417,11 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Calculates base geometric layout parameters based on path and label dimensions.
+        /// Attempts to calculate the layout parameters of the label based on path and label dimensions.
         /// </summary>
+        /// <param name="options">The arrangement options.</param>
+        /// <param name="layout">The output layout parameters.</param>
+        /// <returns>True if layout calculation is successful; otherwise, false.</returns>
         internal bool TryGetLayout(ArrangeOptions options, out Layout layout)
         {
             layout = default(Layout);
@@ -486,8 +501,10 @@ namespace ArrangeAlgorithms
         }
 
         /// <summary>
-        /// Calculates the maximum bounding box diagonal dimension of the label.
+        /// Calculates the maximum diagonal dimension of the label's bounding box.
         /// </summary>
+        /// <param name="options">The arrangement options.</param>
+        /// <returns>The diagonal span of the bounding box.</returns>
         internal double GetBoxSpan(ArrangeOptions options)
         {
             var vertices = GeoRectangle.GetVertices();
@@ -510,6 +527,15 @@ namespace ArrangeAlgorithms
     /// </summary>
     internal readonly struct Layout
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Layout"/> struct.
+        /// </summary>
+        /// <param name="anchor">The anchor point on the path segment.</param>
+        /// <param name="direction">The longitudinal direction axis of the path.</param>
+        /// <param name="perpendicular">The perpendicular direction axis of the path.</param>
+        /// <param name="height">The actual height of the label.</param>
+        /// <param name="baseOffset">The base perpendicular offset from the path.</param>
+        /// <param name="maximumShift">The maximum longitudinal shift distance.</param>
         internal Layout(GeoPoint anchor, GeoVector direction, GeoVector perpendicular,
             double height, double baseOffset, double maximumShift)
         {
@@ -521,18 +547,30 @@ namespace ArrangeAlgorithms
             MaximumShift = maximumShift;
         }
 
+        /// <summary>Gets the anchor point on the path segment.</summary>
         internal GeoPoint Anchor { get; }
+        /// <summary>Gets the longitudinal direction axis of the path.</summary>
         internal GeoVector Direction { get; }
+        /// <summary>Gets the perpendicular direction axis of the path.</summary>
         internal GeoVector Perpendicular { get; }
+        /// <summary>Gets the actual height of the label.</summary>
         internal double Height { get; }
+        /// <summary>Gets the base perpendicular offset from the path.</summary>
         internal double BaseOffset { get; }
+        /// <summary>Gets the maximum longitudinal shift distance.</summary>
         internal double MaximumShift { get; }
     }
 
+    /// <summary>
+    /// Specifies the type of geometric obstacle.
+    /// </summary>
     internal enum ObstacleType
     {
+        /// <summary>A polygon obstacle.</summary>
         GeoPolygon,
+        /// <summary>A line segment obstacle.</summary>
         GeoLine,
+        /// <summary>A rectangular obstacle.</summary>
         GeoRectangle
     }
 
@@ -541,12 +579,21 @@ namespace ArrangeAlgorithms
     /// </summary>
     internal readonly struct Obstacle
     {
+        /// <summary>Gets the type of the obstacle.</summary>
         internal ObstacleType Type { get; }
+        /// <summary>Gets the underlying polygon geometry if type is GeoPolygon.</summary>
         internal GeoPolygon GeoPolygon { get; }
+        /// <summary>Gets the underlying line segment geometry if type is GeoLine.</summary>
         internal GeoLine GeoLine { get; }
+        /// <summary>Gets the underlying rectangle geometry if type is GeoRectangle.</summary>
         internal GeoRectangle GeoRectangle { get; }
+        /// <summary>Gets the bounding box of the obstacle.</summary>
         internal Bounds Box { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Obstacle"/> struct wrapping a polygon.
+        /// </summary>
+        /// <param name="polygon">The polygon geometry.</param>
         internal Obstacle(GeoPolygon polygon)
         {
             Type = ObstacleType.GeoPolygon;
@@ -556,6 +603,10 @@ namespace ArrangeAlgorithms
             Box = Bounds.Of(polygon);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Obstacle"/> struct wrapping a line segment.
+        /// </summary>
+        /// <param name="line">The line segment geometry.</param>
         internal Obstacle(GeoLine line)
         {
             Type = ObstacleType.GeoLine;
@@ -565,6 +616,10 @@ namespace ArrangeAlgorithms
             Box = Bounds.Of(line);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Obstacle"/> struct wrapping a rectangle.
+        /// </summary>
+        /// <param name="rectangle">The rectangle geometry.</param>
         internal Obstacle(GeoRectangle rectangle)
         {
             Type = ObstacleType.GeoRectangle;
@@ -580,11 +635,18 @@ namespace ArrangeAlgorithms
     /// </summary>
     internal readonly struct Bounds
     {
+        /// <summary>Gets the minimum X coordinate.</summary>
         internal double MinX { get; }
+        /// <summary>Gets the minimum Y coordinate.</summary>
         internal double MinY { get; }
+        /// <summary>Gets the maximum X coordinate.</summary>
         internal double MaxX { get; }
+        /// <summary>Gets the maximum Y coordinate.</summary>
         internal double MaxY { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bounds"/> struct with coordinates.
+        /// </summary>
         private Bounds(double minX, double minY, double maxX, double maxY)
         {
             MinX = minX;
@@ -593,6 +655,11 @@ namespace ArrangeAlgorithms
             MaxY = maxY;
         }
 
+        /// <summary>
+        /// Creates a bounding box enclosing a polygon.
+        /// </summary>
+        /// <param name="GeoPolygon">The polygon.</param>
+        /// <returns>The calculated bounds.</returns>
         internal static Bounds Of(GeoPolygon GeoPolygon)
         {
             double minX = double.MaxValue, minY = double.MaxValue;
@@ -609,6 +676,11 @@ namespace ArrangeAlgorithms
             return new Bounds(minX, minY, maxX, maxY);
         }
 
+        /// <summary>
+        /// Creates a bounding box enclosing a line segment.
+        /// </summary>
+        /// <param name="GeoLine">The line segment.</param>
+        /// <returns>The calculated bounds.</returns>
         internal static Bounds Of(GeoLine GeoLine)
         {
             return new Bounds(
@@ -619,6 +691,11 @@ namespace ArrangeAlgorithms
             );
         }
 
+        /// <summary>
+        /// Creates a bounding box enclosing a rectangle.
+        /// </summary>
+        /// <param name="rect">The rectangle.</param>
+        /// <returns>The calculated bounds.</returns>
         internal static Bounds Of(GeoRectangle rect)
         {
             var vertices = rect.GetVertices();
@@ -634,6 +711,11 @@ namespace ArrangeAlgorithms
             return new Bounds(minX, minY, maxX, maxY);
         }
 
+        /// <summary>
+        /// Creates a bounding box enclosing a list of points.
+        /// </summary>
+        /// <param name="points">The list of points.</param>
+        /// <returns>The calculated bounds.</returns>
         internal static Bounds Around(IReadOnlyList<GeoPoint> points)
         {
             double minX = points[0].X;
@@ -652,11 +734,21 @@ namespace ArrangeAlgorithms
             return new Bounds(minX, minY, maxX, maxY);
         }
 
+        /// <summary>
+        /// Expands the bounds outward by a margin.
+        /// </summary>
+        /// <param name="margin">The margin to expand.</param>
+        /// <returns>The expanded bounds.</returns>
         internal Bounds Expand(double margin)
         {
             return new Bounds(MinX - margin, MinY - margin, MaxX + margin, MaxY + margin);
         }
 
+        /// <summary>
+        /// Checks whether these bounds overlap other bounds.
+        /// </summary>
+        /// <param name="other">The other bounds to check overlap against.</param>
+        /// <returns>True if they overlap; otherwise, false.</returns>
         internal bool Overlaps(Bounds other)
         {
             return MinX <= other.MaxX && other.MinX <= MaxX

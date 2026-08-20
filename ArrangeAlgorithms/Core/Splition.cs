@@ -6,12 +6,18 @@ using ArrangeAlgorithms.Enums;
 namespace ArrangeAlgorithms.Core
 {
     /// <summary>
-    /// Splits open geometry — line segments and polylines — at a point, at an arc length, or where a
-    /// cutting line crosses it.
+    /// Splits open geometry — line segments and polylines — at a position along it, or wherever a cutter
+    /// meets it. A cutter may be a point, a line, a polyline or a polygon, singly or as an array, and
+    /// several polygons behave as their union.
     /// <para>
     /// Pieces come back in order along the subject, so the first piece always holds its start point and
-    /// the last piece always holds its end point. Geometry that closes back on itself is a
-    /// <see cref="Geometry.GeoPolygon"/> and is out of scope here.
+    /// the last piece always holds its end point. Splitting against a polygon sorts them by side instead,
+    /// each side still in order. Geometry that closes back on itself is a
+    /// <see cref="Geometry.GeoPolygon"/> and is a cutter here, never a subject.
+    /// </para>
+    /// <para>
+    /// A false return says nothing was cut, not that the call failed: the out parameters are left usable
+    /// either way, holding the subject whole rather than nothing at all.
     /// </para>
     /// </summary>
     public static partial class Splition
@@ -282,7 +288,6 @@ namespace ArrangeAlgorithms.Core
             }
 
             double[] cuts = ToCutDistances(subject, crossings.ToArray(), tolerance);
-            cuts = NormalizeCuts(subject.Length, cuts, tolerance);
 
             if (cuts.Length == 0)
             {
@@ -352,8 +357,7 @@ namespace ArrangeAlgorithms.Core
         {
             if (points == null) throw new ArgumentNullException(nameof(points));
 
-            double[] cuts = ToCutDistances(subject, points, tolerance);
-            cuts = NormalizeCuts(subject.Length, cuts, tolerance);
+            double[] cuts = ToCutDistancesFromPoints(subject, points, tolerance);
 
             if (cuts.Length == 0)
             {
@@ -388,84 +392,13 @@ namespace ArrangeAlgorithms.Core
         {
             if (cutters == null) throw new ArgumentNullException(nameof(cutters));
 
-            var crossings = new List<GeoPoint>();
-            foreach (GeoPolygon polygon in cutters)
-            {
-                if (polygon != null)
-                {
-                    GeoPoint[] polyCrossings = Intersection.GetIntersections(polygon, subject, tolerance);
-                    crossings.AddRange(polyCrossings);
-                }
-            }
-
-            if (crossings.Count == 0)
-            {
-                GeoPoint midPoint = new GeoPoint(
-                    (subject.StartPoint.X + subject.EndPoint.X) / 2.0,
-                    (subject.StartPoint.Y + subject.EndPoint.Y) / 2.0
-                );
-
-                bool isInside = false;
-                foreach (var polygon in cutters)
-                {
-                    if (polygon != null)
-                    {
-                        var loc = polygon.Locate(midPoint, tolerance);
-                        if (loc == PointLocation.Inside || loc == PointLocation.OnSide)
-                        {
-                            isInside = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (isInside)
-                {
-                    inside = new[] { subject };
-                    outside = new GeoLine[0];
-                }
-                else
-                {
-                    inside = new GeoLine[0];
-                    outside = new[] { subject };
-                }
-                return false;
-            }
-
-            double[] cuts = ToCutDistances(subject, crossings.ToArray(), tolerance);
-            cuts = NormalizeCuts(subject.Length, cuts, tolerance);
+            double[] cuts = ToCutDistances(subject, CollectCrossings(cutters, subject, tolerance), tolerance);
 
             if (cuts.Length == 0)
             {
-                GeoPoint midPoint = new GeoPoint(
-                    (subject.StartPoint.X + subject.EndPoint.X) / 2.0,
-                    (subject.StartPoint.Y + subject.EndPoint.Y) / 2.0
-                );
-
-                bool isInside = false;
-                foreach (var polygon in cutters)
-                {
-                    if (polygon != null)
-                    {
-                        var loc = polygon.Locate(midPoint, tolerance);
-                        if (loc == PointLocation.Inside || loc == PointLocation.OnSide)
-                        {
-                            isInside = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (isInside)
-                {
-                    inside = new[] { subject };
-                    outside = new GeoLine[0];
-                }
-                else
-                {
-                    inside = new GeoLine[0];
-                    outside = new[] { subject };
-                }
+                bool whollyInside = IsInsideAny(cutters, subject.MidPoint, tolerance);
+                inside = whollyInside ? new[] { subject } : NoLines;
+                outside = whollyInside ? NoLines : new[] { subject };
                 return false;
             }
 
@@ -474,31 +407,18 @@ namespace ArrangeAlgorithms.Core
             var insideList = new List<GeoLine>();
             var outsideList = new List<GeoLine>();
 
-            for (int i = 0; i < pieces.Length; i++)
+            foreach (GeoLine piece in pieces)
             {
-                GeoPoint mid = new GeoPoint(
-                    (pieces[i].StartPoint.X + pieces[i].EndPoint.X) / 2.0,
-                    (pieces[i].StartPoint.Y + pieces[i].EndPoint.Y) / 2.0
-                );
-
-                bool isInsidePiece = false;
-                foreach (var polygon in cutters)
+                // No crossing falls inside a piece, so its midpoint speaks for the whole of it. An
+                // endpoint would not: every one of them sits on a boundary by construction.
+                if (IsInsideAny(cutters, piece.MidPoint, tolerance))
                 {
-                    if (polygon != null)
-                    {
-                        var loc = polygon.Locate(mid, tolerance);
-                        if (loc == PointLocation.Inside || loc == PointLocation.OnSide)
-                        {
-                            isInsidePiece = true;
-                            break;
-                        }
-                    }
+                    insideList.Add(piece);
                 }
-
-                if (isInsidePiece)
-                    insideList.Add(pieces[i]);
                 else
-                    outsideList.Add(pieces[i]);
+                {
+                    outsideList.Add(piece);
+                }
             }
 
             inside = MergeConsecutiveLines(insideList, tolerance);
@@ -573,18 +493,13 @@ namespace ArrangeAlgorithms.Core
         {
             if (subject == null) throw new ArgumentNullException(nameof(subject));
 
-            pieces = null;
             GeoPoint[] crossings = Intersection.GetIntersections(subject, cutter, tolerance);
             double[] cuts = ToCutDistances(subject, crossings, tolerance);
-            GeoPolyline[] result = SplitPolylineAt(subject, cuts, tolerance);
+            pieces = SplitPolylineAt(subject, cuts, tolerance);
 
-            if (result.Length <= 1)
-            {
-                return false;
-            }
-
-            pieces = result;
-            return true;
+            // Every overload here leaves its out parameters usable whether or not anything was cut, so a
+            // caller that ignores the return value still gets the subject back rather than a null array.
+            return pieces.Length > 1;
         }
 
         /// <summary>
@@ -612,8 +527,7 @@ namespace ArrangeAlgorithms.Core
             if (subject == null) throw new ArgumentNullException(nameof(subject));
             if (points == null) throw new ArgumentNullException(nameof(points));
 
-            double[] cuts = ToCutDistances(subject, points, tolerance);
-            cuts = NormalizeCuts(subject.Length, cuts, tolerance);
+            double[] cuts = ToCutDistancesFromPoints(subject, points, tolerance);
 
             if (cuts.Length == 0)
             {
@@ -667,7 +581,6 @@ namespace ArrangeAlgorithms.Core
             }
 
             double[] cuts = ToCutDistances(subject, crossings.ToArray(), tolerance);
-            cuts = NormalizeCuts(subject.Length, cuts, tolerance);
 
             if (cuts.Length == 0)
             {
@@ -747,78 +660,13 @@ namespace ArrangeAlgorithms.Core
             if (subject == null) throw new ArgumentNullException(nameof(subject));
             if (cutters == null) throw new ArgumentNullException(nameof(cutters));
 
-            var crossings = new List<GeoPoint>();
-            foreach (GeoPolygon polygon in cutters)
-            {
-                if (polygon != null)
-                {
-                    GeoPoint[] polyCrossings = Intersection.GetIntersections(subject, polygon, tolerance);
-                    crossings.AddRange(polyCrossings);
-                }
-            }
-
-            if (crossings.Count == 0)
-            {
-                GeoPoint midPoint = subject.GetPointAtDistance(subject.Length / 2.0);
-
-                bool isInside = false;
-                foreach (var polygon in cutters)
-                {
-                    if (polygon != null)
-                    {
-                        var loc = polygon.Locate(midPoint, tolerance);
-                        if (loc == PointLocation.Inside || loc == PointLocation.OnSide)
-                        {
-                            isInside = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (isInside)
-                {
-                    inside = new[] { subject };
-                    outside = new GeoPolyline[0];
-                }
-                else
-                {
-                    inside = new GeoPolyline[0];
-                    outside = new[] { subject };
-                }
-                return false;
-            }
-
-            double[] cuts = ToCutDistances(subject, crossings.ToArray(), tolerance);
-            cuts = NormalizeCuts(subject.Length, cuts, tolerance);
+            double[] cuts = ToCutDistances(subject, CollectCrossings(cutters, subject, tolerance), tolerance);
 
             if (cuts.Length == 0)
             {
-                GeoPoint midPoint = subject.GetPointAtDistance(subject.Length / 2.0);
-
-                bool isInside = false;
-                foreach (var polygon in cutters)
-                {
-                    if (polygon != null)
-                    {
-                        var loc = polygon.Locate(midPoint, tolerance);
-                        if (loc == PointLocation.Inside || loc == PointLocation.OnSide)
-                        {
-                            isInside = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (isInside)
-                {
-                    inside = new[] { subject };
-                    outside = new GeoPolyline[0];
-                }
-                else
-                {
-                    inside = new GeoPolyline[0];
-                    outside = new[] { subject };
-                }
+                bool whollyInside = IsInsideAny(cutters, subject.MidPoint, tolerance);
+                inside = whollyInside ? new[] { subject } : NoPolylines;
+                outside = whollyInside ? NoPolylines : new[] { subject };
                 return false;
             }
 
@@ -827,28 +675,16 @@ namespace ArrangeAlgorithms.Core
             var insideList = new List<GeoPolyline>();
             var outsideList = new List<GeoPolyline>();
 
-            for (int i = 0; i < pieces.Length; i++)
+            foreach (GeoPolyline piece in pieces)
             {
-                GeoPoint mid = pieces[i].GetPointAtDistance(pieces[i].Length / 2.0);
-
-                bool isInsidePiece = false;
-                foreach (var polygon in cutters)
+                if (IsInsideAny(cutters, piece.MidPoint, tolerance))
                 {
-                    if (polygon != null)
-                    {
-                        var loc = polygon.Locate(mid, tolerance);
-                        if (loc == PointLocation.Inside || loc == PointLocation.OnSide)
-                        {
-                            isInsidePiece = true;
-                            break;
-                        }
-                    }
+                    insideList.Add(piece);
                 }
-
-                if (isInsidePiece)
-                    insideList.Add(pieces[i]);
                 else
-                    outsideList.Add(pieces[i]);
+                {
+                    outsideList.Add(piece);
+                }
             }
 
             inside = MergeConsecutivePolylines(insideList, tolerance);
@@ -1060,6 +896,23 @@ namespace ArrangeAlgorithms.Core
             return SplitPolylineAt(polyline, cuts, tolerance);
         }
 
+        /// <summary>
+        /// Rejoins the segments of a classified run that end where the next one begins.
+        /// </summary>
+        /// <param name="segments">The pieces landing on one side, in order along the subject.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>One segment per unbroken stretch, in order along the subject.</returns>
+        /// <remarks>
+        /// Pieces arrive here already sorted onto one side of the cutter, so two that touch were parted
+        /// by a cut that turned out to separate nothing — the far side of it landed on this side too.
+        /// Handing back both would report a seam the caller has no way to account for.
+        /// <para>
+        /// Joining start to end looks careless, since it discards whatever lay between them, but every
+        /// piece here was cut from a single straight subject and the discarded point was on the line
+        /// joining the two ends. The polyline form cannot take this shortcut and has to decide, which is
+        /// what <see cref="MergePolylines"/> is for.
+        /// </para>
+        /// </remarks>
         private static GeoLine[] MergeConsecutiveLines(IEnumerable<GeoLine> segments, Tolerance tolerance)
         {
             var result = new List<GeoLine>();
@@ -1086,20 +939,62 @@ namespace ArrangeAlgorithms.Core
             return result.ToArray();
         }
 
+        /// <summary>
+        /// Joins two pieces into one if the first ends where the second begins.
+        /// </summary>
+        /// <param name="first">The earlier piece along the subject.</param>
+        /// <param name="second">The piece that may continue it.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>The joined piece, or null when the two do not meet.</returns>
+        /// <remarks>
+        /// Null is the answer rather than an exception because not meeting is ordinary: the pieces on one
+        /// side of a cutter are usually several separate stretches, and the caller walks the run using
+        /// exactly this to tell one stretch from the next.
+        /// </remarks>
         private static GeoPolyline MergePolylines(GeoPolyline first, GeoPolyline second, Tolerance tolerance)
         {
-            if (first[first.VertexCount - 1].IsEqualTo(second[0], tolerance))
+            if (!first[first.VertexCount - 1].IsEqualTo(second[0], tolerance))
             {
-                var vertices = new List<GeoPoint>(first.Vertices);
-                for (int i = 1; i < second.VertexCount; i++)
-                {
-                    vertices.Add(second[i]);
-                }
-                return new GeoPolyline(vertices);
+                return null;
             }
-            return null;
+
+            var vertices = new List<GeoPoint>(first.Vertices);
+            int junction = vertices.Count - 1;
+
+            // The junction is where a cut was made that turned out not to separate anything, so the two
+            // pieces are being put back together. Where it carries no bend it is an artefact of the cut
+            // and goes; where it carries a real corner of the subject it stays. Without this the line and
+            // polyline forms of the same split disagree, because merging two GeoLine pieces can only
+            // produce one straight segment and drops the junction whether anyone decided to or not.
+            bool carriesNoBend = Containment.IsPointOn(
+                new GeoLine(vertices[junction - 1], second[1]), vertices[junction], tolerance);
+
+            if (carriesNoBend)
+            {
+                vertices.RemoveAt(junction);
+            }
+
+            for (int i = 1; i < second.VertexCount; i++)
+            {
+                vertices.Add(second[i]);
+            }
+
+            // The trusted constructor, so a caller supplied tolerance is not overridden by the global one
+            // while the pieces are being reassembled.
+            return new GeoPolyline(vertices.ToArray(), vertices.Count);
         }
 
+        /// <summary>
+        /// Rejoins the pieces of a classified run that end where the next one begins.
+        /// </summary>
+        /// <param name="polylines">The pieces landing on one side, in order along the subject.</param>
+        /// <param name="tolerance">The tolerance.</param>
+        /// <returns>One piece per unbroken stretch, in order along the subject.</returns>
+        /// <remarks>
+        /// The counterpart of <see cref="MergeConsecutiveLines"/> for a subject that can bend. The walk
+        /// is the same; what differs is that whether two pieces join at all is left to
+        /// <see cref="MergePolylines"/>, which returns null when they do not.
+        /// </remarks>
         private static GeoPolyline[] MergeConsecutivePolylines(IEnumerable<GeoPolyline> polylines, Tolerance tolerance)
         {
             var result = new List<GeoPolyline>();

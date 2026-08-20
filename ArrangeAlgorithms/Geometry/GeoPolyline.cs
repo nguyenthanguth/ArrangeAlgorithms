@@ -51,6 +51,11 @@ namespace ArrangeAlgorithms.Geometry
         }
 
         /// <summary>
+        /// Gets the point half way along the polyline, which can be used to probe the location of the whole polyline.
+        /// </summary>
+        public GeoPoint MidPoint => GetPointAtDistance(Length * 0.5);
+
+        /// <summary>
         /// Initializes a new GeoPolyline instance from a collection of vertices.
         /// Consecutive duplicate vertices are automatically filtered out.
         /// </summary>
@@ -152,7 +157,6 @@ namespace ArrangeAlgorithms.Geometry
                 yield return GetEdgeAt(i);
             }
         }
-
 
         /// <summary>
         /// Gets the point at a normalized parameter along this polyline, where 0 is the first vertex and 1
@@ -494,9 +498,6 @@ namespace ArrangeAlgorithms.Geometry
         public bool TrySplitBy(GeoPolyline[] cutters, out GeoPolyline[] pieces, Tolerance tolerance)
             => Splition.TrySplitBy(this, cutters, out pieces, tolerance);
 
-        /// <summary>
-        /// Splits this polyline everywhere a list of polygon boundaries crosses it, using the default tolerance.
-        /// </summary>
         /// <summary>
         /// Splits this polyline everywhere a list of polygon boundaries crosses it, separating the parts that fall
         /// inside the polygons from those that fall outside, using the default tolerance.

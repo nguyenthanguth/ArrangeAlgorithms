@@ -206,6 +206,11 @@ namespace ArrangeAlgorithms.Core
         /// <param name="point">The target point.</param>
         /// <param name="tolerance">The tolerance.</param>
         /// <returns>true if the polygon contains the point; otherwise, false.</returns>
+        /// <remarks>
+        /// Counting crossings makes this the even-odd rule, which matters only when the polygon is not
+        /// simple: a region its edges enclose twice reads as outside. That is a definition rather than a
+        /// failure, and it is the definition every operation resting on this one inherits.
+        /// </remarks>
         public static bool Contains(GeoPolygon poly, GeoPoint point, Tolerance tolerance)
         {
             if (poly == null) throw new ArgumentNullException(nameof(poly));

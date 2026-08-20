@@ -7,7 +7,16 @@ using ArrangeAlgorithms.Enums;
 namespace ArrangeAlgorithms.Geometry
 {
     /// <summary>
-    /// Represents a 2D simple closed polygon.
+    /// Represents a 2D closed polygon.
+    /// <para>
+    /// A polygon is expected to be simple — no edge crossing another — but this is not checked, because
+    /// checking costs more than every other thing the constructor does put together. A polygon whose
+    /// edges do cross is still usable rather than undefined: containment reads it under the even-odd
+    /// rule, so a region enclosed an even number of times counts as outside, and every operation built
+    /// on containment follows suit. What does not survive is area. <see cref="GetSignedArea"/> sums
+    /// lobes with their own signs, so a figure-eight reports zero however large its lobes are, and
+    /// <see cref="GetArea"/> reports zero with it.
+    /// </para>
     /// </summary>
     public sealed class GeoPolygon : IEquatable<GeoPolygon>
     {
@@ -206,6 +215,19 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         /// <returns>A new GeoPolygon independent of this one.</returns>
         public GeoPolygon Clone() => new GeoPolygon(_vertices, _vertices.Length);
+
+        /// <summary>
+        /// Converts this polygon's boundary into a closed 2D GeoPolyline.
+        /// The boundary is closed by repeating the first vertex at the end of the chain.
+        /// </summary>
+        /// <returns>A new GeoPolyline instance representing the polygon boundary.</returns>
+        public GeoPolyline ToPolyline()
+        {
+            var polylineVertices = new GeoPoint[_vertices.Length + 1];
+            Array.Copy(_vertices, polylineVertices, _vertices.Length);
+            polylineVertices[_vertices.Length] = _vertices[0];
+            return new GeoPolyline(polylineVertices);
+        }
 
         /// <summary>
         /// Gets the point at a normalized parameter along this polygon perimeter, where 0 is the first vertex and 1 is the end.

@@ -649,6 +649,12 @@ namespace ArrangeAlgorithms.Core
             points.Add(line.GetPointAtParameter(Math.Max(0.0, Math.Min(1.0, parameter))));
         }
 
+        /// <summary>
+        /// Adds a point to the list only if it is not already present within the specified tolerance.
+        /// </summary>
+        /// <param name="list">The target list of points.</param>
+        /// <param name="pt">The point to be added.</param>
+        /// <param name="tolerance">The tolerance used to evaluate if points are equal.</param>
         private static void AddUniquePoint(List<GeoPoint> list, GeoPoint pt, Tolerance tolerance)
         {
             foreach (var p in list)

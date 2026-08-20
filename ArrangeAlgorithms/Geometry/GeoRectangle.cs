@@ -91,6 +91,29 @@ namespace ArrangeAlgorithms.Geometry
         public GeoRectangle Clone() => new GeoRectangle(Center, Width, Height, AngleRad);
 
         /// <summary>
+        /// Converts this rectangle into a solid 2D GeoPolygon.
+        /// </summary>
+        /// <returns>A new GeoPolygon instance representing this rectangle.</returns>
+        public GeoPolygon ToPolygon()
+        {
+            return new GeoPolygon(GetVertices());
+        }
+
+        /// <summary>
+        /// Converts this rectangle's boundary into a closed 2D GeoPolyline.
+        /// The boundary is closed by repeating the first vertex at the end of the chain.
+        /// </summary>
+        /// <returns>A new GeoPolyline instance representing the rectangle boundary.</returns>
+        public GeoPolyline ToPolyline()
+        {
+            GeoPoint[] v = GetVertices();
+            var polylineVertices = new GeoPoint[5];
+            Array.Copy(v, polylineVertices, 4);
+            polylineVertices[4] = v[0];
+            return new GeoPolyline(polylineVertices);
+        }
+
+        /// <summary>
         /// Gets the point at a normalized parameter along this rectangle perimeter, where 0 is the LowerLeft corner and 1 is the end.
         /// Values outside [0, 1] wrap around, so 1.25 is the same position as 0.25.
         /// </summary>
@@ -135,6 +158,55 @@ namespace ArrangeAlgorithms.Geometry
         /// <param name="center">Center of rotation.</param>
         /// <returns>A new rotated GeoRectangle.</returns>
         public GeoRectangle RotateBy(double angleRad, GeoPoint center) => new GeoRectangle(Center.RotateBy(angleRad, center), Width, Height, AngleRad + angleRad);
+
+        /// <summary>
+        /// Combines this rectangle with another rectangle, returning a new rectangle that encloses both.
+        /// The resulting rectangle maintains the same orientation (angle) as this rectangle.
+        /// </summary>
+        /// <param name="other">The other rectangle to combine with.</param>
+        /// <returns>A new GeoRectangle containing both rectangles, oriented along this rectangle's axis.</returns>
+        public GeoRectangle Combine(GeoRectangle other)
+        {
+            double cos = Math.Cos(AngleRad);
+            double sin = Math.Sin(AngleRad);
+
+            double halfW = Width * 0.5;
+            double halfH = Height * 0.5;
+
+            // Initialize bounds in local coordinate system of this rectangle
+            double minX = -halfW;
+            double maxX = halfW;
+            double minY = -halfH;
+            double maxY = halfH;
+
+            // Project the 4 vertices of the other rectangle into this local system
+            GeoPoint[] otherVertices = other.GetVertices();
+            foreach (var pt in otherVertices)
+            {
+                double dx = pt.X - Center.X;
+                double dy = pt.Y - Center.Y;
+
+                double localX = dx * cos + dy * sin;
+                double localY = -dx * sin + dy * cos;
+
+                if (localX < minX) minX = localX;
+                if (localX > maxX) maxX = localX;
+                if (localY < minY) minY = localY;
+                if (localY > maxY) maxY = localY;
+            }
+
+            // Calculate new dimensions and local center
+            double localCenterX = (minX + maxX) * 0.5;
+            double localCenterY = (minY + maxY) * 0.5;
+            double newWidth = maxX - minX;
+            double newHeight = maxY - minY;
+
+            // Transform local center back to world coordinates
+            double worldCenterX = Center.X + localCenterX * cos - localCenterY * sin;
+            double worldCenterY = Center.Y + localCenterX * sin + localCenterY * cos;
+
+            return new GeoRectangle(new GeoPoint(worldCenterX, worldCenterY), newWidth, newHeight, AngleRad);
+        }
 
         /// <summary>
         /// Gets the bottom-left corner coordinates.
@@ -203,6 +275,26 @@ namespace ArrangeAlgorithms.Geometry
                     Center.Y + halfW * sin + halfH * cos);
             }
         }
+
+        /// <summary>
+        /// Gets the middle point of the bottom edge (between LowerLeft and LowerRight).
+        /// </summary>
+        public GeoPoint LowerMiddle => LowerLeft.GetMiddlePoint(LowerRight);
+
+        /// <summary>
+        /// Gets the middle point of the right edge (between LowerRight and UpperRight).
+        /// </summary>
+        public GeoPoint RightMiddle => LowerRight.GetMiddlePoint(UpperRight);
+
+        /// <summary>
+        /// Gets the middle point of the top edge (between UpperRight and UpperLeft).
+        /// </summary>
+        public GeoPoint UpperMiddle => UpperRight.GetMiddlePoint(UpperLeft);
+
+        /// <summary>
+        /// Gets the middle point of the left edge (between UpperLeft and LowerLeft).
+        /// </summary>
+        public GeoPoint LeftMiddle => UpperLeft.GetMiddlePoint(LowerLeft);
 
         /// <summary>
         /// Gets the 4 vertices of the rectangle in counter-clockwise order: LowerLeft, LowerRight, UpperRight, UpperLeft.

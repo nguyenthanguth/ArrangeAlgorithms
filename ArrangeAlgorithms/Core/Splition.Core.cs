@@ -4,18 +4,77 @@ using ArrangeAlgorithms.Geometry;
 
 namespace ArrangeAlgorithms.Core
 {
-    /// <summary>
-    /// Internal machinery shared by every public split operation.
-    /// <para>
-    /// Every split in this class reduces to the same shape: turn whatever the caller supplied — a point,
-    /// a distance, a cutting line — into a list of arc lengths measured along the subject, clean that list
-    /// up, then walk the subject once and cut it there. Only the first step differs between operations,
-    /// so only the first step is written more than once.
-    /// </para>
-    /// </summary>
+    // The internal machinery shared by every public split operation. Kept in its own half of the
+    // partial class so the other half reads as the API surface and nothing else.
+    //
+    // Every split reduces to the same shape: turn whatever the caller supplied — a point, a distance, a
+    // cutting line, a polygon — into a list of arc lengths measured along the subject, clean that list
+    // up, then walk the subject once and cut it there. Only the first step differs between operations,
+    // so only the first step is written more than once.
+    //
+    // The type summary lives on the other half: a partial class that carries one on each half has both
+    // copied into the generated documentation, where a reader sees whichever the tooling picks.
     public static partial class Splition
     {
         private static readonly double[] NoCuts = new double[0];
+        private static readonly GeoLine[] NoLines = new GeoLine[0];
+        private static readonly GeoPolyline[] NoPolylines = new GeoPolyline[0];
+
+        /// <summary>
+        /// Reports whether a point falls within any of the cutters, counting the boundary as within.
+        /// </summary>
+        /// <remarks>
+        /// Several cutters together behave as their union: a position is inside when any one of them
+        /// holds it, which is why the search stops at the first that does. Null entries are skipped
+        /// rather than refused, so a caller can pass a sparse array without filtering it first.
+        /// </remarks>
+        internal static bool IsInsideAny(GeoPolygon[] cutters, GeoPoint point, Tolerance tolerance)
+        {
+            foreach (GeoPolygon polygon in cutters)
+            {
+                if (polygon != null && Containment.Contains(polygon, point, tolerance))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Gathers every point at which any of the cutters meets a line segment.
+        /// </summary>
+        internal static GeoPoint[] CollectCrossings(GeoPolygon[] cutters, GeoLine subject, Tolerance tolerance)
+        {
+            var crossings = new List<GeoPoint>();
+            foreach (GeoPolygon polygon in cutters)
+            {
+                if (polygon != null)
+                {
+                    crossings.AddRange(Intersection.GetIntersections(polygon, subject, tolerance));
+                }
+            }
+
+            return crossings.ToArray();
+        }
+
+        /// <summary>
+        /// Gathers every point at which any of the cutters meets a polyline.
+        /// </summary>
+        internal static GeoPoint[] CollectCrossings(GeoPolygon[] cutters, GeoPolyline subject, Tolerance tolerance)
+        {
+            var crossings = new List<GeoPoint>();
+            foreach (GeoPolygon polygon in cutters)
+            {
+                if (polygon != null)
+                {
+                    crossings.AddRange(Intersection.GetIntersections(subject, polygon, tolerance));
+                }
+            }
+
+            return crossings.ToArray();
+        }
+
 
         /// <summary>
         /// Puts a caller supplied set of cut positions into the form the walker expects: ascending, free of
@@ -172,6 +231,60 @@ namespace ArrangeAlgorithms.Core
             }
 
             return kept.Count == cuts.Length ? cuts : kept.ToArray();
+        }
+
+        /// <summary>
+        /// Turns caller supplied points into normalized cut positions, dropping any that do not lie on
+        /// the subject.
+        /// </summary>
+        /// <remarks>
+        /// This is the difference between a point the caller chose and a point an intersection produced.
+        /// An intersection point is on the subject by construction, so <see cref="ToCutDistances(GeoLine, GeoPoint[], Tolerance)"/>
+        /// converts it without asking. A point handed in by the caller has to be checked, because
+        /// GetDistanceAtPoint answers for the nearest position on the subject whether or not the point is
+        /// anywhere near it — cutting there would be cutting somewhere nobody asked for. The single point
+        /// overloads have always refused such a point, and the array overloads have to agree.
+        /// </remarks>
+        internal static double[] ToCutDistancesFromPoints(GeoLine subject, GeoPoint[] points, Tolerance tolerance)
+        {
+            if (points.Length == 0)
+            {
+                return NoCuts;
+            }
+
+            var distances = new List<double>(points.Length);
+            for (int i = 0; i < points.Length; i++)
+            {
+                if (TryGetCutDistance(subject, points[i], tolerance, out double distance))
+                {
+                    distances.Add(distance);
+                }
+            }
+
+            return NormalizeCuts(subject.Length, distances, tolerance);
+        }
+
+        /// <summary>
+        /// Turns caller supplied points into normalized cut positions, dropping any that do not lie on
+        /// the subject.
+        /// </summary>
+        internal static double[] ToCutDistancesFromPoints(GeoPolyline subject, GeoPoint[] points, Tolerance tolerance)
+        {
+            if (points.Length == 0)
+            {
+                return NoCuts;
+            }
+
+            var distances = new List<double>(points.Length);
+            for (int i = 0; i < points.Length; i++)
+            {
+                if (TryGetCutDistance(subject, points[i], tolerance, out double distance))
+                {
+                    distances.Add(distance);
+                }
+            }
+
+            return NormalizeCuts(subject.Length, distances, tolerance);
         }
 
         /// <summary>

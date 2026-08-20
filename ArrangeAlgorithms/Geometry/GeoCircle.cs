@@ -72,6 +72,13 @@ namespace ArrangeAlgorithms.Geometry
         public GeoCircle Clone() => new GeoCircle(Center, Radius);
 
         /// <summary>
+        /// Converts this circle into an oriented bounding GeoRectangle with the specified rotation angle.
+        /// </summary>
+        /// <param name="angleRad">The rotation angle of the resulting rectangle in radians.</param>
+        /// <returns>A new GeoRectangle instance representing the oriented bounding box of this circle.</returns>
+        public GeoRectangle ToRectangle(double angleRad) => new GeoRectangle(Center, Diameter, Diameter, angleRad);
+
+        /// <summary>
         /// Gets the point at a normalized parameter along this circle, where 0 is angle zero and 1 is the end.
         /// Values outside [0, 1] wrap around, so 1.25 is the same position as 0.25.
         /// </summary>
