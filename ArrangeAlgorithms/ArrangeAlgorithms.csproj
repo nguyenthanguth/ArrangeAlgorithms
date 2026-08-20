@@ -45,11 +45,16 @@
         on its endpoints are skipped, positions closer together than the tolerance are merged, and a
         position near an existing vertex snaps onto it, so no piece and no edge is shorter than the
         tolerance.
-      - Splition.TrySplitBy(GeoLine or GeoPolyline, GeoPolygon, out GeoLine[] inside, out GeoLine[]
-        outside): splits against a polygon and sorts the result by which side of the boundary each part
-        falls on. Both forms return GeoLine[], so a polyline arrives as its individual segments. A part
+      - Splition: splits a GeoLine or GeoPolyline at a point, at an arc length, or wherever a cutter
+        meets it. Cutters may be a line, a polyline, a polygon, or an array of any of those, and several
+        polygons behave as their union. Splitting against a polygon sorts the result by side; a polyline
+        subject keeps each run whole as a GeoPolyline rather than breaking it into segments. A part
         running along the boundary counts as inside, and a path that touches the boundary and turns back
         is not a crossing.
+      - Every split overload leaves its out parameters usable when it returns false: an array form hands
+        back the subject as a single piece rather than a null array.
+      - A point that does not lie on the subject is refused by every overload that takes points, the
+        array forms included, instead of being projected onto the subject and cut at.
       - Every split is also reachable as an instance method on the shape being cut: GeoLine and
         GeoPolyline now carry TrySplitBy, TrySplitAtDistance, SplitAtDistances and SplitBy, matching how
         the other Operations classes are mirrored. They sit on the subject rather than the cutter, since

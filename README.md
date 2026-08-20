@@ -224,24 +224,37 @@ GeoPoint[] points = poly.GetIntersections(line);
 
 ### Splitting
 
-`Splition` cuts a `GeoLine` or a `GeoPolyline` at a point, at an arc length, or where a cutting line crosses it. Pieces come back in order along the subject, so the first piece always holds its start point and the last holds its end point:
+`Splition` cuts a `GeoLine` or a `GeoPolyline` — at a position along it, or wherever a cutter meets it. Pieces come back in order along the subject, so the first piece always holds its start point and the last holds its end point.
+
+Cutting at a position:
 
 ```csharp
 Splition.TrySplitBy(line, point, out GeoLine first, out GeoLine second);
 Splition.TrySplitAtDistance(polyline, 12.5, out GeoPolyline head, out GeoPolyline tail);
 
 GeoLine[] pieces = Splition.SplitAtDistances(line, new[] { 2.0, 5.0, 8.0 });
-GeoPolyline[] parts = Splition.SplitBy(polyline, cutter);
 ```
 
-Splitting against a `GeoPolygon` sorts the result by which side of the boundary each part falls on:
+Cutting with another shape. A single cutter that can only meet a segment once fills two pieces; anything that can meet it repeatedly fills an array:
 
 ```csharp
-Splition.TrySplitBy(line,     polygon, out GeoLine[] inside, out GeoLine[] outside);
-Splition.TrySplitBy(polyline, polygon, out GeoLine[] inside, out GeoLine[] outside);
+Splition.TrySplitBy(line, cutter, out GeoLine first, out GeoLine second);
+Splition.TrySplitBy(polyline, cutter, out GeoPolyline[] pieces);
+
+// Several cutters at once, and points already known to lie on the subject.
+Splition.TrySplitBy(line, new[] { cutterA, cutterB }, out GeoLine[] byLines);
+Splition.TrySplitBy(polyline, new[] { new GeoPoint(3, 0) }, out GeoPolyline[] byPoints);
 ```
 
-Both return `GeoLine[]`, so a polyline arrives as its individual segments and nothing records which of them belonged to the same run — use `SplitBy(polyline, cutter)` when that grouping matters. `false` means the boundary was never crossed, not that the call failed: one array then holds the whole subject and the other is empty. A part running along the boundary counts as inside, and a path that merely touches the boundary and turns back is not a crossing.
+Splitting against a `GeoPolygon` sorts the result by which side of the boundary each part falls on, and keeps each run whole rather than breaking it into segments:
+
+```csharp
+Splition.TrySplitBy(line,     polygon, out GeoLine[] inside,     out GeoLine[] outside);
+Splition.TrySplitBy(polyline, polygon, out GeoPolyline[] insideRuns, out GeoPolyline[] outsideRuns);
+
+// Several polygons behave as their union.
+Splition.TrySplitBy(polyline, new[] { polygonA, polygonB }, out GeoPolyline[] within, out GeoPolyline[] beyond);
+```
 
 Every split is also reachable from the shape being cut, which is usually how it reads better:
 
@@ -251,13 +264,17 @@ line.TrySplitAtDistance(4.0, out first, out second);
 line.TrySplitBy(polygon, out GeoLine[] inside, out GeoLine[] outside);
 GeoLine[] pieces = line.SplitAtDistances(new[] { 2.0, 5.0, 8.0 });
 
-polyline.TrySplitBy(cutter, out GeoPolyline head, out GeoPolyline tail);
-GeoPolyline[] parts = polyline.SplitBy(cutter);
+polyline.TrySplitBy(cutter, out GeoPolyline[] parts);
+polyline.TrySplitBy(polygon, out GeoPolyline[] insideRuns, out GeoPolyline[] outsideRuns);
 ```
 
 The instance methods live on the shape being cut, not on the cutter: `polygon.Split(line)` would leave it unclear which of the two comes back in pieces.
 
-Cut positions outside the subject, or landing on one of its endpoints, are not splits and are skipped. Positions closer together than the tolerance merge into one, and a position within a tolerance of an existing vertex snaps onto it, so no piece and no edge is ever shorter than the tolerance.
+**What the return value means.** `false` says nothing was cut, not that the call failed. The out parameters are always usable: an array form hands back the subject as a single piece, and a polygon form puts it in whichever of the two arrays matches the side it lies on, leaving the other empty.
+
+**What gets skipped.** Cut positions outside the subject, or landing on one of its endpoints, are not splits. Positions closer together than the tolerance merge into one, and a position within a tolerance of an existing vertex snaps onto it, so no piece and no edge is ever shorter than the tolerance. A point that does not lie on the subject is refused rather than projected onto it — cutting at its projection would be cutting somewhere nobody asked for.
+
+**Against a polygon.** A part running along the boundary counts as inside, matching `Contains`. A path that merely touches the boundary and turns back has not crossed it, so it comes back whole instead of split in two at the touch.
 
 ### Tolerance
 
