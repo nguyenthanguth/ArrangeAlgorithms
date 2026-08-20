@@ -421,8 +421,8 @@ namespace ArrangeAlgorithms.Core
                 }
             }
 
-            inside = MergeConsecutiveLines(insideList, tolerance);
-            outside = MergeConsecutiveLines(outsideList, tolerance);
+            inside = Merge.ConsecutiveLines(insideList, tolerance);
+            outside = Merge.ConsecutiveLines(outsideList, tolerance);
             return true;
         }
 
@@ -687,8 +687,8 @@ namespace ArrangeAlgorithms.Core
                 }
             }
 
-            inside = MergeConsecutivePolylines(insideList, tolerance);
-            outside = MergeConsecutivePolylines(outsideList, tolerance);
+            inside = Merge.ConsecutivePolylines(insideList, tolerance);
+            outside = Merge.ConsecutivePolylines(outsideList, tolerance);
             return true;
         }
 
@@ -894,132 +894,6 @@ namespace ArrangeAlgorithms.Core
 
             double[] cuts = NormalizeCuts(polyline.Length, distances, tolerance);
             return SplitPolylineAt(polyline, cuts, tolerance);
-        }
-
-        /// <summary>
-        /// Rejoins the segments of a classified run that end where the next one begins.
-        /// </summary>
-        /// <param name="segments">The pieces landing on one side, in order along the subject.</param>
-        /// <param name="tolerance">The tolerance.</param>
-        /// <returns>One segment per unbroken stretch, in order along the subject.</returns>
-        /// <remarks>
-        /// Pieces arrive here already sorted onto one side of the cutter, so two that touch were parted
-        /// by a cut that turned out to separate nothing — the far side of it landed on this side too.
-        /// Handing back both would report a seam the caller has no way to account for.
-        /// <para>
-        /// Joining start to end looks careless, since it discards whatever lay between them, but every
-        /// piece here was cut from a single straight subject and the discarded point was on the line
-        /// joining the two ends. The polyline form cannot take this shortcut and has to decide, which is
-        /// what <see cref="MergePolylines"/> is for.
-        /// </para>
-        /// </remarks>
-        private static GeoLine[] MergeConsecutiveLines(IEnumerable<GeoLine> segments, Tolerance tolerance)
-        {
-            var result = new List<GeoLine>();
-            using (var enumerator = segments.GetEnumerator())
-            {
-                if (!enumerator.MoveNext()) return result.ToArray();
-                GeoLine current = enumerator.Current;
-
-                while (enumerator.MoveNext())
-                {
-                    GeoLine next = enumerator.Current;
-                    if (current.EndPoint.IsEqualTo(next.StartPoint, tolerance))
-                    {
-                        current = new GeoLine(current.StartPoint, next.EndPoint);
-                    }
-                    else
-                    {
-                        result.Add(current);
-                        current = next;
-                    }
-                }
-                result.Add(current);
-            }
-            return result.ToArray();
-        }
-
-        /// <summary>
-        /// Joins two pieces into one if the first ends where the second begins.
-        /// </summary>
-        /// <param name="first">The earlier piece along the subject.</param>
-        /// <param name="second">The piece that may continue it.</param>
-        /// <param name="tolerance">The tolerance.</param>
-        /// <returns>The joined piece, or null when the two do not meet.</returns>
-        /// <remarks>
-        /// Null is the answer rather than an exception because not meeting is ordinary: the pieces on one
-        /// side of a cutter are usually several separate stretches, and the caller walks the run using
-        /// exactly this to tell one stretch from the next.
-        /// </remarks>
-        private static GeoPolyline MergePolylines(GeoPolyline first, GeoPolyline second, Tolerance tolerance)
-        {
-            if (!first[first.VertexCount - 1].IsEqualTo(second[0], tolerance))
-            {
-                return null;
-            }
-
-            var vertices = new List<GeoPoint>(first.Vertices);
-            int junction = vertices.Count - 1;
-
-            // The junction is where a cut was made that turned out not to separate anything, so the two
-            // pieces are being put back together. Where it carries no bend it is an artefact of the cut
-            // and goes; where it carries a real corner of the subject it stays. Without this the line and
-            // polyline forms of the same split disagree, because merging two GeoLine pieces can only
-            // produce one straight segment and drops the junction whether anyone decided to or not.
-            bool carriesNoBend = Containment.IsPointOn(
-                new GeoLine(vertices[junction - 1], second[1]), vertices[junction], tolerance);
-
-            if (carriesNoBend)
-            {
-                vertices.RemoveAt(junction);
-            }
-
-            for (int i = 1; i < second.VertexCount; i++)
-            {
-                vertices.Add(second[i]);
-            }
-
-            // The trusted constructor, so a caller supplied tolerance is not overridden by the global one
-            // while the pieces are being reassembled.
-            return new GeoPolyline(vertices.ToArray(), vertices.Count);
-        }
-
-        /// <summary>
-        /// Rejoins the pieces of a classified run that end where the next one begins.
-        /// </summary>
-        /// <param name="polylines">The pieces landing on one side, in order along the subject.</param>
-        /// <param name="tolerance">The tolerance.</param>
-        /// <returns>One piece per unbroken stretch, in order along the subject.</returns>
-        /// <remarks>
-        /// The counterpart of <see cref="MergeConsecutiveLines"/> for a subject that can bend. The walk
-        /// is the same; what differs is that whether two pieces join at all is left to
-        /// <see cref="MergePolylines"/>, which returns null when they do not.
-        /// </remarks>
-        private static GeoPolyline[] MergeConsecutivePolylines(IEnumerable<GeoPolyline> polylines, Tolerance tolerance)
-        {
-            var result = new List<GeoPolyline>();
-            using (var enumerator = polylines.GetEnumerator())
-            {
-                if (!enumerator.MoveNext()) return result.ToArray();
-                GeoPolyline current = enumerator.Current;
-
-                while (enumerator.MoveNext())
-                {
-                    GeoPolyline next = enumerator.Current;
-                    var merged = MergePolylines(current, next, tolerance);
-                    if (merged != null)
-                    {
-                        current = merged;
-                    }
-                    else
-                    {
-                        result.Add(current);
-                        current = next;
-                    }
-                }
-                result.Add(current);
-            }
-            return result.ToArray();
         }
 
         #endregion
