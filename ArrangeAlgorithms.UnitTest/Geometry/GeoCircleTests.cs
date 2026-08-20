@@ -66,5 +66,28 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
             Assert.True(pts[0].IsEqualTo(new GeoPoint(-5, 0)) || pts[0].IsEqualTo(new GeoPoint(5, 0)));
             Assert.True(pts[1].IsEqualTo(new GeoPoint(-5, 0)) || pts[1].IsEqualTo(new GeoPoint(5, 0)));
         }
+
+        [Fact]
+        public void Circle_ToRectangle_ConvertsToOrientedBoundingSquare()
+        {
+            var center = new GeoPoint(10.0, 20.0);
+            var circle = new GeoCircle(center, 5.0);
+            double angleRad = 0.5;
+
+            GeoRectangle rect = circle.ToRectangle(angleRad);
+
+            Assert.True(rect.Center.IsEqualTo(center));
+            Assert.Equal(10.0, rect.Width, 9);
+            Assert.Equal(10.0, rect.Height, 9);
+            Assert.Equal(angleRad, rect.AngleRad, 9);
+
+            // Verify corners are at distance of R * sqrt(2) from center
+            GeoPoint[] vertices = rect.GetVertices();
+            double expectedDist = 5.0 * Math.Sqrt(2.0);
+            foreach (var vertex in vertices)
+            {
+                Assert.Equal(expectedDist, rect.Center.DistanceTo(vertex), 9);
+            }
+        }
     }
 }

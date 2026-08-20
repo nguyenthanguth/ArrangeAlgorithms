@@ -398,5 +398,31 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(rotated[1].IsEqualTo(new GeoPoint(0, 10)));
             Assert.Equal(poly.GetArea(), rotated.GetArea(), 9);
         }
+
+        [Fact]
+        public void Polygon_ToPolyline_ProducesClosedPolylineBoundary()
+        {
+            // Create a triangle polygon with 3 vertices
+            var p0 = new GeoPoint(0, 0);
+            var p1 = new GeoPoint(10, 0);
+            var p2 = new GeoPoint(10, 10);
+            var polygon = new GeoPolygon(p0, p1, p2);
+
+            // Convert to polyline
+            GeoPolyline polyline = polygon.ToPolyline();
+
+            // The resulting polyline should have 4 vertices (closed boundary)
+            Assert.NotNull(polyline);
+            Assert.Equal(4, polyline.VertexCount);
+
+            // Check that vertices match in order and end vertex repeats the first one
+            Assert.True(polyline[0].IsEqualTo(p0));
+            Assert.True(polyline[1].IsEqualTo(p1));
+            Assert.True(polyline[2].IsEqualTo(p2));
+            Assert.True(polyline[3].IsEqualTo(p0));
+
+            // Cumulative length of the polyline should equal the perimeter of the polygon
+            Assert.Equal(polygon.Length, polyline.Length, 9);
+        }
     }
 }

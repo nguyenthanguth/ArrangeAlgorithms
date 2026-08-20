@@ -330,6 +330,111 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.True(vertices[0].GetMiddlePoint(vertices[2]).IsEqualTo(rect.Center));
             Assert.True(vertices[1].GetMiddlePoint(vertices[3]).IsEqualTo(rect.Center));
         }
+
+        [Fact]
+        public void Rectangle_ToPolygon_ConvertsToEquivalentPolygon()
+        {
+            var center = new GeoPoint(2.0, 3.0);
+            var rect = new GeoRectangle(center, 6.0, 4.0, 0.5); // Rotated rectangle
+
+            GeoPolygon polygon = rect.ToPolygon();
+
+            Assert.NotNull(polygon);
+            Assert.Equal(4, polygon.VertexCount);
+
+            GeoPoint[] vertices = rect.GetVertices();
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.True(polygon[i].IsEqualTo(vertices[i]));
+            }
+
+            // Area of polygon should equal rectangle area
+            Assert.Equal(24.0, polygon.GetArea(), 9);
+        }
+
+        [Fact]
+        public void Rectangle_ToPolyline_ProducesClosedPolylineBoundary()
+        {
+            var center = new GeoPoint(2.0, 3.0);
+            var rect = new GeoRectangle(center, 6.0, 4.0, 0.5); // Rotated rectangle
+
+            GeoPolyline polyline = rect.ToPolyline();
+
+            Assert.NotNull(polyline);
+            Assert.Equal(5, polyline.VertexCount);
+
+            GeoPoint[] vertices = rect.GetVertices();
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.True(polyline[i].IsEqualTo(vertices[i]));
+            }
+            // Closed loop
+            Assert.True(polyline[4].IsEqualTo(vertices[0]));
+
+            // Length of boundary should equal perimeter of rectangle
+            Assert.Equal(20.0, polyline.Length, 9);
+        }
+
+        [Fact]
+        public void Rectangle_MiddlePoints_CalculateCorrectly()
+        {
+            // Test 1: Unrotated rectangle
+            var center = new GeoPoint(10.0, 20.0);
+            var rectUnrotated = new GeoRectangle(center, 6.0, 4.0, 0.0);
+
+            Assert.True(rectUnrotated.LowerMiddle.IsEqualTo(new GeoPoint(10.0, 18.0)));
+            Assert.True(rectUnrotated.RightMiddle.IsEqualTo(new GeoPoint(13.0, 20.0)));
+            Assert.True(rectUnrotated.UpperMiddle.IsEqualTo(new GeoPoint(10.0, 22.0)));
+            Assert.True(rectUnrotated.LeftMiddle.IsEqualTo(new GeoPoint(7.0, 20.0)));
+
+            // Test 2: Rotated rectangle
+            var rectRotated = new GeoRectangle(center, 6.0, 4.0, 0.5);
+
+            // Centroid of opposite middle points must be the rectangle center
+            Assert.True(rectRotated.LowerMiddle.GetMiddlePoint(rectRotated.UpperMiddle).IsEqualTo(center));
+            Assert.True(rectRotated.LeftMiddle.GetMiddlePoint(rectRotated.RightMiddle).IsEqualTo(center));
+
+            // Distances from center to middle points must equal half dimensions
+            Assert.Equal(2.0, center.DistanceTo(rectRotated.LowerMiddle), 9);
+            Assert.Equal(2.0, center.DistanceTo(rectRotated.UpperMiddle), 9);
+            Assert.Equal(3.0, center.DistanceTo(rectRotated.LeftMiddle), 9);
+            Assert.Equal(3.0, center.DistanceTo(rectRotated.RightMiddle), 9);
+        }
+
+        [Fact]
+        public void Rectangle_Combine_EnclosesBothRectangles()
+        {
+            // Test 1: Simple aligned rectangles combination
+            var rect1 = new GeoRectangle(new GeoPoint(0.0, 0.0), 2.0, 2.0, 0.0);
+            var rect2 = new GeoRectangle(new GeoPoint(4.0, 0.0), 2.0, 2.0, 0.0);
+
+            GeoRectangle combined = rect1.Combine(rect2);
+
+            Assert.Equal(2.0, combined.Center.X, 9);
+            Assert.Equal(0.0, combined.Center.Y, 9);
+            Assert.Equal(6.0, combined.Width, 9);
+            Assert.Equal(2.0, combined.Height, 9);
+            Assert.Equal(0.0, combined.AngleRad, 9);
+
+            // Test 2: Rotated rectangles combination
+            var rectA = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.5);
+            var rectB = new GeoRectangle(new GeoPoint(5.0, 5.0), 2.0, 4.0, -0.2);
+
+            GeoRectangle combinedRotated = rectA.Combine(rectB);
+
+            // Angle of the combined rectangle must match rectA
+            Assert.Equal(rectA.AngleRad, combinedRotated.AngleRad, 9);
+
+            // Combined rectangle must contain all vertices of rectA and rectB
+            foreach (var pt in rectA.GetVertices())
+            {
+                Assert.True(combinedRotated.Contains(pt));
+            }
+            foreach (var pt in rectB.GetVertices())
+            {
+                Assert.True(combinedRotated.Contains(pt));
+            }
+        }
     }
 }
 

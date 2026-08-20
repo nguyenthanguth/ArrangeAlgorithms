@@ -157,61 +157,7 @@ namespace ArrangeAlgorithms.UnitTest
             Assert.Equal(2, points.Length);
         }
 
-        [Fact]
-        public void Splitting_MatchesWhatTheReadmeShows()
-        {
-            var line = new GeoLine(new GeoPoint(0, 0), new GeoPoint(10, 0));
-            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
-            var point = new GeoPoint(4, 0);
-            var cutter = new GeoLine(new GeoPoint(6, -5), new GeoPoint(6, 5));
 
-            Assert.True(Splition.TrySplitBy(line, point, out GeoLine first, out GeoLine second));
-            Assert.True(Splition.TrySplitAtDistance(polyline, 12.5, out GeoPolyline head, out GeoPolyline tail));
-
-            GeoLine[] pieces = Splition.SplitAtDistances(line, new[] { 2.0, 5.0, 8.0 });
-            Assert.True(Splition.TrySplitBy(polyline, cutter, out GeoPolyline[] parts));
-
-            // The first piece holds the start point and the last holds the end point.
-            Assert.True(first.StartPoint.IsEqualTo(line.StartPoint));
-            Assert.True(second.EndPoint.IsEqualTo(line.EndPoint));
-            Assert.True(head[0].IsEqualTo(polyline[0]));
-            Assert.True(tail[tail.VertexCount - 1].IsEqualTo(polyline[polyline.VertexCount - 1]));
-
-            Assert.Equal(4, pieces.Length);
-            Assert.Equal(2, parts.Length);
-        }
-
-        [Fact]
-        public void Splitting_SkipsAndMergesExactlyAsDocumented()
-        {
-            var tolerance = new Tolerance(1E-4, 1E-4);
-            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
-
-            // "Positions outside the subject, or landing on one of its endpoints, are not splits."
-            GeoPolyline[] skipped = Splition.SplitAtDistances(
-                polyline, new[] { -5.0, 0.0, 20.0, 50.0 }, tolerance);
-            Assert.Single(skipped);
-
-            // "Positions closer together than the tolerance merge into one."
-            GeoPolyline[] merged = Splition.SplitAtDistances(
-                polyline, new[] { 5.0, 5.0 + tolerance.EqualPoint * 0.5 }, tolerance);
-            Assert.Equal(2, merged.Length);
-
-            // "A position within a tolerance of an existing vertex snaps onto it, so no piece and no
-            // edge is ever shorter than the tolerance."
-            GeoPolyline[] snapped = Splition.SplitAtDistances(
-                polyline, new[] { 10.0 + tolerance.EqualPoint * 0.5 }, tolerance);
-            Assert.Equal(2, snapped.Length);
-
-            foreach (GeoPolyline piece in snapped)
-            {
-                Assert.True(piece.Length > tolerance.EqualPoint);
-                for (int e = 0; e < piece.EdgeCount; e++)
-                {
-                    Assert.True(piece.GetEdgeAt(e).Length > tolerance.EqualPoint);
-                }
-            }
-        }
 
         [Fact]
         public void Tolerance_GlobalAppliesToOverloadsThatDoNotPassOne()
@@ -237,40 +183,77 @@ namespace ArrangeAlgorithms.UnitTest
             }
         }
 
+
+
+
+        [Fact]
+        public void Splitting_CuttingAtAPosition()
+        {
+            var line = new GeoLine(new GeoPoint(0, 0), new GeoPoint(10, 0));
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+            var point = new GeoPoint(4, 0);
+
+            Assert.True(Splition.TrySplitBy(line, point, out GeoLine first, out GeoLine second));
+            Assert.True(Splition.TrySplitAtDistance(polyline, 12.5, out GeoPolyline head, out GeoPolyline tail));
+
+            GeoLine[] pieces = Splition.SplitAtDistances(line, new[] { 2.0, 5.0, 8.0 });
+
+            // The first piece holds the start point and the last holds the end point.
+            Assert.True(first.StartPoint.IsEqualTo(line.StartPoint));
+            Assert.True(second.EndPoint.IsEqualTo(line.EndPoint));
+            Assert.True(head[0].IsEqualTo(polyline[0]));
+            Assert.True(tail[tail.VertexCount - 1].IsEqualTo(polyline[polyline.VertexCount - 1]));
+            Assert.Equal(4, pieces.Length);
+        }
+
+        [Fact]
+        public void Splitting_CuttingWithAnotherShape()
+        {
+            var line = new GeoLine(new GeoPoint(0, 0), new GeoPoint(10, 0));
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+            var cutter = new GeoLine(new GeoPoint(6, -5), new GeoPoint(6, 5));
+            var cutterA = new GeoLine(new GeoPoint(3, -5), new GeoPoint(3, 5));
+            var cutterB = new GeoLine(new GeoPoint(7, -5), new GeoPoint(7, 5));
+
+            Assert.True(Splition.TrySplitBy(line, cutter, out GeoLine first, out GeoLine second));
+            Assert.True(Splition.TrySplitBy(polyline, cutter, out GeoPolyline[] pieces));
+
+            Assert.True(Splition.TrySplitBy(line, new[] { cutterA, cutterB }, out GeoLine[] byLines));
+            Assert.True(Splition.TrySplitBy(polyline, new[] { new GeoPoint(3, 0) }, out GeoPolyline[] byPoints));
+
+            Assert.True(first.EndPoint.IsEqualTo(new GeoPoint(6, 0)));
+            Assert.True(second.StartPoint.IsEqualTo(new GeoPoint(6, 0)));
+            Assert.Equal(2, pieces.Length);
+            Assert.Equal(3, byLines.Length);
+            Assert.Equal(2, byPoints.Length);
+        }
+
         [Fact]
         public void Splitting_AgainstAPolygonSortsBySide()
         {
             var polygon = new GeoPolygon(
                 new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
+            var polygonA = polygon;
+            var polygonB = new GeoPolygon(
+                new GeoPoint(10, 0), new GeoPoint(20, 0), new GeoPoint(20, 10), new GeoPoint(10, 10));
+
             var line = new GeoLine(new GeoPoint(-5, 5), new GeoPoint(15, 5));
             var polyline = new GeoPolyline(new GeoPoint(-5, 5), new GeoPoint(5, 5), new GeoPoint(5, 15));
 
             Assert.True(Splition.TrySplitBy(line, polygon, out GeoLine[] inside, out GeoLine[] outside));
+            Assert.True(Splition.TrySplitBy(polyline, polygon, out GeoPolyline[] insideRuns, out GeoPolyline[] outsideRuns));
+            Assert.True(Splition.TrySplitBy(polyline, new[] { polygonA, polygonB }, out GeoPolyline[] within, out GeoPolyline[] beyond));
+
             Assert.Single(inside);
             Assert.Equal(2, outside.Length);
 
-            Assert.True(Splition.TrySplitBy(polyline, polygon, out GeoPolyline[] pathInside, out GeoPolyline[] pathOutside));
-            Assert.Equal(polyline.Length, pathInside.Sum(p => p.Length) + pathOutside.Sum(p => p.Length), 9);
-
-            // "false means the boundary was never crossed, not that the call failed."
-            var clear = new GeoLine(new GeoPoint(50, 50), new GeoPoint(60, 60));
-            Assert.False(Splition.TrySplitBy(clear, polygon, out GeoLine[] none, out GeoLine[] all));
-            Assert.Empty(none);
-            Assert.Single(all);
-
-            // "A part running along the boundary counts as inside."
-            var alongEdge = new GeoLine(new GeoPoint(2, 0), new GeoPoint(8, 0));
-            Splition.TrySplitBy(alongEdge, polygon, out GeoLine[] onEdge, out GeoLine[] off);
-            Assert.Single(onEdge);
-            Assert.Empty(off);
-
-            // "A path that merely touches the boundary and turns back is not a crossing."
-            var graze = new GeoLine(new GeoPoint(5, 15), new GeoPoint(15, 5));
-            Assert.False(Splition.TrySplitBy(graze, polygon, out GeoLine[] grazeIn, out GeoLine[] grazeOut));
-            Assert.Empty(grazeIn);
-            Assert.Single(grazeOut);
+            // "keeps each run whole rather than breaking it into segments": the run that bends inside the
+            // polygon arrives as one GeoPolyline of three vertices, not as two separate segments.
+            Assert.Single(insideRuns);
+            Assert.Equal(3, insideRuns[0].VertexCount);
+            Assert.Equal(polyline.Length, insideRuns.Sum(p => p.Length) + outsideRuns.Sum(p => p.Length), 9);
+            Assert.Equal(polyline.Length, within.Sum(p => p.Length) + beyond.Sum(p => p.Length), 9);
         }
-
 
         [Fact]
         public void Splitting_IsReachableFromTheShapeBeingCut()
@@ -288,21 +271,92 @@ namespace ArrangeAlgorithms.UnitTest
             GeoLine[] pieces = line.SplitAtDistances(new[] { 2.0, 5.0, 8.0 });
 
             Assert.True(polyline.TrySplitBy(cutter, out GeoPolyline[] parts));
-            GeoPolyline head = parts[0];
-            GeoPolyline tail = parts[1];
-
-            // Each instance call is the static one with the receiver moved to the front.
-            Splition.TrySplitBy(line, point, out GeoLine sFirst, out GeoLine sSecond);
-            Assert.Equal(sFirst, first);
-            Assert.Equal(sSecond, second);
+            Assert.True(polyline.TrySplitBy(polygon, out GeoPolyline[] insideRuns, out GeoPolyline[] outsideRuns));
 
             Assert.Single(inside);
             Assert.Equal(2, outside.Length);
             Assert.Equal(4, pieces.Length);
             Assert.Equal(2, parts.Length);
-            Assert.True(head[0].IsEqualTo(polyline[0]));
-            Assert.True(tail[tail.VertexCount - 1].IsEqualTo(polyline[polyline.VertexCount - 1]));
+            Assert.Equal(polyline.Length, insideRuns.Sum(p => p.Length) + outsideRuns.Sum(p => p.Length), 9);
         }
 
+        [Fact]
+        public void Splitting_WhatTheReturnValueMeans()
+        {
+            // "false says nothing was cut, not that the call failed. The out parameters are always
+            // usable: an array form hands back the subject as a single piece, and a polygon form puts it
+            // in whichever of the two arrays matches the side it lies on, leaving the other empty."
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0));
+            var missing = new GeoLine(new GeoPoint(50, -5), new GeoPoint(50, 5));
+            var farAway = new GeoPolygon(
+                new GeoPoint(50, 50), new GeoPoint(60, 50), new GeoPoint(60, 60), new GeoPoint(50, 60));
+
+            Assert.False(polyline.TrySplitBy(missing, out GeoPolyline[] pieces));
+            Assert.Single(pieces);
+            Assert.Equal(polyline.Length, pieces[0].Length, 9);
+
+            Assert.False(polyline.TrySplitBy(farAway, out GeoPolyline[] inside, out GeoPolyline[] outside));
+            Assert.Empty(inside);
+            Assert.Single(outside);
+        }
+
+        [Fact]
+        public void Splitting_WhatGetsSkipped()
+        {
+            var tolerance = new Tolerance(1E-4, 1E-4);
+            var polyline = new GeoPolyline(new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10));
+
+            // "Cut positions outside the subject, or landing on one of its endpoints, are not splits."
+            GeoPolyline[] skipped = Splition.SplitAtDistances(
+                polyline, new[] { -5.0, 0.0, 20.0, 50.0 }, tolerance);
+            Assert.Single(skipped);
+
+            // "Positions closer together than the tolerance merge into one."
+            GeoPolyline[] merged = Splition.SplitAtDistances(
+                polyline, new[] { 5.0, 5.0 + tolerance.EqualPoint * 0.5 }, tolerance);
+            Assert.Equal(2, merged.Length);
+
+            // "A position within a tolerance of an existing vertex snaps onto it, so no piece and no
+            // edge is ever shorter than the tolerance."
+            GeoPolyline[] snapped = Splition.SplitAtDistances(
+                polyline, new[] { 10.0 + tolerance.EqualPoint * 0.5 }, tolerance);
+            Assert.Equal(2, snapped.Length);
+            foreach (GeoPolyline piece in snapped)
+            {
+                Assert.True(piece.Length > tolerance.EqualPoint);
+                for (int e = 0; e < piece.EdgeCount; e++)
+                {
+                    Assert.True(piece.GetEdgeAt(e).Length > tolerance.EqualPoint);
+                }
+            }
+
+            // "A point that does not lie on the subject is refused rather than projected onto it."
+            var offPath = new GeoPoint(5, 3);
+            Assert.False(polyline.TrySplitBy(offPath, out GeoPolyline _, out GeoPolyline _, tolerance));
+            Assert.False(polyline.TrySplitBy(new[] { offPath }, out GeoPolyline[] byPoints, tolerance));
+            Assert.Single(byPoints);
+        }
+
+        [Fact]
+        public void Splitting_AgainstAPolygonBoundaryCases()
+        {
+            var tolerance = new Tolerance(1E-4, 1E-4);
+            var square = new GeoPolygon(
+                new GeoPoint(0, 0), new GeoPoint(10, 0), new GeoPoint(10, 10), new GeoPoint(0, 10));
+
+            // "A part running along the boundary counts as inside, matching Contains."
+            var alongEdge = new GeoLine(new GeoPoint(2, 0), new GeoPoint(8, 0));
+            alongEdge.TrySplitBy(square, out GeoLine[] onEdge, out GeoLine[] off, tolerance);
+            Assert.Single(onEdge);
+            Assert.Empty(off);
+
+            // "A path that merely touches the boundary and turns back has not crossed it, so it comes
+            // back whole instead of split in two at the touch."
+            var graze = new GeoLine(new GeoPoint(5, 15), new GeoPoint(15, 5));
+            Assert.False(graze.TrySplitBy(square, out GeoLine[] grazeIn, out GeoLine[] grazeOut, tolerance));
+            Assert.Empty(grazeIn);
+            Assert.Single(grazeOut);
+            Assert.Equal(graze.Length, grazeOut[0].Length, 9);
+        }
     }
 }

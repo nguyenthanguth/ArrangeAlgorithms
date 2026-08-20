@@ -3,7 +3,7 @@ using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Core;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     public class ProjectionTests
     {

@@ -5,7 +5,7 @@ using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Core;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     /// <summary>
     /// Properties that must hold for every split, checked against generated geometry rather than

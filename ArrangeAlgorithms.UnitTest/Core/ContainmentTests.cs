@@ -3,7 +3,7 @@ using ArrangeAlgorithms.Core;
 using ArrangeAlgorithms.Enums;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     public class ContainmentTests
     {

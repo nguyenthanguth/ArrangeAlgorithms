@@ -5,7 +5,7 @@ using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Core;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     /// <summary>
     /// Splitting a line or a polyline against a polygon, which sorts the result into the parts inside the

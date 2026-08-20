@@ -9,7 +9,7 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
     /// The instance methods on GeoLine and GeoPolyline that forward to <see cref="Splition"/>.
     /// <para>
     /// A forwarding method has its own failure mode: it compiles and returns something plausible while
-    /// handing the operation the wrong arguments ??the two out parameters swapped, or Tolerance.Global
+    /// handing the operation the wrong arguments — the two out parameters swapped, or Tolerance.Global
     /// substituted for the tolerance the caller passed. Neither shows up in a test that only checks the
     /// result looks reasonable, so every case here pins the instance call against the static one, and
     /// every tolerance overload is given a tolerance that changes the answer.
@@ -204,7 +204,7 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
             Assert.True(Path().TrySplitBy(cutter, out GeoPolyline[] pieces1));
             Assert.Equal(2, pieces1.Length);
             Assert.False(Path().TrySplitBy(cutter, out GeoPolyline[] pieces2, Wide()));
-            Assert.Null(pieces2);
+            Assert.Single(pieces2);
         }
 
         [Fact]

@@ -5,7 +5,7 @@ using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Core;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     /// <summary>
     /// The configurations the ordinary cases do not reach: cuts landing exactly on a vertex through each
@@ -140,7 +140,8 @@ namespace ArrangeAlgorithms.UnitTest.Operations
 
             Assert.False(Splition.TrySplitBy(Corner(), cutter, out GeoPolyline[] pieces, Tol));
 
-            Assert.Null(pieces);
+            Assert.Single(pieces);
+            Assert.Equal(Corner().Length, pieces[0].Length, 9);
         }
 
         #endregion

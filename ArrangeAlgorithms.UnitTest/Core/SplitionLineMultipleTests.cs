@@ -4,7 +4,7 @@ using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Core;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     public class SplitionLineMultipleTests
     {
@@ -62,10 +62,13 @@ namespace ArrangeAlgorithms.UnitTest.Operations
             // Subject runs along X-axis from (0, 0) to (10, 0)
             var subject = new GeoLine(new GeoPoint(0, 0), new GeoPoint(10, 0));
 
-            // Cutter is a polyline that crosses the X-axis twice at X = 2.0 and X = 8.0
+            // A staple shape whose two uprights cross the X-axis at X = 2.0 and X = 8.0. The earlier
+            // chevron shape crossed at 20/7 and 50/7 instead, which is what the expectations below
+            // were actually being compared against.
             var cutter = new GeoPolyline(
                 new GeoPoint(2, -2),
-                new GeoPoint(5, 5),
+                new GeoPoint(2, 2),
+                new GeoPoint(8, 2),
                 new GeoPoint(8, -2)
             );
 

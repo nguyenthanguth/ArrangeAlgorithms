@@ -4,7 +4,7 @@ using ArrangeAlgorithms.Geometry;
 using ArrangeAlgorithms.Core;
 using Xunit;
 
-namespace ArrangeAlgorithms.UnitTest.Operations
+namespace ArrangeAlgorithms.UnitTest.Core
 {
     public class SplitionTests
     {
@@ -324,7 +324,10 @@ namespace ArrangeAlgorithms.UnitTest.Operations
             var cutter = new GeoLine(new GeoPoint(-5, -5), new GeoPoint(-5, 5));
 
             Assert.False(Splition.TrySplitBy(OpenPath(), cutter, out GeoPolyline[] pieces));
-            Assert.Null(pieces);
+
+            // false says nothing was cut, not that the call failed, so the subject still comes back.
+            Assert.Single(pieces);
+            Assert.Equal(OpenPath().Length, pieces[0].Length, 9);
         }
 
         [Fact]
