@@ -54,6 +54,12 @@ namespace ArrangeAlgorithms.CadTest
             new ClosestPointTestRunner().RunClosestPointTest();
         }
 
+        [CommandMethod("T1_RectangleCombine")]
+        public static void RunRectangleCombineTest()
+        {
+            new RectangleCombineTestRunner().RunRectangleCombineTest();
+        }
+
         [CommandMethod("T1_SplitAutoTest")]
         public static void RunSplitAutoTest()
         {
