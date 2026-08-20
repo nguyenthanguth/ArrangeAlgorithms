@@ -1,4 +1,4 @@
-using Autodesk.AutoCAD.ApplicationServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
@@ -58,6 +58,18 @@ namespace ArrangeAlgorithms.CadTest
         public static void RunRectangleCombineTest()
         {
             new RectangleCombineTestRunner().RunRectangleCombineTest();
+        }
+
+        [CommandMethod("T1_Join")]
+        public static void RunJoinTest()
+        {
+            new JoinTestRunner().RunJoinTest();
+        }
+
+        [CommandMethod("T1_JoinBackup")]
+        public static void RunJoinBackupTest()
+        {
+            new JoinTestRunner().RunJoinBackupTest();
         }
 
         [CommandMethod("T1_SplitAutoTest")]
