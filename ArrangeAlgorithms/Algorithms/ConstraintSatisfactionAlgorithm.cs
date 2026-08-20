@@ -10,15 +10,27 @@ namespace ArrangeAlgorithms.Algorithms
     /// </summary>
     internal class ConstraintSatisfactionAlgorithm : IArrangeAlgorithm
     {
+        /// <summary>
+        /// Represents a variable in the Constraint Satisfaction Problem context.
+        /// </summary>
         private class CSPVariable
         {
+            /// <summary>Gets the original index of the label.</summary>
             public int OriginalIndex { get; }
+            /// <summary>Gets the label object.</summary>
             public Arrange Arrange { get; }
-            // List of initial valid translation candidates (no static collisions)
+            /// <summary>Gets or sets the list of initial valid translation candidates (no static collisions).</summary>
             public List<GeoVector> Domain { get; set; }
+            /// <summary>Gets or sets the currently assigned translation vector.</summary>
             public GeoVector AssignedValue { get; set; }
+            /// <summary>Gets or sets a value indicating whether this variable has been assigned.</summary>
             public bool IsAssigned { get; set; }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CSPVariable"/> class.
+            /// </summary>
+            /// <param name="originalIndex">The original index of the label.</param>
+            /// <param name="arrange">The label object.</param>
             public CSPVariable(int originalIndex, Arrange arrange)
             {
                 OriginalIndex = originalIndex;
@@ -29,9 +41,22 @@ namespace ArrangeAlgorithms.Algorithms
             }
         }
 
+        /// <summary>
+        /// Tracks the number of backtracking steps taken during search.
+        /// </summary>
         private int _backtrackSteps;
+
+        /// <summary>
+        /// Indicates whether the search process has timed out.
+        /// </summary>
         private bool _isTimeout;
 
+        /// <summary>
+        /// Arranges the labels using a constraint satisfaction algorithm.
+        /// </summary>
+        /// <param name="arranges">The list of labels to arrange.</param>
+        /// <param name="options">The arrangement options.</param>
+        /// <returns>The list of translation vectors for the labels.</returns>
         public List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options)
         {
             var translations = new GeoVector[arranges.Count];

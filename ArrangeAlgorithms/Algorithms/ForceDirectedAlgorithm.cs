@@ -14,6 +14,12 @@ namespace ArrangeAlgorithms.Algorithms
         /// <summary>Influence radius of repulsive force from static obstacles; beyond this, no force is contributed.</summary>
         private const double PushRadius = 1500.0;
 
+        /// <summary>
+        /// Arranges the labels using a force-directed algorithm.
+        /// </summary>
+        /// <param name="arranges">The list of labels to arrange.</param>
+        /// <param name="options">The arrangement options.</param>
+        /// <returns>The list of translation vectors for the labels.</returns>
         public List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options)
         {
             if (arranges.Count == 0)

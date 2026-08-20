@@ -9,6 +9,12 @@ namespace ArrangeAlgorithms.Algorithms
     /// </summary>
     internal class GreedyAlgorithm : IArrangeAlgorithm
     {
+        /// <summary>
+        /// Arranges the labels using a greedy algorithm.
+        /// </summary>
+        /// <param name="arranges">The list of labels to arrange.</param>
+        /// <param name="options">The arrangement options.</param>
+        /// <returns>The list of translation vectors for the labels.</returns>
         public List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options)
         {
             var translations = new GeoVector[arranges.Count];

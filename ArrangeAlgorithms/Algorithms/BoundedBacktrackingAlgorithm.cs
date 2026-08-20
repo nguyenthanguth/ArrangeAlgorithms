@@ -10,9 +10,22 @@ namespace ArrangeAlgorithms.Algorithms
     /// </summary>
     internal class BoundedBacktrackingAlgorithm : IArrangeAlgorithm
     {
+        /// <summary>
+        /// Tracks the number of backtracking steps taken during search.
+        /// </summary>
         private int _stepsCount;
+
+        /// <summary>
+        /// Indicates whether the search process has timed out.
+        /// </summary>
         private bool _isTimeout;
 
+        /// <summary>
+        /// Arranges the labels using a bounded backtracking algorithm.
+        /// </summary>
+        /// <param name="arranges">The list of labels to arrange.</param>
+        /// <param name="options">The arrangement options.</param>
+        /// <returns>The list of translation vectors for the labels.</returns>
         public List<GeoVector> Arrange(List<Arrange> arranges, ArrangeOptions options)
         {
             var translations = new GeoVector[arranges.Count];
