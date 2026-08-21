@@ -1,5 +1,6 @@
 using ArrangeAlgorithms.Geometry;
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace ArrangeAlgorithms.UnitTest
@@ -435,6 +436,194 @@ namespace ArrangeAlgorithms.UnitTest
                 Assert.True(combinedRotated.Contains(pt));
             }
         }
+
+        [Fact]
+        public void Rectangle_Combine_Point_EnclosesRectangleAndPoint()
+        {
+            // Test 1: Point inside rectangle does not change size
+            var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.0);
+            var combinedInside = rect.Combine(new GeoPoint(1.0, 0.5));
+
+            Assert.Equal(rect.Center.X, combinedInside.Center.X, 9);
+            Assert.Equal(rect.Center.Y, combinedInside.Center.Y, 9);
+            Assert.Equal(rect.Width, combinedInside.Width, 9);
+            Assert.Equal(rect.Height, combinedInside.Height, 9);
+
+            // Test 2: Point outside unrotated rectangle
+            var pointOutside = new GeoPoint(4.0, 3.0);
+            var combinedOutside = rect.Combine(pointOutside);
+
+            Assert.True(combinedOutside.Contains(pointOutside));
+            foreach (var v in rect.GetVertices())
+            {
+                Assert.True(combinedOutside.Contains(v));
+            }
+
+            // Expected bounds: X from -2 to 4 (width = 6, centerX = 1), Y from -1 to 3 (height = 4, centerY = 1)
+            Assert.Equal(1.0, combinedOutside.Center.X, 9);
+            Assert.Equal(1.0, combinedOutside.Center.Y, 9);
+            Assert.Equal(6.0, combinedOutside.Width, 9);
+            Assert.Equal(4.0, combinedOutside.Height, 9);
+
+            // Test 3: Point outside rotated rectangle
+            var rotatedRect = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, Math.PI / 4.0);
+            var targetPoint = new GeoPoint(5.0, 0.0);
+            var combinedRotated = rotatedRect.Combine(targetPoint);
+
+            Assert.Equal(rotatedRect.AngleRad, combinedRotated.AngleRad, 9);
+            Assert.True(combinedRotated.Contains(targetPoint));
+            foreach (var v in rotatedRect.GetVertices())
+            {
+                Assert.True(combinedRotated.Contains(v));
+            }
+        }
+
+        [Fact]
+        public void Rectangle_Combine_PointsArray_EnclosesAllPoints()
+        {
+            var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 2.0, 2.0, 0.0);
+            
+            // Empty / null collection returns this
+            Assert.Equal(rect.Width, rect.Combine((GeoPoint[])null).Width);
+            Assert.Equal(rect.Width, rect.Combine(new GeoPoint[0]).Width);
+
+            // Multiple points
+            var points = new[]
+            {
+                new GeoPoint(-5.0, 0.0),
+                new GeoPoint(5.0, 0.0),
+                new GeoPoint(0.0, 4.0),
+                new GeoPoint(0.0, -4.0)
+            };
+
+            var combined = rect.Combine(points);
+
+            Assert.Equal(0.0, combined.Center.X, 9);
+            Assert.Equal(0.0, combined.Center.Y, 9);
+            Assert.Equal(10.0, combined.Width, 9);
+            Assert.Equal(8.0, combined.Height, 9);
+
+            foreach (var p in points)
+            {
+                Assert.True(combined.Contains(p));
+            }
+            foreach (var v in rect.GetVertices())
+            {
+                Assert.True(combined.Contains(v));
+            }
+        }
+
+        [Fact]
+        public void Rectangle_GetClosestOnBoundary_WorksCorrectly()
+        {
+            var rect1 = new GeoRectangle(new GeoPoint(0.0, 0.0), 4.0, 2.0, 0.0); // X in [-2, 2], Y in [-1, 1]
+            var rect2 = new GeoRectangle(new GeoPoint(10.0, 0.0), 4.0, 2.0, 0.0); // X in [8, 12], Y in [-1, 1]
+
+            // Test 1: Rectangle - Rectangle
+            // Closest is from (2, 0) on rect1 to (8, 0) on rect2, length = 6
+            var segRects = rect1.GetClosestOnBoundary(rect2);
+            Assert.Equal(6.0, segRects.Length, 9);
+            Assert.True(segRects.StartPoint.IsEqualTo(new GeoPoint(2.0, 0.0)));
+            Assert.True(segRects.EndPoint.IsEqualTo(new GeoPoint(8.0, 0.0)));
+
+            // Test 2: Rectangle - Circle
+            var circle = new GeoCircle(new GeoPoint(0.0, 6.0), 2.0); // bottom of circle is (0, 4)
+            var segCircle = rect1.GetClosestOnBoundary(circle);
+            // Closest is from top edge of rect1 (0, 1) to bottom of circle (0, 4), length = 3
+            Assert.Equal(3.0, segCircle.Length, 9);
+            Assert.True(segCircle.StartPoint.IsEqualTo(new GeoPoint(0.0, 1.0)));
+            Assert.True(segCircle.EndPoint.IsEqualTo(new GeoPoint(0.0, 4.0)));
+        }
+
+        [Fact]
+        public void Rectangle_Combine_RectangleOverload_MatchesTheVertexOverload()
+        {
+            // Combining with a rectangle is combining with its four corners, and the two routes have to
+            // stay identical now that they share one implementation.
+            var baseRect = new GeoRectangle(new GeoPoint(0.0, 0.0), 10.0, 10.0, 0.0);
+            var other = new GeoRectangle(new GeoPoint(20.0, 3.0), 4.0, 4.0, 0.7);
+
+            Assert.True(baseRect.Combine(other).Equals(baseRect.Combine(other.GetVertices())));
+
+            var rotated = new GeoRectangle(new GeoPoint(-3.0, 2.0), 6.0, 2.0, Math.PI / 5.0);
+            Assert.True(rotated.Combine(other).Equals(rotated.Combine(other.GetVertices())));
+        }
+
+        [Fact]
+        public void Rectangle_Combine_NullOrEmptyInput_LeavesTheRectangleUnchanged()
+        {
+            var rect = new GeoRectangle(new GeoPoint(1.0, 2.0), 4.0, 3.0, 0.4);
+
+            Assert.True(rect.Combine().Equals(rect));
+            Assert.True(rect.Combine(new GeoPoint[0]).Equals(rect));
+            Assert.True(rect.Combine((GeoPoint[])null).Equals(rect));
+            Assert.True(rect.Combine((IEnumerable<GeoPoint>)null).Equals(rect));
+            Assert.True(rect.Combine(new List<GeoPoint>()).Equals(rect));
+        }
+
+        [Fact]
+        public void Rectangle_Combine_WalksTheSequenceOnlyOnce()
+        {
+            // A caller may hand in a sequence that cannot be replayed, so the bounds have to be built in
+            // a single pass.
+            int passes = 0;
+            IEnumerable<GeoPoint> OnePassOnly()
+            {
+                passes++;
+                yield return new GeoPoint(20.0, 0.0);
+                yield return new GeoPoint(0.0, 20.0);
+            }
+
+            var rect = new GeoRectangle(new GeoPoint(0.0, 0.0), 10.0, 10.0, 0.0);
+            var combined = rect.Combine(OnePassOnly());
+
+            Assert.Equal(1, passes);
+            Assert.Equal(25.0, combined.Width, 9);
+            Assert.Equal(25.0, combined.Height, 9);
+        }
+
+        [Fact]
+        public void Rectangle_Combine_OnePassMatchesAccumulatingPointByPoint()
+        {
+            var rnd = new Random(7);
+            var points = new List<GeoPoint>();
+            for (int i = 0; i < 2000; i++)
+            {
+                points.Add(new GeoPoint(rnd.NextDouble() * 100.0 - 50.0, rnd.NextDouble() * 100.0 - 50.0));
+            }
+
+            var start = new GeoRectangle(new GeoPoint(0.0, 0.0), 10.0, 10.0, Math.PI / 7.0);
+
+            var oneShot = start.Combine(points);
+
+            var accumulated = start;
+            foreach (var p in points)
+            {
+                accumulated = accumulated.Combine(p);
+            }
+
+            Assert.Equal(oneShot.Width, accumulated.Width, 9);
+            Assert.Equal(oneShot.Height, accumulated.Height, 9);
+            Assert.Equal(0.0, oneShot.Center.DistanceTo(accumulated.Center), 9);
+
+            foreach (var p in points)
+            {
+                Assert.True(oneShot.Contains(p));
+            }
+        }
+
+        [Fact]
+        public void Rectangle_Combine_DegenerateRectangle_GrowsToReachThePoint()
+        {
+            var flat = new GeoRectangle(new GeoPoint(0.0, 0.0), 0.0, 0.0, 0.0);
+            var grown = flat.Combine(new GeoPoint(3.0, 4.0));
+
+            Assert.Equal(3.0, grown.Width, 9);
+            Assert.Equal(4.0, grown.Height, 9);
+            Assert.True(grown.Contains(new GeoPoint(3.0, 4.0)));
+            Assert.True(grown.Contains(new GeoPoint(0.0, 0.0)));
+        }
     }
 }
+
 

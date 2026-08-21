@@ -89,5 +89,33 @@ namespace ArrangeAlgorithms.UnitTest.Geometry
                 Assert.Equal(expectedDist, rect.Center.DistanceTo(vertex), 9);
             }
         }
+
+        [Fact]
+        public void Circle_GetClosestOnBoundary_WorksCorrectly()
+        {
+            var circle1 = new GeoCircle(new GeoPoint(0.0, 0.0), 3.0);
+            var circle2 = new GeoCircle(new GeoPoint(10.0, 0.0), 2.0);
+
+            // Test 1: Circle - Circle (disjoint)
+            // Distance between centers is 10. Closest on c1 is (3, 0), on c2 is (8, 0), length = 5
+            var segCircles = circle1.GetClosestOnBoundary(circle2);
+            Assert.Equal(5.0, segCircles.Length, 9);
+            Assert.True(segCircles.StartPoint.IsEqualTo(new GeoPoint(3.0, 0.0)));
+            Assert.True(segCircles.EndPoint.IsEqualTo(new GeoPoint(8.0, 0.0)));
+
+            // Test 2: Circle - Line
+            var line = new GeoLine(10.0, -5.0, 10.0, 5.0);
+            var segLine = circle1.GetClosestOnBoundary(line);
+            Assert.Equal(7.0, segLine.Length, 9);
+            Assert.True(segLine.StartPoint.IsEqualTo(new GeoPoint(3.0, 0.0)));
+            Assert.True(segLine.EndPoint.IsEqualTo(new GeoPoint(10.0, 0.0)));
+
+            // Test 3: Circle - Rectangle
+            var rect = new GeoRectangle(new GeoPoint(10.0, 0.0), 4.0, 4.0, 0.0); // left edge at X = 8
+            var segRect = circle1.GetClosestOnBoundary(rect);
+            Assert.Equal(5.0, segRect.Length, 9);
+            Assert.True(segRect.StartPoint.IsEqualTo(new GeoPoint(3.0, 0.0)));
+            Assert.True(segRect.EndPoint.IsEqualTo(new GeoPoint(8.0, 0.0)));
+        }
     }
 }

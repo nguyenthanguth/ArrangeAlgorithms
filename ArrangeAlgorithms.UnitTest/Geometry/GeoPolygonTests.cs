@@ -424,5 +424,39 @@ namespace ArrangeAlgorithms.UnitTest
             // Cumulative length of the polyline should equal the perimeter of the polygon
             Assert.Equal(polygon.Length, polyline.Length, 9);
         }
+
+        [Fact]
+        public void Polygon_GetClosestOnBoundary_WorksCorrectly()
+        {
+            var poly1 = new GeoPolygon(
+                new GeoPoint(0.0, 0.0),
+                new GeoPoint(4.0, 0.0),
+                new GeoPoint(4.0, 4.0),
+                new GeoPoint(0.0, 4.0)
+            );
+
+            var poly2 = new GeoPolygon(
+                new GeoPoint(10.0, 0.0),
+                new GeoPoint(14.0, 0.0),
+                new GeoPoint(14.0, 4.0),
+                new GeoPoint(10.0, 4.0)
+            );
+
+            // Test 1: Polygon - Polygon
+            // The facing edges are parallel and overlap over their whole height, so every pair between
+            // them is 6 apart; the segment is anchored at the middle of that overlap.
+            var segPolys = poly1.GetClosestOnBoundary(poly2);
+            Assert.Equal(6.0, segPolys.Length, 9);
+            Assert.True(segPolys.StartPoint.IsEqualTo(new GeoPoint(4.0, 2.0)));
+            Assert.True(segPolys.EndPoint.IsEqualTo(new GeoPoint(10.0, 2.0)));
+
+            // Test 2: Polygon - Line
+            var line = new GeoLine(4.0, 8.0, 4.0, 12.0);
+            var segLine = poly1.GetClosestOnBoundary(line);
+            Assert.Equal(4.0, segLine.Length, 9);
+            Assert.True(segLine.StartPoint.IsEqualTo(new GeoPoint(4.0, 4.0)));
+            Assert.True(segLine.EndPoint.IsEqualTo(new GeoPoint(4.0, 8.0)));
+        }
     }
 }
+

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ArrangeAlgorithms.Core;
 using ArrangeAlgorithms.Enums;
 using ArrangeAlgorithms.Datatype;
@@ -165,47 +166,102 @@ namespace ArrangeAlgorithms.Geometry
         /// </summary>
         /// <param name="other">The other rectangle to combine with.</param>
         /// <returns>A new GeoRectangle containing both rectangles, oriented along this rectangle's axis.</returns>
-        public GeoRectangle Combine(GeoRectangle other)
+        public GeoRectangle Combine(GeoRectangle other) => Combine((IEnumerable<GeoPoint>)other.GetVertices());
+
+        /// <summary>
+        /// Combines this rectangle with a point, returning a new rectangle that encloses both.
+        /// The resulting rectangle maintains the same orientation (angle) as this rectangle.
+        /// </summary>
+        /// <param name="point">The point to combine with.</param>
+        /// <returns>A new GeoRectangle containing this rectangle and the point, oriented along this rectangle's axis.</returns>
+        public GeoRectangle Combine(GeoPoint point)
         {
             double cos = Math.Cos(AngleRad);
             double sin = Math.Sin(AngleRad);
 
-            double halfW = Width * 0.5;
-            double halfH = Height * 0.5;
+            double minX = Width * -0.5;
+            double maxX = Width * 0.5;
+            double minY = Height * -0.5;
+            double maxY = Height * 0.5;
 
-            // Initialize bounds in local coordinate system of this rectangle
-            double minX = -halfW;
-            double maxX = halfW;
-            double minY = -halfH;
-            double maxY = halfH;
+            ExpandLocalBounds(point, cos, sin, ref minX, ref maxX, ref minY, ref maxY);
 
-            // Project the 4 vertices of the other rectangle into this local system
-            GeoPoint[] otherVertices = other.GetVertices();
-            foreach (var pt in otherVertices)
+            return FromLocalBounds(minX, maxX, minY, maxY, cos, sin);
+        }
+
+        /// <summary>
+        /// Combines this rectangle with an array of points, returning a new rectangle that encloses this rectangle and all points.
+        /// The resulting rectangle maintains the same orientation (angle) as this rectangle.
+        /// </summary>
+        /// <param name="points">The points to combine with. A null or empty array leaves the rectangle unchanged.</param>
+        /// <returns>A new GeoRectangle containing this rectangle and all points, oriented along this rectangle's axis.</returns>
+        public GeoRectangle Combine(params GeoPoint[] points) => Combine((IEnumerable<GeoPoint>)points);
+
+        /// <summary>
+        /// Combines this rectangle with a collection of points, returning a new rectangle that encloses this rectangle and all points.
+        /// The resulting rectangle maintains the same orientation (angle) as this rectangle.
+        /// </summary>
+        /// <param name="points">The points to combine with. A null or empty sequence leaves the rectangle unchanged.</param>
+        /// <returns>A new GeoRectangle containing this rectangle and all points, oriented along this rectangle's axis.</returns>
+        public GeoRectangle Combine(IEnumerable<GeoPoint> points)
+        {
+            if (points == null)
             {
-                double dx = pt.X - Center.X;
-                double dy = pt.Y - Center.Y;
-
-                double localX = dx * cos + dy * sin;
-                double localY = -dx * sin + dy * cos;
-
-                if (localX < minX) minX = localX;
-                if (localX > maxX) maxX = localX;
-                if (localY < minY) minY = localY;
-                if (localY > maxY) maxY = localY;
+                return this;
             }
 
-            // Calculate new dimensions and local center
+            double cos = Math.Cos(AngleRad);
+            double sin = Math.Sin(AngleRad);
+
+            double minX = Width * -0.5;
+            double maxX = Width * 0.5;
+            double minY = Height * -0.5;
+            double maxY = Height * 0.5;
+
+            bool anyPoint = false;
+            foreach (var pt in points)
+            {
+                anyPoint = true;
+                ExpandLocalBounds(pt, cos, sin, ref minX, ref maxX, ref minY, ref maxY);
+            }
+
+            if (!anyPoint)
+            {
+                return this;
+            }
+
+            return FromLocalBounds(minX, maxX, minY, maxY, cos, sin);
+        }
+
+        /// <summary>
+        /// Projects a point into this rectangle's local axes and widens the running bounds to reach it.
+        /// </summary>
+        private void ExpandLocalBounds(GeoPoint point, double cos, double sin, ref double minX, ref double maxX, ref double minY, ref double maxY)
+        {
+            double dx = point.X - Center.X;
+            double dy = point.Y - Center.Y;
+
+            double localX = dx * cos + dy * sin;
+            double localY = -dx * sin + dy * cos;
+
+            if (localX < minX) minX = localX;
+            if (localX > maxX) maxX = localX;
+            if (localY < minY) minY = localY;
+            if (localY > maxY) maxY = localY;
+        }
+
+        /// <summary>
+        /// Rebuilds a rectangle on this one's axes from bounds expressed in its local coordinate system.
+        /// </summary>
+        private GeoRectangle FromLocalBounds(double minX, double maxX, double minY, double maxY, double cos, double sin)
+        {
             double localCenterX = (minX + maxX) * 0.5;
             double localCenterY = (minY + maxY) * 0.5;
-            double newWidth = maxX - minX;
-            double newHeight = maxY - minY;
 
-            // Transform local center back to world coordinates
             double worldCenterX = Center.X + localCenterX * cos - localCenterY * sin;
             double worldCenterY = Center.Y + localCenterX * sin + localCenterY * cos;
 
-            return new GeoRectangle(new GeoPoint(worldCenterX, worldCenterY), newWidth, newHeight, AngleRad);
+            return new GeoRectangle(new GeoPoint(worldCenterX, worldCenterY), maxX - minX, maxY - minY, AngleRad);
         }
 
         /// <summary>
@@ -324,6 +380,116 @@ namespace ArrangeAlgorithms.Geometry
         /// inside the rectangle.
         /// </summary>
         public GeoPoint GetClosestPointOnBoundary(GeoPoint point) => Projection.ProjectToRectangle(this, point);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on a line segment using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoLine line) => Projection.GetClosestSegment(this, line, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on a line segment within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoLine line, Tolerance tolerance) => Projection.GetClosestSegment(this, line, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on the circumference of a circle using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoCircle circle) => Projection.GetClosestSegment(this, circle, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on the circumference of a circle within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoCircle circle, Tolerance tolerance) => Projection.GetClosestSegment(this, circle, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on the boundary of another rectangle using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoRectangle other) => Projection.GetClosestSegment(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on the boundary of another rectangle within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoRectangle other, Tolerance tolerance) => Projection.GetClosestSegment(this, other, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on a polyline using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolyline polyline) => Projection.GetClosestSegment(this, polyline, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on a polyline within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolyline polyline, Tolerance tolerance) => Projection.GetClosestSegment(this, polyline, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on the boundary of a polygon using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolygon poly) => Projection.GetClosestSegment(this, poly, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on the boundary of this rectangle to a point on the boundary of a polygon within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolygon poly, Tolerance tolerance) => Projection.GetClosestSegment(this, poly, tolerance);
 
         /// <summary>
         /// Calculates the shortest Euclidean distance from this rectangle to a point.

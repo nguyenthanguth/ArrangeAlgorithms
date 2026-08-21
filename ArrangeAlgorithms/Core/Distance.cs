@@ -62,7 +62,11 @@ namespace ArrangeAlgorithms.Core
         /// </summary>
         public static double DistanceTo(GeoLine line1, GeoLine line2, Tolerance tolerance)
         {
-            if (Intersection.TryIntersectWith(line1, line2, out _, tolerance))
+            // Not Intersection.TryIntersectWith: that one reports no intersection for any pair meeting at
+            // less than the angular tolerance, which is right when the intersection point is wanted but
+            // would make two crossing segments measure the gap between their endpoints instead of zero,
+            // by an amount that grows with their length.
+            if (Projection.TryGetCrossingPoint(line1, line2, tolerance, out _))
             {
                 return 0.0;
             }

@@ -282,6 +282,116 @@ namespace ArrangeAlgorithms.Geometry
         public GeoPoint GetClosestPointOnBoundary(GeoPoint point) => Projection.ProjectToPolyline(this, point);
 
         /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on a line segment using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoLine line) => Projection.GetClosestSegment(this, line, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on a line segment within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoLine line, Tolerance tolerance) => Projection.GetClosestSegment(this, line, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on the circumference of a circle using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoCircle circle) => Projection.GetClosestSegment(this, circle, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on the circumference of a circle within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoCircle circle, Tolerance tolerance) => Projection.GetClosestSegment(this, circle, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on the boundary of a rectangle using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoRectangle rect) => Projection.GetClosestSegment(this, rect, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on the boundary of a rectangle within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoRectangle rect, Tolerance tolerance) => Projection.GetClosestSegment(this, rect, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on another polyline using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolyline other) => Projection.GetClosestSegment(this, other, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on another polyline within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolyline other, Tolerance tolerance) => Projection.GetClosestSegment(this, other, tolerance);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on the boundary of a polygon using default tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolygon poly) => Projection.GetClosestSegment(this, poly, Tolerance.Global);
+
+        /// <summary>
+        /// Finds the shortest line segment connecting a point on this polyline to a point on the boundary of a polygon within tolerance.
+        /// </summary>
+        /// <remarks>
+        /// Both ends of the returned segment sit on a boundary, so a shape lying entirely inside another
+        /// still reports the gap out to its outline rather than zero. <see cref="ArrangeAlgorithms.Core.Distance"/>
+        /// takes the opposite view and treats a closed shape as a filled region, returning zero for that
+        /// same pair.
+        /// </remarks>
+        public GeoLine GetClosestOnBoundary(GeoPolygon poly, Tolerance tolerance) => Projection.GetClosestSegment(this, poly, tolerance);
+
+        /// <summary>
         /// Checks whether a point lies on this polyline using default tolerance.
         /// </summary>
         public bool IsPointOn(GeoPoint point) => Containment.IsPointOn(this, point);
