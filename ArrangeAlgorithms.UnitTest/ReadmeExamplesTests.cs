@@ -29,7 +29,7 @@ namespace ArrangeAlgorithms.UnitTest
                 {
                     GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 2000.0, 1000.0),
                     GeoLine      = leader,
-                    MarkOffsetFromLine = 50.0,
+                    BaseOffsetFromLine = 50.0,
                     BlockPolygons = new List<GeoPolygon>(),
                     BlockLines    = new List<GeoLine>()
                 }
@@ -68,14 +68,14 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 2000.0, 1000.0),
                 GeoLine      = leader,
-                MarkOffsetFromLine = 50.0
+                BaseOffsetFromLine = 50.0
             };
 
             var largeTextLabel = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(1000.0, 0.0), 4000.0, 2000.0),
                 GeoLine      = leader,
-                MarkOffsetFromLine = 200.0
+                BaseOffsetFromLine = 200.0
             };
 
             List<GeoVector> moves = Arrange.Run(new List<Arrange> { smallTextLabel, largeTextLabel }, options);

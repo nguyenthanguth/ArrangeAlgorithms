@@ -139,7 +139,7 @@ namespace ArrangeAlgorithms.TeklaTest
                     // Define the target centerline for the mark
                     GeoLine = new GeoLine(markGroup.MiddleLineRebar.StartPoint.ToGeoPoint(), markGroup.MiddleLineRebar.EndPoint.ToGeoPoint()),
                     // Preferred offset distance of the mark from the rebar centerline
-                    MarkOffsetFromLine = 50.0,
+                    BaseOffsetFromLine = 50.0,
                     // Keep track of obstacles (dimensions and other rebar lines) to avoid overlaps
                     BlockPolygons = blockPolygons,
                     BlockLines = blockLines,

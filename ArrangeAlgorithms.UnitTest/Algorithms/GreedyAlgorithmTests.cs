@@ -26,7 +26,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
         }
 
@@ -47,13 +47,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var list = new List<Arrange> { a1, a2 };
@@ -93,7 +93,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = rect,
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0,
+                BaseOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 
@@ -133,7 +133,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = rect,
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0,
+                BaseOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 
@@ -249,8 +249,8 @@ namespace ArrangeAlgorithms.UnitTest
             var leader = new GeoLine(0.0, 0.0, 40.0, 40.0);
             var box = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0);
 
-            var a = new Arrange { GeoLine = leader, GeoRectangle = box, MarkOffsetFromLine = 5.0 };
-            var b = new Arrange { GeoLine = leader, GeoRectangle = box, MarkOffsetFromLine = 5.0 };
+            var a = new Arrange { GeoLine = leader, GeoRectangle = box, BaseOffsetFromLine = 5.0 };
+            var b = new Arrange { GeoLine = leader, GeoRectangle = box, BaseOffsetFromLine = 5.0 };
 
             Arrange.Run(new List<Arrange> { a, b }, GreedyOptions());
 

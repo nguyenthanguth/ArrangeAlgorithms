@@ -14,13 +14,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions
@@ -55,7 +55,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                 GeoLine = leader,
-                MarkOffsetFromLine = 5.0,
+                BaseOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 
@@ -79,8 +79,8 @@ namespace ArrangeAlgorithms.UnitTest
         {
             // Even with zero simulation iterations, the discrete mapping step must still yield a valid layout.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
-            var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
-            var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
+            var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, BaseOffsetFromLine = 5.0 };
+            var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, BaseOffsetFromLine = 5.0 };
 
             Arrange.Run(new List<Arrange> { a, b }, new ArrangeOptions
             {
@@ -109,7 +109,7 @@ namespace ArrangeAlgorithms.UnitTest
                 {
                     GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                     GeoLine = leader,
-                    MarkOffsetFromLine = 5.0
+                    BaseOffsetFromLine = 5.0
                 });
             }
 
@@ -146,7 +146,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                 GeoLine = leader,
-                MarkOffsetFromLine = 5.0,
+                BaseOffsetFromLine = 5.0,
                 BlockLines = new List<GeoLine> { blockLine }
             };
 
@@ -173,7 +173,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                 GeoLine = leader,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions

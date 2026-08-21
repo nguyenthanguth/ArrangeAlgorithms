@@ -37,7 +37,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, width, height),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
         }
 

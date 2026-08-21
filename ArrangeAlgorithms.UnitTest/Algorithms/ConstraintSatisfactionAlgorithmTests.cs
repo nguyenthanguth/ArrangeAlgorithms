@@ -14,13 +14,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions
@@ -106,7 +106,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(20.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0,
+                BaseOffsetFromLine = 5.0,
                 BlockPolygons = new List<GeoPolygon> { blockPoly }
             };
 

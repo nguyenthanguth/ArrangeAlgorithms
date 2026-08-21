@@ -16,13 +16,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
             var a2 = new Arrange
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions
@@ -50,7 +50,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
                 GeoLine = leaderLine,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             // Huge blocked polygon wrapping the entire candidate space
@@ -85,7 +85,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                 GeoLine = leader,
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = new ArrangeOptions
@@ -117,7 +117,7 @@ namespace ArrangeAlgorithms.UnitTest
                 {
                     GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
                     GeoLine = leader,
-                    MarkOffsetFromLine = 5.0
+                    BaseOffsetFromLine = 5.0
                 });
             }
 
@@ -146,8 +146,8 @@ namespace ArrangeAlgorithms.UnitTest
             // Budget equal to 0 forces the algorithm to give up immediately and fallback to Greedy,
             // but the returned result must still be valid and not empty or throwing errors.
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
-            var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
-            var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, MarkOffsetFromLine = 5.0 };
+            var a = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, BaseOffsetFromLine = 5.0 };
+            var b = new Arrange { GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0), GeoLine = leader, BaseOffsetFromLine = 5.0 };
 
             var options = new ArrangeOptions
             {

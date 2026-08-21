@@ -27,7 +27,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
         }
 
@@ -108,7 +108,7 @@ namespace ArrangeAlgorithms.UnitTest
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var near = LabelOn(leader);                       // MarkOffsetFromLine = 5
             var far = LabelOn(leader);
-            far.MarkOffsetFromLine = 30.0;
+            far.BaseOffsetFromLine = 30.0;
 
             var options = OptionsFor(ArrangeAlgorithmType.Greedy);
 
@@ -125,7 +125,7 @@ namespace ArrangeAlgorithms.UnitTest
             var leader = new GeoLine(0.0, 0.0, 40.0, 0.0);
             var near = LabelOn(leader);                       // MarkOffsetFromLine = 5
             var far = LabelOn(leader);
-            far.MarkOffsetFromLine = 30.0;
+            far.BaseOffsetFromLine = 30.0;
 
             Arrange.Run(new List<Arrange> { near, far }, OptionsFor(ArrangeAlgorithmType.Greedy));
 
@@ -180,7 +180,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = new GeoLine(5.0, 0.0, 5.0, 0.0),
                 GeoRectangle = new GeoRectangle(new GeoPoint(5.0, 0.0), 20.0, 10.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             Arrange.Run(new List<Arrange> { label }, OptionsFor(ArrangeAlgorithmType.Greedy));
@@ -201,7 +201,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(new GeoPoint(20.0, 10.0), 20.0, 10.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             Arrange.Run(new List<Arrange> { label }, OptionsFor(ArrangeAlgorithmType.Greedy));
@@ -450,13 +450,13 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
             var b = new Arrange
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 20.0, 10.0, Math.PI / 4.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             Arrange.Run(new List<Arrange> { a, b }, OptionsFor(algorithm));
@@ -477,7 +477,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(new GeoPoint(10.0, 0.0), 30.0, 10.0), // Label width = 30
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = OptionsFor(ArrangeAlgorithmType.Greedy);
@@ -543,7 +543,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(new GeoPoint(20.05, 10.0), 20.0, 10.0),
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             var options = OptionsFor(ArrangeAlgorithmType.Greedy);
@@ -694,7 +694,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 1.0, 1.0), // Tiny label
-                MarkOffsetFromLine = 1.0
+                BaseOffsetFromLine = 1.0
             };
 
             var options = OptionsFor(algorithm);
@@ -714,7 +714,7 @@ namespace ArrangeAlgorithms.UnitTest
             {
                 GeoLine = leader,
                 GeoRectangle = new GeoRectangle(leader.MidPoint, 1000.0, 1000.0), // Giant label
-                MarkOffsetFromLine = 5.0
+                BaseOffsetFromLine = 5.0
             };
 
             Arrange.Run(new List<Arrange> { a }, OptionsFor(algorithm));

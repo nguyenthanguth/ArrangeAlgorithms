@@ -28,7 +28,7 @@ namespace ArrangeAlgorithms
         /// each label may require a unique offset — e.g., larger text labels may need to be placed further away than smaller ones.
         /// </para>
         /// </summary>
-        public double MarkOffsetFromLine { get; set; } = 50.0;
+        public double BaseOffsetFromLine { get; set; } = 50.0;
 
         /// <summary>Gets or sets the list of static block polygons that the label must not overlap.</summary>
         public List<GeoPolygon> BlockPolygons { get; set; }
@@ -491,7 +491,7 @@ namespace ArrangeAlgorithms
 
                 // BaseOffset: Minimum perpendicular distance from the path to the center of the first label row,
                 // which equals half the label height plus this label's unique offset margin (MarkOffsetFromLine)
-                height * 0.5 + MarkOffsetFromLine,
+                height * 0.5 + BaseOffsetFromLine,
 
                 // MaximumShift: Maximum allowable longitudinal shift distance along the path,
                 // which equals half the path length plus a portion of the label width overshooting the ends (LongitudinalOvershootRatio)
